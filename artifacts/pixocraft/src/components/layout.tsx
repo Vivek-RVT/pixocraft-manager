@@ -99,17 +99,17 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const initials = (username ?? "U").slice(0, 1).toUpperCase();
 
   return (
-    <div className="flex h-screen w-full bg-background overflow-hidden">
+    <div className="flex h-[100dvh] w-full bg-background overflow-hidden">
       <aside className="hidden md:flex w-60 flex-col shrink-0">
         <SidebarContent />
       </aside>
 
-      <main className="flex-1 flex flex-col h-full overflow-hidden">
-        <header className="h-16 flex items-center justify-between px-4 md:px-8 border-b border-border bg-card/40 backdrop-blur-md z-10 shrink-0">
-          <div className="flex items-center gap-3">
+      <main className="flex-1 flex flex-col h-full overflow-hidden min-w-0">
+        <header className="h-14 sm:h-16 flex items-center justify-between gap-2 px-3 sm:px-4 md:px-8 border-b border-border bg-card/40 backdrop-blur-md z-10 shrink-0">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="md:hidden">
+                <Button variant="ghost" size="icon" className="md:hidden shrink-0 h-9 w-9">
                   <Menu className="w-5 h-5" />
                 </Button>
               </SheetTrigger>
@@ -117,12 +117,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 <SidebarContent onNavigate={() => setMobileOpen(false)} />
               </SheetContent>
             </Sheet>
-            <div className="font-semibold text-lg tracking-tight">
+            <div className="font-semibold text-base sm:text-lg tracking-tight truncate">
               {titleFor(location)}
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5 sm:gap-2">
+          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
             <Button
               variant="default"
               size="sm"
@@ -148,7 +148,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="ghost"
-                  className="h-9 px-2 gap-2 rounded-full"
+                  className="h-9 px-1.5 sm:px-2 gap-2 rounded-full"
                 >
                   <div className="w-7 h-7 rounded-full bg-primary text-primary-foreground text-xs font-semibold flex items-center justify-center">
                     {initials}
@@ -176,7 +176,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         </header>
 
         <div className="flex-1 overflow-auto">
-          <div className="max-w-7xl mx-auto w-full p-4 md:p-8">{children}</div>
+          <div className="max-w-7xl mx-auto w-full p-3 sm:p-4 md:p-8">{children}</div>
         </div>
       </main>
 

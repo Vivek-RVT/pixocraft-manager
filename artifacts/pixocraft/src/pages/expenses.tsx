@@ -204,9 +204,9 @@ export default function Expenses() {
         </CardContent>
       </Card>
 
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <Select value={filter} onValueChange={setFilter}>
-          <SelectTrigger className="w-[200px]">
+          <SelectTrigger className="w-full sm:w-[200px]">
             <SelectValue placeholder="All categories" />
           </SelectTrigger>
           <SelectContent>

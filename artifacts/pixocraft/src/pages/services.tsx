@@ -129,7 +129,7 @@ export default function Services() {
 
       <div className="flex flex-wrap gap-2">
         <Select value={customerFilter} onValueChange={setCustomerFilter}>
-          <SelectTrigger className="w-[200px]">
+          <SelectTrigger className="w-full sm:w-[200px]">
             <SelectValue placeholder="All customers" />
           </SelectTrigger>
           <SelectContent>
@@ -142,7 +142,7 @@ export default function Services() {
           </SelectContent>
         </Select>
         <Select value={paymentFilter} onValueChange={setPaymentFilter}>
-          <SelectTrigger className="w-[180px]">
+          <SelectTrigger className="w-full sm:w-[180px]">
             <SelectValue placeholder="Any payment" />
           </SelectTrigger>
           <SelectContent>

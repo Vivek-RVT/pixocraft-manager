@@ -106,36 +106,36 @@ export default function Transactions() {
         </Button>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-3 sm:gap-4 grid-cols-3">
         <Card>
-          <CardContent className="pt-5">
-            <div className="text-xs text-muted-foreground uppercase tracking-wide">
+          <CardContent className="pt-4 sm:pt-5">
+            <div className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wide truncate">
               Total in
             </div>
-            <div className="text-xl font-semibold tabular-nums text-emerald-600 dark:text-emerald-400 flex items-center gap-2 mt-1">
-              <ArrowUpRight className="w-4 h-4" />
-              {formatCurrency(credits)}
+            <div className="text-sm sm:text-xl font-semibold tabular-nums text-emerald-600 dark:text-emerald-400 flex items-center gap-1 sm:gap-2 mt-1 truncate">
+              <ArrowUpRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+              <span className="truncate">{formatCurrency(credits)}</span>
             </div>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="pt-5">
-            <div className="text-xs text-muted-foreground uppercase tracking-wide">
+          <CardContent className="pt-4 sm:pt-5">
+            <div className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wide truncate">
               Total out
             </div>
-            <div className="text-xl font-semibold tabular-nums text-rose-600 dark:text-rose-400 flex items-center gap-2 mt-1">
-              <ArrowDownRight className="w-4 h-4" />
-              {formatCurrency(debits)}
+            <div className="text-sm sm:text-xl font-semibold tabular-nums text-rose-600 dark:text-rose-400 flex items-center gap-1 sm:gap-2 mt-1 truncate">
+              <ArrowDownRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+              <span className="truncate">{formatCurrency(debits)}</span>
             </div>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="pt-5">
-            <div className="text-xs text-muted-foreground uppercase tracking-wide">
+          <CardContent className="pt-4 sm:pt-5">
+            <div className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wide truncate">
               Net flow
             </div>
             <div
-              className={`text-xl font-semibold tabular-nums mt-1 ${
+              className={`text-sm sm:text-xl font-semibold tabular-nums mt-1 truncate ${
                 net >= 0
                   ? "text-emerald-600 dark:text-emerald-400"
                   : "text-rose-600 dark:text-rose-400"
@@ -172,9 +172,9 @@ export default function Transactions() {
                 <TableHead>Source</TableHead>
                 <TableHead className="hidden md:table-cell">Account</TableHead>
                 <TableHead className="hidden md:table-cell">Method</TableHead>
-                <TableHead>Date</TableHead>
+                <TableHead className="hidden sm:table-cell">Date</TableHead>
                 <TableHead className="text-right">Amount</TableHead>
-                <TableHead className="w-[60px]" />
+                <TableHead className="w-[40px] sm:w-[60px]" />
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -202,8 +202,11 @@ export default function Transactions() {
                           {t.type === "credit" ? "In" : "Out"}
                         </Badge>
                       </TableCell>
-                      <TableCell className="font-medium">
-                        {t.source}
+                      <TableCell className="font-medium max-w-[140px] sm:max-w-none">
+                        <div className="truncate">{t.source}</div>
+                        <div className="text-[11px] text-muted-foreground sm:hidden">
+                          {formatDate(t.date)}
+                        </div>
                       </TableCell>
                       <TableCell className="hidden md:table-cell text-sm text-muted-foreground">
                         {t.accountName}
@@ -211,7 +214,7 @@ export default function Transactions() {
                       <TableCell className="hidden md:table-cell text-sm text-muted-foreground capitalize">
                         {t.method}
                       </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
+                      <TableCell className="hidden sm:table-cell text-sm text-muted-foreground">
                         {formatDate(t.date)}
                       </TableCell>
                       <TableCell

@@ -156,10 +156,10 @@ export default function Dashboard() {
   const growthUp = growth >= 0;
 
   return (
-    <div className="space-y-8 pb-8">
+    <div className="space-y-6 sm:space-y-8 pb-8">
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-semibold tracking-tight">
+          <h2 className="text-xl sm:text-2xl font-semibold tracking-tight">
             Good to see you back.
           </h2>
           <p className="text-muted-foreground text-sm">
@@ -167,7 +167,7 @@ export default function Dashboard() {
           </p>
         </div>
         {summary && (
-          <div className="rounded-lg border bg-card px-4 py-3 flex items-center gap-3">
+          <div className="rounded-lg border bg-card px-4 py-3 flex items-center gap-3 self-start sm:self-auto">
             <div
               className={`w-9 h-9 rounded-md flex items-center justify-center ${
                 growthUp
@@ -199,7 +199,7 @@ export default function Dashboard() {
         )}
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+      <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         {loadingSummary
           ? Array.from({ length: 6 }).map((_, i) => (
               <Card key={i}>
@@ -219,18 +219,18 @@ export default function Dashboard() {
                 transition={{ delay: index * 0.05, duration: 0.3 }}
               >
                 <Card className="hover-elevate transition-shadow h-full">
-                  <CardHeader className="flex flex-row items-center justify-between pb-1.5 space-y-0">
-                    <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  <CardHeader className="flex flex-row items-center justify-between pb-1.5 space-y-0 gap-2">
+                    <CardTitle className="text-[10px] sm:text-xs font-medium text-muted-foreground uppercase tracking-wide truncate">
                       {stat.title}
                     </CardTitle>
                     <div
-                      className={`w-7 h-7 rounded-md flex items-center justify-center ${stat.accent}`}
+                      className={`w-7 h-7 rounded-md flex items-center justify-center shrink-0 ${stat.accent}`}
                     >
                       <stat.icon className="h-3.5 w-3.5" />
                     </div>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-xl font-semibold tabular-nums">
+                    <div className="text-base sm:text-xl font-semibold tabular-nums truncate">
                       {stat.value}
                     </div>
                   </CardContent>

@@ -205,7 +205,7 @@ export default function Reports() {
         Snapshots of your business and exportable records.
       </p>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
         {summary && (
           <>
             <SummaryStat label="Lifetime revenue" value={summary.totalRevenue} />
@@ -297,28 +297,28 @@ export default function Reports() {
           )}
         </CardContent>
         {trend && trend.length > 0 && (
-          <CardContent className="pt-0 grid grid-cols-3 gap-4 text-sm border-t">
-            <div className="pt-4">
-              <div className="text-xs text-muted-foreground uppercase tracking-wide">
+          <CardContent className="pt-0 grid grid-cols-3 gap-3 sm:gap-4 text-sm border-t">
+            <div className="pt-4 min-w-0">
+              <div className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wide truncate">
                 Year revenue
               </div>
-              <div className="font-semibold tabular-nums">
+              <div className="font-semibold tabular-nums truncate">
                 {formatCurrency(yearTotals.revenue)}
               </div>
             </div>
-            <div className="pt-4">
-              <div className="text-xs text-muted-foreground uppercase tracking-wide">
+            <div className="pt-4 min-w-0">
+              <div className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wide truncate">
                 Year expenses
               </div>
-              <div className="font-semibold tabular-nums">
+              <div className="font-semibold tabular-nums truncate">
                 {formatCurrency(yearTotals.expenses)}
               </div>
             </div>
-            <div className="pt-4">
-              <div className="text-xs text-muted-foreground uppercase tracking-wide">
+            <div className="pt-4 min-w-0">
+              <div className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wide truncate">
                 Year profit
               </div>
-              <div className="font-semibold tabular-nums text-emerald-600 dark:text-emerald-400">
+              <div className="font-semibold tabular-nums text-emerald-600 dark:text-emerald-400 truncate">
                 {formatCurrency(yearTotals.profit)}
               </div>
             </div>
@@ -337,20 +337,21 @@ export default function Reports() {
         <div className="grid gap-3 sm:grid-cols-2">
           {exports.map((ex) => (
             <Card key={ex.title}>
-              <CardContent className="pt-5 flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-md bg-primary/10 text-primary flex items-center justify-center">
+              <CardContent className="pt-5 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-9 h-9 rounded-md bg-primary/10 text-primary flex items-center justify-center shrink-0">
                     <FileSpreadsheet className="w-4 h-4" />
                   </div>
-                  <div>
-                    <div className="font-medium text-sm">{ex.title}</div>
-                    <div className="text-xs text-muted-foreground">
+                  <div className="min-w-0">
+                    <div className="font-medium text-sm truncate">{ex.title}</div>
+                    <div className="text-xs text-muted-foreground truncate">
                       {ex.description}
                     </div>
                   </div>
                 </div>
-                <Button variant="outline" size="sm" onClick={ex.onClick}>
-                  <Download className="w-4 h-4 mr-2" /> CSV
+                <Button variant="outline" size="sm" onClick={ex.onClick} className="shrink-0">
+                  <Download className="w-4 h-4 sm:mr-2" />
+                  <span className="hidden sm:inline">CSV</span>
                 </Button>
               </CardContent>
             </Card>

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useState } from "react";
 
 interface AuthContextType {
   isLoggedIn: boolean;
@@ -10,19 +10,14 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [username, setUsername] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const stored = localStorage.getItem("pixocraft_isLoggedIn");
-    const storedUser = localStorage.getItem("pixocraft_username");
-    if (stored === "true") {
-      setIsLoggedIn(true);
-      setUsername(storedUser);
-    }
-    setIsLoading(false);
-  }, []);
+  const [isLoggedIn, setIsLoggedIn] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem("pixocraft_isLoggedIn") === "true";
+  });
+  const [username, setUsername] = useState<string | null>(() => {
+    if (typeof window === "undefined") return null;
+    return localStorage.getItem("pixocraft_username");
+  });
 
   const login = (user: string) => {
     localStorage.setItem("pixocraft_isLoggedIn", "true");
@@ -37,8 +32,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoggedIn(false);
     setUsername(null);
   };
-
-  if (isLoading) return null;
 
   return (
     <AuthContext.Provider value={{ isLoggedIn, login, logout, username }}>

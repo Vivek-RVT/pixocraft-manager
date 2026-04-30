@@ -184,18 +184,19 @@ export default function CustomerDetail() {
       </Card>
 
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <div>
+        <CardHeader className="flex flex-row items-center justify-between gap-3">
+          <div className="min-w-0">
             <CardTitle className="text-base font-semibold flex items-center gap-2">
-              <Briefcase className="w-4 h-4" /> Service history
+              <Briefcase className="w-4 h-4 shrink-0" /> Service history
             </CardTitle>
             <CardDescription>
               {services?.length ?? 0} service
               {services?.length === 1 ? "" : "s"} delivered
             </CardDescription>
           </div>
-          <Button size="sm" onClick={() => setServiceOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" /> Add service
+          <Button size="sm" onClick={() => setServiceOpen(true)} className="shrink-0">
+            <Plus className="sm:mr-2 h-4 w-4" />
+            <span className="hidden sm:inline">Add service</span>
           </Button>
         </CardHeader>
         <CardContent>
