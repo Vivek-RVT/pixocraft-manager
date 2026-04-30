@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Pixocraft Business Manager"
+version = "1.0.0"
+id = "artifacts/pixocraft"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 23261
+
+[services.development]
+run = "pnpm --filter @workspace/pixocraft run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/pixocraft", "run", "build" ]
+publicDir = "artifacts/pixocraft/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "23261"
+BASE_PATH = "/"

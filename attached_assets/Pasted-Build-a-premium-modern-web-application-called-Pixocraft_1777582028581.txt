@@ -1,0 +1,130 @@
+Build a premium modern web application called "Pixocraft Business Manager".
+
+Purpose:
+This app will manage all Pixocraft customers, services sold, revenue, expenses, profit, bank transactions, and business insights in one place.
+
+Design Style:
+- Ultra premium UI
+- Modern SaaS dashboard style
+- Clean layout
+- Dark + Light mode
+- Smooth animations
+- Apple + Stripe + Notion inspired design
+- Mobile responsive
+- Professional fonts
+- Glassmorphism cards
+- Fast loading
+- Beautiful charts
+
+Core Features:
+
+1. Dashboard Homepage
+- Total Customers
+- Total Revenue
+- Total Expenses
+- Net Profit
+- Pending Payments
+- This Month Earnings
+- Recent Transactions
+- Growth Graph
+- Top Services Sold
+
+2. Customer Management
+- Add Customer
+- Customer Name
+- Phone Number
+- Email
+- Business Name
+- Address
+- Notes
+- Date Added
+- Search Customer
+- Edit / Delete Customer
+- Customer History Timeline
+
+3. Services Management
+- Add Service Sold
+- Select Customer
+- Service Name
+- Price Sold
+- Cost Price
+- Profit Auto Calculate
+- Payment Status (Paid / Pending / Partial)
+- Delivery Status
+- Date
+- Notes
+
+4. Expense Tracker
+- Add Expense
+- Expense Category
+  (Ads, Salary, Hosting, Tools, Travel, Office, Misc)
+- Amount
+- Date
+- Notes
+- Monthly Expense Reports
+
+5. Bank Transactions
+- Add Transaction
+- Credit / Debit
+- Amount
+- Source
+- Account Name
+- UPI / Bank / Cash
+- Date
+- Notes
+
+6. Profit Analytics
+- Revenue vs Expense Graph
+- Monthly Profit Chart
+- Best Selling Services
+- Highest Paying Customers
+- Loss Alerts
+
+7. Reports
+- Export CSV
+- Export PDF
+- Monthly Summary
+- Yearly Summary
+
+8. Notifications
+- Pending Payment Alerts
+- Low Profit Alerts
+- Big Expense Alerts
+
+9. Security
+- Login Page
+- Admin Authentication
+- Secure Database
+- Data Backup
+
+10. Advanced Features
+- Search Everything
+- Filter by Date
+- Tags
+- Notes System
+- Quick Add Button
+- Dark Mode Toggle
+
+Tech Stack:
+- React + TypeScript
+- Tailwind CSS
+- Supabase / Firebase database
+- Charts library
+- Responsive layout
+
+UI Pages:
+1. Login
+2. Dashboard
+3. Customers
+4. Services
+5. Expenses
+6. Transactions
+7. Reports
+8. Settings
+
+Extra:
+Make it look like a premium startup product worth ₹999/month SaaS.
+Animations should feel smooth and professional.
+Use icons and cards.
+Use beautiful data tables.
+Keep code clean and scalable.

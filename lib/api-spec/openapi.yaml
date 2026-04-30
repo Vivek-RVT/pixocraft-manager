@@ -3,20 +3,29 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Pixocraft Business Manager API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: customers
+    description: Customer management
+  - name: services
+    description: Services sold to customers
+  - name: expenses
+    description: Business expenses
+  - name: transactions
+    description: Bank transactions (credit/debit)
+  - name: dashboard
+    description: Dashboard summary and analytics
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +33,421 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /customers:
+    get:
+      operationId: listCustomers
+      tags: [customers]
+      summary: List all customers
+      parameters:
+        - in: query
+          name: search
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Customers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Customer"
+    post:
+      operationId: createCustomer
+      tags: [customers]
+      summary: Create a customer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCustomer"
+      responses:
+        "200":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Customer"
+  /customers/{id}:
+    get:
+      operationId: getCustomer
+      tags: [customers]
+      summary: Get a customer by id
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Customer
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CustomerDetail"
+    patch:
+      operationId: updateCustomer
+      tags: [customers]
+      summary: Update a customer
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateCustomer"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Customer"
+    delete:
+      operationId: deleteCustomer
+      tags: [customers]
+      summary: Delete a customer
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeletedResponse"
+
+  /services:
+    get:
+      operationId: listServices
+      tags: [services]
+      summary: List all services sold
+      parameters:
+        - in: query
+          name: customerId
+          required: false
+          schema:
+            type: integer
+        - in: query
+          name: paymentStatus
+          required: false
+          schema:
+            type: string
+            enum: [paid, pending, partial]
+      responses:
+        "200":
+          description: Services
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Service"
+    post:
+      operationId: createService
+      tags: [services]
+      summary: Create a service sold record
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateService"
+      responses:
+        "200":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Service"
+  /services/{id}:
+    patch:
+      operationId: updateService
+      tags: [services]
+      summary: Update a service
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateService"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Service"
+    delete:
+      operationId: deleteService
+      tags: [services]
+      summary: Delete a service
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeletedResponse"
+
+  /expenses:
+    get:
+      operationId: listExpenses
+      tags: [expenses]
+      summary: List all expenses
+      parameters:
+        - in: query
+          name: category
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Expenses
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Expense"
+    post:
+      operationId: createExpense
+      tags: [expenses]
+      summary: Create an expense
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateExpense"
+      responses:
+        "200":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Expense"
+  /expenses/{id}:
+    patch:
+      operationId: updateExpense
+      tags: [expenses]
+      summary: Update an expense
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateExpense"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Expense"
+    delete:
+      operationId: deleteExpense
+      tags: [expenses]
+      summary: Delete an expense
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeletedResponse"
+
+  /transactions:
+    get:
+      operationId: listTransactions
+      tags: [transactions]
+      summary: List all bank transactions
+      parameters:
+        - in: query
+          name: type
+          required: false
+          schema:
+            type: string
+            enum: [credit, debit]
+      responses:
+        "200":
+          description: Transactions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Transaction"
+    post:
+      operationId: createTransaction
+      tags: [transactions]
+      summary: Create a transaction
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTransaction"
+      responses:
+        "200":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Transaction"
+  /transactions/{id}:
+    delete:
+      operationId: deleteTransaction
+      tags: [transactions]
+      summary: Delete a transaction
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeletedResponse"
+
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [dashboard]
+      summary: Get dashboard KPI summary
+      responses:
+        "200":
+          description: Summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+  /dashboard/revenue-trend:
+    get:
+      operationId: getRevenueTrend
+      tags: [dashboard]
+      summary: Monthly revenue vs expense trend (last 12 months)
+      responses:
+        "200":
+          description: Trend
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MonthlyTrendPoint"
+  /dashboard/top-services:
+    get:
+      operationId: getTopServices
+      tags: [dashboard]
+      summary: Top selling services by revenue
+      responses:
+        "200":
+          description: Top services
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TopServiceItem"
+  /dashboard/top-customers:
+    get:
+      operationId: getTopCustomers
+      tags: [dashboard]
+      summary: Highest paying customers
+      responses:
+        "200":
+          description: Top customers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TopCustomerItem"
+  /dashboard/recent-activity:
+    get:
+      operationId: getRecentActivity
+      tags: [dashboard]
+      summary: Most recent activity across services, expenses and transactions
+      responses:
+        "200":
+          description: Activity
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ActivityItem"
+  /dashboard/expense-breakdown:
+    get:
+      operationId: getExpenseBreakdown
+      tags: [dashboard]
+      summary: Expense totals grouped by category
+      responses:
+        "200":
+          description: Breakdown
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CategoryBreakdownItem"
+  /dashboard/notifications:
+    get:
+      operationId: getNotifications
+      tags: [dashboard]
+      summary: Smart alerts (pending payments, big expenses, low profit)
+      responses:
+        "200":
+          description: Notifications
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Notification"
+
 components:
   schemas:
     HealthStatus:
@@ -31,6 +455,405 @@ components:
       properties:
         status:
           type: string
-      required:
-        - status
+      required: [status]
 
+    DeletedResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+      required: [success]
+
+    Customer:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        phone:
+          type: string
+          nullable: true
+        email:
+          type: string
+          nullable: true
+        businessName:
+          type: string
+          nullable: true
+        address:
+          type: string
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, name, createdAt]
+
+    CustomerDetail:
+      type: object
+      properties:
+        customer:
+          $ref: "#/components/schemas/Customer"
+        services:
+          type: array
+          items:
+            $ref: "#/components/schemas/Service"
+        totalRevenue:
+          type: number
+        totalProfit:
+          type: number
+        pendingAmount:
+          type: number
+      required: [customer, services, totalRevenue, totalProfit, pendingAmount]
+
+    CreateCustomer:
+      type: object
+      properties:
+        name:
+          type: string
+        phone:
+          type: string
+          nullable: true
+        email:
+          type: string
+          nullable: true
+        businessName:
+          type: string
+          nullable: true
+        address:
+          type: string
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+      required: [name]
+
+    UpdateCustomer:
+      type: object
+      properties:
+        name:
+          type: string
+        phone:
+          type: string
+          nullable: true
+        email:
+          type: string
+          nullable: true
+        businessName:
+          type: string
+          nullable: true
+        address:
+          type: string
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+
+    Service:
+      type: object
+      properties:
+        id:
+          type: integer
+        customerId:
+          type: integer
+        customerName:
+          type: string
+        serviceName:
+          type: string
+        priceSold:
+          type: number
+        costPrice:
+          type: number
+        profit:
+          type: number
+        paymentStatus:
+          type: string
+          enum: [paid, pending, partial]
+        amountPaid:
+          type: number
+        deliveryStatus:
+          type: string
+          enum: [pending, in_progress, delivered]
+        date:
+          type: string
+          format: date
+        notes:
+          type: string
+          nullable: true
+      required: [id, customerId, customerName, serviceName, priceSold, costPrice, profit, paymentStatus, amountPaid, deliveryStatus, date]
+
+    CreateService:
+      type: object
+      properties:
+        customerId:
+          type: integer
+        serviceName:
+          type: string
+        priceSold:
+          type: number
+        costPrice:
+          type: number
+        paymentStatus:
+          type: string
+          enum: [paid, pending, partial]
+        amountPaid:
+          type: number
+        deliveryStatus:
+          type: string
+          enum: [pending, in_progress, delivered]
+        date:
+          type: string
+          format: date
+        notes:
+          type: string
+          nullable: true
+      required: [customerId, serviceName, priceSold, costPrice, paymentStatus, amountPaid, deliveryStatus, date]
+
+    UpdateService:
+      type: object
+      properties:
+        serviceName:
+          type: string
+        priceSold:
+          type: number
+        costPrice:
+          type: number
+        paymentStatus:
+          type: string
+          enum: [paid, pending, partial]
+        amountPaid:
+          type: number
+        deliveryStatus:
+          type: string
+          enum: [pending, in_progress, delivered]
+        date:
+          type: string
+          format: date
+        notes:
+          type: string
+          nullable: true
+
+    Expense:
+      type: object
+      properties:
+        id:
+          type: integer
+        category:
+          type: string
+          enum: [ads, salary, hosting, tools, travel, office, misc]
+        amount:
+          type: number
+        date:
+          type: string
+          format: date
+        notes:
+          type: string
+          nullable: true
+      required: [id, category, amount, date]
+
+    CreateExpense:
+      type: object
+      properties:
+        category:
+          type: string
+          enum: [ads, salary, hosting, tools, travel, office, misc]
+        amount:
+          type: number
+        date:
+          type: string
+          format: date
+        notes:
+          type: string
+          nullable: true
+      required: [category, amount, date]
+
+    UpdateExpense:
+      type: object
+      properties:
+        category:
+          type: string
+          enum: [ads, salary, hosting, tools, travel, office, misc]
+        amount:
+          type: number
+        date:
+          type: string
+          format: date
+        notes:
+          type: string
+          nullable: true
+
+    Transaction:
+      type: object
+      properties:
+        id:
+          type: integer
+        type:
+          type: string
+          enum: [credit, debit]
+        amount:
+          type: number
+        source:
+          type: string
+        accountName:
+          type: string
+        method:
+          type: string
+          enum: [upi, bank, cash]
+        date:
+          type: string
+          format: date
+        notes:
+          type: string
+          nullable: true
+      required: [id, type, amount, source, accountName, method, date]
+
+    CreateTransaction:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [credit, debit]
+        amount:
+          type: number
+        source:
+          type: string
+        accountName:
+          type: string
+        method:
+          type: string
+          enum: [upi, bank, cash]
+        date:
+          type: string
+          format: date
+        notes:
+          type: string
+          nullable: true
+      required: [type, amount, source, accountName, method, date]
+
+    DashboardSummary:
+      type: object
+      properties:
+        totalCustomers:
+          type: integer
+        totalRevenue:
+          type: number
+        totalExpenses:
+          type: number
+        netProfit:
+          type: number
+        pendingPayments:
+          type: number
+        thisMonthRevenue:
+          type: number
+        thisMonthExpenses:
+          type: number
+        thisMonthProfit:
+          type: number
+        revenueGrowthPercent:
+          type: number
+        servicesCount:
+          type: integer
+      required:
+        - totalCustomers
+        - totalRevenue
+        - totalExpenses
+        - netProfit
+        - pendingPayments
+        - thisMonthRevenue
+        - thisMonthExpenses
+        - thisMonthProfit
+        - revenueGrowthPercent
+        - servicesCount
+
+    MonthlyTrendPoint:
+      type: object
+      properties:
+        month:
+          type: string
+        revenue:
+          type: number
+        expenses:
+          type: number
+        profit:
+          type: number
+      required: [month, revenue, expenses, profit]
+
+    TopServiceItem:
+      type: object
+      properties:
+        serviceName:
+          type: string
+        totalRevenue:
+          type: number
+        totalProfit:
+          type: number
+        count:
+          type: integer
+      required: [serviceName, totalRevenue, totalProfit, count]
+
+    TopCustomerItem:
+      type: object
+      properties:
+        customerId:
+          type: integer
+        customerName:
+          type: string
+        totalRevenue:
+          type: number
+        totalProfit:
+          type: number
+        servicesCount:
+          type: integer
+      required: [customerId, customerName, totalRevenue, totalProfit, servicesCount]
+
+    ActivityItem:
+      type: object
+      properties:
+        id:
+          type: string
+        kind:
+          type: string
+          enum: [service, expense, transaction]
+        title:
+          type: string
+        subtitle:
+          type: string
+        amount:
+          type: number
+        date:
+          type: string
+          format: date-time
+      required: [id, kind, title, subtitle, amount, date]
+
+    CategoryBreakdownItem:
+      type: object
+      properties:
+        category:
+          type: string
+        total:
+          type: number
+        count:
+          type: integer
+      required: [category, total, count]
+
+    Notification:
+      type: object
+      properties:
+        id:
+          type: string
+        kind:
+          type: string
+          enum: [pending_payment, big_expense, low_profit]
+        title:
+          type: string
+        message:
+          type: string
+        severity:
+          type: string
+          enum: [info, warning, danger]
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, kind, title, message, severity, createdAt]
