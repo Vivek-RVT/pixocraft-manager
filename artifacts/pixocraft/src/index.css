@@ -156,13 +156,13 @@
   --elevate-1: rgba(255,255,255, .04);
   --elevate-2: rgba(255,255,255, .09);
 
-  --background: 240 10% 4%;
+  --background: 240 10% 6%;
   --foreground: 0 0% 98%;
-  --border: 240 6% 12%;
+  --border: 240 6% 16%;
 
-  --card: 240 10% 6%;
+  --card: 240 10% 11%;
   --card-foreground: 0 0% 98%;
-  --card-border: 240 6% 14%;
+  --card-border: 240 6% 18%;
 
   --sidebar: 240 10% 4%;
   --sidebar-foreground: 240 5% 70%;
@@ -173,9 +173,9 @@
   --sidebar-accent-foreground: 0 0% 98%;
   --sidebar-ring: 240 6% 20%;
 
-  --popover: 240 10% 6%;
+  --popover: 240 10% 11%;
   --popover-foreground: 0 0% 98%;
-  --popover-border: 240 6% 14%;
+  --popover-border: 240 6% 18%;
 
   --primary: 236 82% 62%;
   --primary-foreground: 0 0% 100%;
@@ -294,5 +294,5 @@
 }
 
 .glass-card {
-  @apply bg-card/60 backdrop-blur-lg border border-white/10 dark:border-white/5 shadow-sm;
+  @apply bg-card/85 backdrop-blur-lg border border-white/10 dark:border-white/10 shadow-sm;
 }
