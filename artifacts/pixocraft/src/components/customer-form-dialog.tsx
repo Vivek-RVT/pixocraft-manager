@@ -145,8 +145,8 @@ export function CustomerFormDialog({ open, onOpenChange, customerId }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[520px]">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-[520px] flex flex-col max-h-[88vh]">
+        <DialogHeader className="shrink-0">
           <DialogTitle>{isEdit ? "Edit customer" : "New customer"}</DialogTitle>
           <DialogDescription>
             {isEdit
@@ -154,74 +154,76 @@ export function CustomerFormDialog({ open, onOpenChange, customerId }: Props) {
               : "Add a new customer to your studio."}
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2 sm:col-span-2">
-              <Label htmlFor="name">Name *</Label>
-              <Input
-                id="name"
-                {...register("name", { required: true })}
-                placeholder="Aarav Mehta"
-              />
-              {formState.errors.name && (
-                <p className="text-xs text-destructive">Name is required</p>
-              )}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="businessName">Business</Label>
-              <Input
-                id="businessName"
-                {...register("businessName")}
-                placeholder="Northlight Studio"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="phone">Phone</Label>
-              <Input id="phone" {...register("phone")} placeholder="+91 ..." />
-            </div>
-            <div className="space-y-2 sm:col-span-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                {...register("email")}
-                placeholder="hello@studio.in"
-              />
-            </div>
-            <div className="space-y-2 sm:col-span-2">
-              <Label htmlFor="address">Address</Label>
-              <Input
-                id="address"
-                {...register("address")}
-                placeholder="City, area"
-              />
-            </div>
-            <div className="space-y-2 sm:col-span-2">
-              <Label>First contact date</Label>
-              <Controller
-                control={control}
-                name="contactedAt"
-                render={({ field }) => (
-                  <CalendarDatePicker
-                    value={field.value}
-                    onChange={field.onChange}
-                    placeholder="Pick a date"
-                  />
+        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col flex-1 min-h-0">
+          <div className="overflow-y-auto flex-1 px-1 py-1">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              <div className="space-y-2 sm:col-span-2">
+                <Label htmlFor="name">Name *</Label>
+                <Input
+                  id="name"
+                  {...register("name", { required: true })}
+                  placeholder="Aarav Mehta"
+                />
+                {formState.errors.name && (
+                  <p className="text-xs text-destructive">Name is required</p>
                 )}
-              />
-              <p className="text-xs text-muted-foreground">When did you first connect with this customer?</p>
-            </div>
-            <div className="space-y-2 sm:col-span-2">
-              <Label htmlFor="notes">Notes</Label>
-              <Textarea
-                id="notes"
-                {...register("notes")}
-                rows={2}
-                placeholder="Anything worth remembering"
-              />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="businessName">Business</Label>
+                <Input
+                  id="businessName"
+                  {...register("businessName")}
+                  placeholder="Northlight Studio"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="phone">Phone</Label>
+                <Input id="phone" {...register("phone")} placeholder="+91 ..." />
+              </div>
+              <div className="space-y-2 sm:col-span-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  {...register("email")}
+                  placeholder="hello@studio.in"
+                />
+              </div>
+              <div className="space-y-2 sm:col-span-2">
+                <Label htmlFor="address">Address</Label>
+                <Input
+                  id="address"
+                  {...register("address")}
+                  placeholder="City, area"
+                />
+              </div>
+              <div className="space-y-2 sm:col-span-2">
+                <Label>First contact date</Label>
+                <Controller
+                  control={control}
+                  name="contactedAt"
+                  render={({ field }) => (
+                    <CalendarDatePicker
+                      value={field.value}
+                      onChange={field.onChange}
+                      placeholder="Pick a date"
+                    />
+                  )}
+                />
+                <p className="text-xs text-muted-foreground">When did you first connect with this customer?</p>
+              </div>
+              <div className="space-y-2 sm:col-span-2">
+                <Label htmlFor="notes">Notes</Label>
+                <Textarea
+                  id="notes"
+                  {...register("notes")}
+                  rows={3}
+                  placeholder="Anything worth remembering"
+                />
+              </div>
             </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="shrink-0 pt-5 border-t mt-5">
             <Button
               type="button"
               variant="ghost"
