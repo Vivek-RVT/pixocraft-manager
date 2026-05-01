@@ -16,6 +16,7 @@ import Expenses from "@/pages/expenses";
 import Transactions from "@/pages/transactions";
 import Reports from "@/pages/reports";
 import Settings from "@/pages/settings";
+import MonthlyServices from "@/pages/monthly-services";
 
 function AppRoutes() {
   const { isLoggedIn } = useAuth();
@@ -34,6 +35,7 @@ function AppRoutes() {
         <Route path="/services" component={Services} />
         <Route path="/expenses" component={Expenses} />
         <Route path="/transactions" component={Transactions} />
+        <Route path="/monthly-services" component={MonthlyServices} />
         <Route path="/reports" component={Reports} />
         <Route path="/settings" component={Settings} />
         <Route component={NotFound} />

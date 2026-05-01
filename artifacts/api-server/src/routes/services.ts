@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, sql } from "drizzle-orm";
 import { db, servicesTable, customersTable } from "@workspace/db";
 import {
   ListServicesQueryParams,
@@ -25,6 +25,7 @@ function rowToService(
     id: s.id,
     customerId: s.customerId,
     customerName,
+    serviceType: s.serviceType as "web" | "digital" | "other",
     serviceName: s.serviceName,
     priceSold,
     costPrice,
@@ -32,6 +33,7 @@ function rowToService(
     paymentStatus: s.paymentStatus,
     amountPaid: Number(s.amountPaid),
     deliveryStatus: s.deliveryStatus,
+    satisfactionRating: s.satisfactionRating,
     date: s.date,
     notes: s.notes,
   };
@@ -78,12 +80,14 @@ router.post("/services", async (req, res): Promise<void> => {
     .insert(servicesTable)
     .values({
       customerId: data.customerId,
+      serviceType: data.serviceType ?? "other",
       serviceName: data.serviceName,
       priceSold: String(data.priceSold),
       costPrice: String(data.costPrice),
       amountPaid: String(data.amountPaid),
       paymentStatus: data.paymentStatus,
       deliveryStatus: data.deliveryStatus,
+      satisfactionRating: data.satisfactionRating ?? null,
       date: data.date.toISOString().slice(0, 10),
       notes: data.notes,
     })
@@ -109,6 +113,8 @@ router.patch("/services/:id", async (req, res): Promise<void> => {
     return;
   }
   const updates: Record<string, unknown> = {};
+  if (body.data.serviceType !== undefined)
+    updates.serviceType = body.data.serviceType;
   if (body.data.serviceName !== undefined)
     updates.serviceName = body.data.serviceName;
   if (body.data.priceSold !== undefined)
@@ -121,6 +127,8 @@ router.patch("/services/:id", async (req, res): Promise<void> => {
     updates.paymentStatus = body.data.paymentStatus;
   if (body.data.deliveryStatus !== undefined)
     updates.deliveryStatus = body.data.deliveryStatus;
+  if (body.data.satisfactionRating !== undefined)
+    updates.satisfactionRating = body.data.satisfactionRating;
   if (body.data.date !== undefined)
     updates.date = body.data.date.toISOString().slice(0, 10);
   if (body.data.notes !== undefined) updates.notes = body.data.notes;
@@ -151,6 +159,14 @@ router.delete("/services/:id", async (req, res): Promise<void> => {
   }
   await db.delete(servicesTable).where(eq(servicesTable.id, params.data.id));
   res.json(DeleteServiceResponse.parse({ success: true }));
+});
+
+router.get("/service-names", async (_req, res): Promise<void> => {
+  const rows = await db
+    .selectDistinct({ serviceName: servicesTable.serviceName })
+    .from(servicesTable)
+    .orderBy(servicesTable.serviceName);
+  res.json(rows.map((r) => r.serviceName));
 });
 
 export default router;

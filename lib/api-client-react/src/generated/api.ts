@@ -21,6 +21,8 @@ import type {
   CategoryBreakdownItem,
   CreateCustomer,
   CreateExpense,
+  CreateMonthlyDigitalService,
+  CreateMonthlyWebsiteService,
   CreateService,
   CreateTransaction,
   Customer,
@@ -31,16 +33,24 @@ import type {
   HealthStatus,
   ListCustomersParams,
   ListExpensesParams,
+  ListMonthlyDigitalServicesParams,
+  ListMonthlyWebsiteServicesParams,
   ListServicesParams,
   ListTransactionsParams,
+  MonthlyCompletion,
+  MonthlyDigitalService,
   MonthlyTrendPoint,
+  MonthlyWebsiteService,
   Notification,
   Service,
+  ToggleMonthlyCompletion,
   TopCustomerItem,
   TopServiceItem,
   Transaction,
   UpdateCustomer,
   UpdateExpense,
+  UpdateMonthlyDigitalService,
+  UpdateMonthlyWebsiteService,
   UpdateService,
 } from "./api.schemas";
 
@@ -2052,6 +2062,1005 @@ export function useGetNotifications<
   request?: SecondParameter<typeof customFetch>;
 }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getGetNotificationsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary List all monthly website services
+ */
+export const getListMonthlyWebsiteServicesUrl = (
+  params?: ListMonthlyWebsiteServicesParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/monthly-website?${stringifiedParams}`
+    : `/api/monthly-website`;
+};
+
+export const listMonthlyWebsiteServices = async (
+  params?: ListMonthlyWebsiteServicesParams,
+  options?: RequestInit,
+): Promise<MonthlyWebsiteService[]> => {
+  return customFetch<MonthlyWebsiteService[]>(
+    getListMonthlyWebsiteServicesUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListMonthlyWebsiteServicesQueryKey = (
+  params?: ListMonthlyWebsiteServicesParams,
+) => {
+  return [`/api/monthly-website`, ...(params ? [params] : [])] as const;
+};
+
+export const getListMonthlyWebsiteServicesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listMonthlyWebsiteServices>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListMonthlyWebsiteServicesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listMonthlyWebsiteServices>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListMonthlyWebsiteServicesQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listMonthlyWebsiteServices>>
+  > = ({ signal }) =>
+    listMonthlyWebsiteServices(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listMonthlyWebsiteServices>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListMonthlyWebsiteServicesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listMonthlyWebsiteServices>>
+>;
+export type ListMonthlyWebsiteServicesQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List all monthly website services
+ */
+
+export function useListMonthlyWebsiteServices<
+  TData = Awaited<ReturnType<typeof listMonthlyWebsiteServices>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListMonthlyWebsiteServicesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listMonthlyWebsiteServices>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListMonthlyWebsiteServicesQueryOptions(
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create a monthly website service
+ */
+export const getCreateMonthlyWebsiteServiceUrl = () => {
+  return `/api/monthly-website`;
+};
+
+export const createMonthlyWebsiteService = async (
+  createMonthlyWebsiteService: CreateMonthlyWebsiteService,
+  options?: RequestInit,
+): Promise<MonthlyWebsiteService> => {
+  return customFetch<MonthlyWebsiteService>(
+    getCreateMonthlyWebsiteServiceUrl(),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(createMonthlyWebsiteService),
+    },
+  );
+};
+
+export const getCreateMonthlyWebsiteServiceMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createMonthlyWebsiteService>>,
+    TError,
+    { data: BodyType<CreateMonthlyWebsiteService> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createMonthlyWebsiteService>>,
+  TError,
+  { data: BodyType<CreateMonthlyWebsiteService> },
+  TContext
+> => {
+  const mutationKey = ["createMonthlyWebsiteService"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createMonthlyWebsiteService>>,
+    { data: BodyType<CreateMonthlyWebsiteService> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createMonthlyWebsiteService(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateMonthlyWebsiteServiceMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createMonthlyWebsiteService>>
+>;
+export type CreateMonthlyWebsiteServiceMutationBody =
+  BodyType<CreateMonthlyWebsiteService>;
+export type CreateMonthlyWebsiteServiceMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Create a monthly website service
+ */
+export const useCreateMonthlyWebsiteService = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createMonthlyWebsiteService>>,
+    TError,
+    { data: BodyType<CreateMonthlyWebsiteService> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createMonthlyWebsiteService>>,
+  TError,
+  { data: BodyType<CreateMonthlyWebsiteService> },
+  TContext
+> => {
+  return useMutation(getCreateMonthlyWebsiteServiceMutationOptions(options));
+};
+
+/**
+ * @summary Update a monthly website service
+ */
+export const getUpdateMonthlyWebsiteServiceUrl = (id: number) => {
+  return `/api/monthly-website/${id}`;
+};
+
+export const updateMonthlyWebsiteService = async (
+  id: number,
+  updateMonthlyWebsiteService: UpdateMonthlyWebsiteService,
+  options?: RequestInit,
+): Promise<MonthlyWebsiteService> => {
+  return customFetch<MonthlyWebsiteService>(
+    getUpdateMonthlyWebsiteServiceUrl(id),
+    {
+      ...options,
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(updateMonthlyWebsiteService),
+    },
+  );
+};
+
+export const getUpdateMonthlyWebsiteServiceMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateMonthlyWebsiteService>>,
+    TError,
+    { id: number; data: BodyType<UpdateMonthlyWebsiteService> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateMonthlyWebsiteService>>,
+  TError,
+  { id: number; data: BodyType<UpdateMonthlyWebsiteService> },
+  TContext
+> => {
+  const mutationKey = ["updateMonthlyWebsiteService"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateMonthlyWebsiteService>>,
+    { id: number; data: BodyType<UpdateMonthlyWebsiteService> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return updateMonthlyWebsiteService(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateMonthlyWebsiteServiceMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateMonthlyWebsiteService>>
+>;
+export type UpdateMonthlyWebsiteServiceMutationBody =
+  BodyType<UpdateMonthlyWebsiteService>;
+export type UpdateMonthlyWebsiteServiceMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Update a monthly website service
+ */
+export const useUpdateMonthlyWebsiteService = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateMonthlyWebsiteService>>,
+    TError,
+    { id: number; data: BodyType<UpdateMonthlyWebsiteService> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateMonthlyWebsiteService>>,
+  TError,
+  { id: number; data: BodyType<UpdateMonthlyWebsiteService> },
+  TContext
+> => {
+  return useMutation(getUpdateMonthlyWebsiteServiceMutationOptions(options));
+};
+
+/**
+ * @summary Delete a monthly website service
+ */
+export const getDeleteMonthlyWebsiteServiceUrl = (id: number) => {
+  return `/api/monthly-website/${id}`;
+};
+
+export const deleteMonthlyWebsiteService = async (
+  id: number,
+  options?: RequestInit,
+): Promise<DeletedResponse> => {
+  return customFetch<DeletedResponse>(getDeleteMonthlyWebsiteServiceUrl(id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteMonthlyWebsiteServiceMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteMonthlyWebsiteService>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteMonthlyWebsiteService>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["deleteMonthlyWebsiteService"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteMonthlyWebsiteService>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return deleteMonthlyWebsiteService(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteMonthlyWebsiteServiceMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteMonthlyWebsiteService>>
+>;
+
+export type DeleteMonthlyWebsiteServiceMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Delete a monthly website service
+ */
+export const useDeleteMonthlyWebsiteService = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteMonthlyWebsiteService>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteMonthlyWebsiteService>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getDeleteMonthlyWebsiteServiceMutationOptions(options));
+};
+
+/**
+ * @summary Toggle month completion for a website service
+ */
+export const getToggleMonthlyWebsiteCompletionUrl = (id: number) => {
+  return `/api/monthly-website/${id}/completion`;
+};
+
+export const toggleMonthlyWebsiteCompletion = async (
+  id: number,
+  toggleMonthlyCompletion: ToggleMonthlyCompletion,
+  options?: RequestInit,
+): Promise<MonthlyCompletion> => {
+  return customFetch<MonthlyCompletion>(
+    getToggleMonthlyWebsiteCompletionUrl(id),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(toggleMonthlyCompletion),
+    },
+  );
+};
+
+export const getToggleMonthlyWebsiteCompletionMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof toggleMonthlyWebsiteCompletion>>,
+    TError,
+    { id: number; data: BodyType<ToggleMonthlyCompletion> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof toggleMonthlyWebsiteCompletion>>,
+  TError,
+  { id: number; data: BodyType<ToggleMonthlyCompletion> },
+  TContext
+> => {
+  const mutationKey = ["toggleMonthlyWebsiteCompletion"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof toggleMonthlyWebsiteCompletion>>,
+    { id: number; data: BodyType<ToggleMonthlyCompletion> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return toggleMonthlyWebsiteCompletion(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ToggleMonthlyWebsiteCompletionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof toggleMonthlyWebsiteCompletion>>
+>;
+export type ToggleMonthlyWebsiteCompletionMutationBody =
+  BodyType<ToggleMonthlyCompletion>;
+export type ToggleMonthlyWebsiteCompletionMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Toggle month completion for a website service
+ */
+export const useToggleMonthlyWebsiteCompletion = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof toggleMonthlyWebsiteCompletion>>,
+    TError,
+    { id: number; data: BodyType<ToggleMonthlyCompletion> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof toggleMonthlyWebsiteCompletion>>,
+  TError,
+  { id: number; data: BodyType<ToggleMonthlyCompletion> },
+  TContext
+> => {
+  return useMutation(getToggleMonthlyWebsiteCompletionMutationOptions(options));
+};
+
+/**
+ * @summary List all monthly digital marketing services
+ */
+export const getListMonthlyDigitalServicesUrl = (
+  params?: ListMonthlyDigitalServicesParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/monthly-digital?${stringifiedParams}`
+    : `/api/monthly-digital`;
+};
+
+export const listMonthlyDigitalServices = async (
+  params?: ListMonthlyDigitalServicesParams,
+  options?: RequestInit,
+): Promise<MonthlyDigitalService[]> => {
+  return customFetch<MonthlyDigitalService[]>(
+    getListMonthlyDigitalServicesUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListMonthlyDigitalServicesQueryKey = (
+  params?: ListMonthlyDigitalServicesParams,
+) => {
+  return [`/api/monthly-digital`, ...(params ? [params] : [])] as const;
+};
+
+export const getListMonthlyDigitalServicesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listMonthlyDigitalServices>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListMonthlyDigitalServicesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listMonthlyDigitalServices>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListMonthlyDigitalServicesQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listMonthlyDigitalServices>>
+  > = ({ signal }) =>
+    listMonthlyDigitalServices(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listMonthlyDigitalServices>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListMonthlyDigitalServicesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listMonthlyDigitalServices>>
+>;
+export type ListMonthlyDigitalServicesQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List all monthly digital marketing services
+ */
+
+export function useListMonthlyDigitalServices<
+  TData = Awaited<ReturnType<typeof listMonthlyDigitalServices>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListMonthlyDigitalServicesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listMonthlyDigitalServices>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListMonthlyDigitalServicesQueryOptions(
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create a monthly digital marketing service
+ */
+export const getCreateMonthlyDigitalServiceUrl = () => {
+  return `/api/monthly-digital`;
+};
+
+export const createMonthlyDigitalService = async (
+  createMonthlyDigitalService: CreateMonthlyDigitalService,
+  options?: RequestInit,
+): Promise<MonthlyDigitalService> => {
+  return customFetch<MonthlyDigitalService>(
+    getCreateMonthlyDigitalServiceUrl(),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(createMonthlyDigitalService),
+    },
+  );
+};
+
+export const getCreateMonthlyDigitalServiceMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createMonthlyDigitalService>>,
+    TError,
+    { data: BodyType<CreateMonthlyDigitalService> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createMonthlyDigitalService>>,
+  TError,
+  { data: BodyType<CreateMonthlyDigitalService> },
+  TContext
+> => {
+  const mutationKey = ["createMonthlyDigitalService"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createMonthlyDigitalService>>,
+    { data: BodyType<CreateMonthlyDigitalService> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createMonthlyDigitalService(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateMonthlyDigitalServiceMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createMonthlyDigitalService>>
+>;
+export type CreateMonthlyDigitalServiceMutationBody =
+  BodyType<CreateMonthlyDigitalService>;
+export type CreateMonthlyDigitalServiceMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Create a monthly digital marketing service
+ */
+export const useCreateMonthlyDigitalService = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createMonthlyDigitalService>>,
+    TError,
+    { data: BodyType<CreateMonthlyDigitalService> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createMonthlyDigitalService>>,
+  TError,
+  { data: BodyType<CreateMonthlyDigitalService> },
+  TContext
+> => {
+  return useMutation(getCreateMonthlyDigitalServiceMutationOptions(options));
+};
+
+/**
+ * @summary Update a monthly digital service
+ */
+export const getUpdateMonthlyDigitalServiceUrl = (id: number) => {
+  return `/api/monthly-digital/${id}`;
+};
+
+export const updateMonthlyDigitalService = async (
+  id: number,
+  updateMonthlyDigitalService: UpdateMonthlyDigitalService,
+  options?: RequestInit,
+): Promise<MonthlyDigitalService> => {
+  return customFetch<MonthlyDigitalService>(
+    getUpdateMonthlyDigitalServiceUrl(id),
+    {
+      ...options,
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(updateMonthlyDigitalService),
+    },
+  );
+};
+
+export const getUpdateMonthlyDigitalServiceMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateMonthlyDigitalService>>,
+    TError,
+    { id: number; data: BodyType<UpdateMonthlyDigitalService> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateMonthlyDigitalService>>,
+  TError,
+  { id: number; data: BodyType<UpdateMonthlyDigitalService> },
+  TContext
+> => {
+  const mutationKey = ["updateMonthlyDigitalService"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateMonthlyDigitalService>>,
+    { id: number; data: BodyType<UpdateMonthlyDigitalService> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return updateMonthlyDigitalService(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateMonthlyDigitalServiceMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateMonthlyDigitalService>>
+>;
+export type UpdateMonthlyDigitalServiceMutationBody =
+  BodyType<UpdateMonthlyDigitalService>;
+export type UpdateMonthlyDigitalServiceMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Update a monthly digital service
+ */
+export const useUpdateMonthlyDigitalService = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateMonthlyDigitalService>>,
+    TError,
+    { id: number; data: BodyType<UpdateMonthlyDigitalService> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateMonthlyDigitalService>>,
+  TError,
+  { id: number; data: BodyType<UpdateMonthlyDigitalService> },
+  TContext
+> => {
+  return useMutation(getUpdateMonthlyDigitalServiceMutationOptions(options));
+};
+
+/**
+ * @summary Delete a monthly digital service
+ */
+export const getDeleteMonthlyDigitalServiceUrl = (id: number) => {
+  return `/api/monthly-digital/${id}`;
+};
+
+export const deleteMonthlyDigitalService = async (
+  id: number,
+  options?: RequestInit,
+): Promise<DeletedResponse> => {
+  return customFetch<DeletedResponse>(getDeleteMonthlyDigitalServiceUrl(id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteMonthlyDigitalServiceMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteMonthlyDigitalService>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteMonthlyDigitalService>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["deleteMonthlyDigitalService"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteMonthlyDigitalService>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return deleteMonthlyDigitalService(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteMonthlyDigitalServiceMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteMonthlyDigitalService>>
+>;
+
+export type DeleteMonthlyDigitalServiceMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Delete a monthly digital service
+ */
+export const useDeleteMonthlyDigitalService = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteMonthlyDigitalService>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteMonthlyDigitalService>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getDeleteMonthlyDigitalServiceMutationOptions(options));
+};
+
+/**
+ * @summary Toggle month completion for a digital service
+ */
+export const getToggleMonthlyDigitalCompletionUrl = (id: number) => {
+  return `/api/monthly-digital/${id}/completion`;
+};
+
+export const toggleMonthlyDigitalCompletion = async (
+  id: number,
+  toggleMonthlyCompletion: ToggleMonthlyCompletion,
+  options?: RequestInit,
+): Promise<MonthlyCompletion> => {
+  return customFetch<MonthlyCompletion>(
+    getToggleMonthlyDigitalCompletionUrl(id),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(toggleMonthlyCompletion),
+    },
+  );
+};
+
+export const getToggleMonthlyDigitalCompletionMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof toggleMonthlyDigitalCompletion>>,
+    TError,
+    { id: number; data: BodyType<ToggleMonthlyCompletion> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof toggleMonthlyDigitalCompletion>>,
+  TError,
+  { id: number; data: BodyType<ToggleMonthlyCompletion> },
+  TContext
+> => {
+  const mutationKey = ["toggleMonthlyDigitalCompletion"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof toggleMonthlyDigitalCompletion>>,
+    { id: number; data: BodyType<ToggleMonthlyCompletion> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return toggleMonthlyDigitalCompletion(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ToggleMonthlyDigitalCompletionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof toggleMonthlyDigitalCompletion>>
+>;
+export type ToggleMonthlyDigitalCompletionMutationBody =
+  BodyType<ToggleMonthlyCompletion>;
+export type ToggleMonthlyDigitalCompletionMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Toggle month completion for a digital service
+ */
+export const useToggleMonthlyDigitalCompletion = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof toggleMonthlyDigitalCompletion>>,
+    TError,
+    { id: number; data: BodyType<ToggleMonthlyCompletion> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof toggleMonthlyDigitalCompletion>>,
+  TError,
+  { id: number; data: BodyType<ToggleMonthlyCompletion> },
+  TContext
+> => {
+  return useMutation(getToggleMonthlyDigitalCompletionMutationOptions(options));
+};
+
+/**
+ * @summary List previously used service names for autocomplete
+ */
+export const getListServiceNamesUrl = () => {
+  return `/api/service-names`;
+};
+
+export const listServiceNames = async (
+  options?: RequestInit,
+): Promise<string[]> => {
+  return customFetch<string[]>(getListServiceNamesUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListServiceNamesQueryKey = () => {
+  return [`/api/service-names`] as const;
+};
+
+export const getListServiceNamesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listServiceNames>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listServiceNames>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListServiceNamesQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listServiceNames>>
+  > = ({ signal }) => listServiceNames({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listServiceNames>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListServiceNamesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listServiceNames>>
+>;
+export type ListServiceNamesQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List previously used service names for autocomplete
+ */
+
+export function useListServiceNames<
+  TData = Awaited<ReturnType<typeof listServiceNames>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listServiceNames>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListServiceNamesQueryOptions(options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

@@ -14,6 +14,7 @@ export const servicesTable = pgTable("services", {
   customerId: integer("customer_id")
     .notNull()
     .references(() => customersTable.id, { onDelete: "cascade" }),
+  serviceType: text("service_type").notNull().default("other"),
   serviceName: text("service_name").notNull(),
   priceSold: numeric("price_sold", { precision: 14, scale: 2 }).notNull(),
   costPrice: numeric("cost_price", { precision: 14, scale: 2 })
@@ -24,6 +25,7 @@ export const servicesTable = pgTable("services", {
     .default("0"),
   paymentStatus: text("payment_status").notNull().default("pending"),
   deliveryStatus: text("delivery_status").notNull().default("pending"),
+  satisfactionRating: integer("satisfaction_rating"),
   date: date("date").notNull(),
   notes: text("notes"),
   createdAt: timestamp("created_at", { withTimezone: true })

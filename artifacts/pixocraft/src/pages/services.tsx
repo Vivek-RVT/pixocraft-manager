@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Plus, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { Plus, MoreHorizontal, Pencil, Trash2, Download, Star, Globe, Megaphone } from "lucide-react";
 import {
   useListServices,
   getListServicesQueryKey,
@@ -15,6 +15,13 @@ import {
   getGetRevenueTrendQueryKey,
   type Service,
 } from "@workspace/api-client-react";
+import {
+  DateRangeFilter,
+  getDefaultDateFilter,
+  isInDateRange,
+  type DateFilter,
+} from "@/components/date-range-filter";
+import { cn } from "@/lib/utils";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -67,6 +74,38 @@ const paymentBadge = (status: string) => {
 const deliveryLabel = (s: string) =>
   s === "in_progress" ? "In progress" : s.charAt(0).toUpperCase() + s.slice(1);
 
+function ServiceTypeIcon({ type }: { type?: string }) {
+  if (type === "web") return <Globe className="w-3.5 h-3.5 text-blue-500 shrink-0" />;
+  if (type === "digital") return <Megaphone className="w-3.5 h-3.5 text-purple-500 shrink-0" />;
+  return null;
+}
+
+function StarDisplay({ rating }: { rating?: number | null }) {
+  if (!rating) return null;
+  return (
+    <div className="flex gap-0.5">
+      {[1, 2, 3, 4, 5].map((s) => (
+        <Star key={s} className={cn("w-3 h-3", s <= rating ? "fill-amber-400 text-amber-400" : "fill-muted text-muted-foreground/20")} />
+      ))}
+    </div>
+  );
+}
+
+function exportToCsv(services: Service[]) {
+  const rows = [
+    ["Date","Customer","Service","Type","Price","Cost","Profit","Payment","Delivery","Rating","Notes"],
+    ...services.map((s) => [s.date, s.customerName, s.serviceName, (s as any).serviceType ?? "", s.priceSold, s.costPrice, s.profit ?? 0, s.paymentStatus, s.deliveryStatus, (s as any).satisfactionRating ?? "", (s.notes ?? "").replace(/"/g, '""')]),
+  ];
+  const csv = rows.map((r) => r.map((v) => `"${v}"`).join(",")).join("\n");
+  const blob = new Blob([csv], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `services-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 export default function Services() {
   const queryClient = useQueryClient();
   const [createOpen, setCreateOpen] = useState(false);
@@ -75,16 +114,23 @@ export default function Services() {
 
   const [customerFilter, setCustomerFilter] = useState<string>("all");
   const [paymentFilter, setPaymentFilter] = useState<string>("all");
+  const [typeFilter, setTypeFilter] = useState<string>("all");
+  const [dateFilter, setDateFilter] = useState<DateFilter>(getDefaultDateFilter());
 
-  const params: { customerId?: number; paymentStatus?: "paid" | "pending" | "partial" } = {};
-  if (customerFilter !== "all") params.customerId = Number(customerFilter);
-  if (paymentFilter !== "all")
-    params.paymentStatus = paymentFilter as "paid" | "pending" | "partial";
-  const queryArg = Object.keys(params).length ? params : undefined;
-
-  const { data: services, isLoading } = useListServices(queryArg, {
-    query: { queryKey: getListServicesQueryKey(queryArg) },
+  const { data: allServices, isLoading } = useListServices(undefined, {
+    query: { queryKey: getListServicesQueryKey() },
   });
+
+  const services = useMemo(() => {
+    if (!allServices) return [];
+    return allServices.filter((s) => {
+      if (customerFilter !== "all" && String(s.customerId) !== customerFilter) return false;
+      if (paymentFilter !== "all" && s.paymentStatus !== paymentFilter) return false;
+      if (typeFilter !== "all" && (s as any).serviceType !== typeFilter) return false;
+      if (!isInDateRange(s.date, dateFilter)) return false;
+      return true;
+    });
+  }, [allServices, customerFilter, paymentFilter, typeFilter, dateFilter]);
 
   const { data: customers } = useListCustomers(undefined, {
     query: { queryKey: getListCustomersQueryKey() },
@@ -114,18 +160,49 @@ export default function Services() {
     }
   };
 
-  const isEmpty = !isLoading && (services?.length ?? 0) === 0;
+  const isEmpty = !isLoading && services.length === 0;
+  const totalRevenue = services.reduce((s, x) => s + Number(x.priceSold), 0);
+  const totalProfit = services.reduce((s, x) => s + Number(x.profit ?? 0), 0);
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <p className="text-muted-foreground text-sm">
-          Track every service you've sold, with profit and payment status.
-        </p>
-        <Button onClick={() => setCreateOpen(true)} className="gap-2">
-          <Plus className="h-4 w-4" /> Add Service
-        </Button>
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Services</h1>
+          <p className="text-muted-foreground text-sm mt-0.5">
+            Track every service you've sold, with profit and payment status.
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => exportToCsv(services)} disabled={services.length === 0}>
+            <Download className="h-4 w-4 mr-1" /> Export
+          </Button>
+          <Button onClick={() => setCreateOpen(true)} className="gap-2">
+            <Plus className="h-4 w-4" /> Add Service
+          </Button>
+        </div>
       </div>
+
+      {services.length > 0 && (
+        <div className="grid grid-cols-3 gap-4">
+          <div className="rounded-lg border bg-card p-4">
+            <p className="text-xs text-muted-foreground">Services</p>
+            <p className="text-2xl font-bold">{services.length}</p>
+          </div>
+          <div className="rounded-lg border bg-card p-4">
+            <p className="text-xs text-muted-foreground">Revenue</p>
+            <p className="text-2xl font-bold">{formatCurrency(totalRevenue)}</p>
+          </div>
+          <div className="rounded-lg border bg-card p-4">
+            <p className="text-xs text-muted-foreground">Profit</p>
+            <p className={cn("text-2xl font-bold", totalProfit >= 0 ? "text-emerald-600" : "text-red-500")}>
+              {formatCurrency(totalProfit)}
+            </p>
+          </div>
+        </div>
+      )}
+
+      <DateRangeFilter value={dateFilter} onChange={setDateFilter} />
 
       <div className="flex flex-wrap gap-2">
         <Select value={customerFilter} onValueChange={setCustomerFilter}>
@@ -135,10 +212,19 @@ export default function Services() {
           <SelectContent>
             <SelectItem value="all">All customers</SelectItem>
             {customers?.map((c) => (
-              <SelectItem key={c.id} value={String(c.id)}>
-                {c.name}
-              </SelectItem>
+              <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>
             ))}
+          </SelectContent>
+        </Select>
+        <Select value={typeFilter} onValueChange={setTypeFilter}>
+          <SelectTrigger className="w-full sm:w-[160px]">
+            <SelectValue placeholder="All types" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All types</SelectItem>
+            <SelectItem value="web">Pixocraft Web</SelectItem>
+            <SelectItem value="digital">Pixocraft Digital</SelectItem>
+            <SelectItem value="other">Other</SelectItem>
           </SelectContent>
         </Select>
         <Select value={paymentFilter} onValueChange={setPaymentFilter}>
@@ -158,7 +244,7 @@ export default function Services() {
         <div className="rounded-lg border border-dashed bg-card/50 p-12 text-center">
           <div className="font-medium">No services match these filters</div>
           <p className="text-sm text-muted-foreground mb-4">
-            Add a service or clear your filters.
+            Add a service or adjust your filters.
           </p>
           <Button onClick={() => setCreateOpen(true)}>Add a service</Button>
         </div>
@@ -170,12 +256,11 @@ export default function Services() {
                 <TableHead>Service</TableHead>
                 <TableHead className="hidden md:table-cell">Customer</TableHead>
                 <TableHead className="text-right">Price</TableHead>
-                <TableHead className="text-right hidden lg:table-cell">
-                  Profit
-                </TableHead>
+                <TableHead className="text-right hidden lg:table-cell">Profit</TableHead>
                 <TableHead>Payment</TableHead>
                 <TableHead className="hidden md:table-cell">Delivery</TableHead>
                 <TableHead className="hidden lg:table-cell">Date</TableHead>
+                <TableHead className="hidden xl:table-cell">Rating</TableHead>
                 <TableHead className="w-[60px]" />
               </TableRow>
             </TableHeader>
@@ -183,35 +268,27 @@ export default function Services() {
               {isLoading
                 ? Array.from({ length: 5 }).map((_, i) => (
                     <TableRow key={i}>
-                      {Array.from({ length: 8 }).map((_, j) => (
-                        <TableCell key={j}>
-                          <Skeleton className="h-4 w-full" />
-                        </TableCell>
+                      {Array.from({ length: 9 }).map((_, j) => (
+                        <TableCell key={j}><Skeleton className="h-4 w-full" /></TableCell>
                       ))}
                     </TableRow>
                   ))
-                : services?.map((s) => (
+                : services.map((s) => (
                     <TableRow key={s.id}>
                       <TableCell className="font-medium">
-                        <div>{s.serviceName}</div>
-                        <div className="text-xs text-muted-foreground md:hidden">
-                          {s.customerName}
+                        <div className="flex items-center gap-1.5">
+                          <ServiceTypeIcon type={(s as any).serviceType} />
+                          <span>{s.serviceName}</span>
                         </div>
+                        <div className="text-xs text-muted-foreground md:hidden">{s.customerName}</div>
                       </TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        {s.customerName}
-                      </TableCell>
-                      <TableCell className="text-right tabular-nums">
-                        {formatCurrency(Number(s.priceSold))}
-                      </TableCell>
+                      <TableCell className="hidden md:table-cell">{s.customerName}</TableCell>
+                      <TableCell className="text-right tabular-nums">{formatCurrency(Number(s.priceSold))}</TableCell>
                       <TableCell className="text-right tabular-nums hidden lg:table-cell text-emerald-600 dark:text-emerald-400">
                         {formatCurrency(Number(s.profit ?? 0))}
                       </TableCell>
                       <TableCell>
-                        <Badge
-                          variant="outline"
-                          className={paymentBadge(s.paymentStatus)}
-                        >
+                        <Badge variant="outline" className={paymentBadge(s.paymentStatus)}>
                           {s.paymentStatus}
                         </Badge>
                       </TableCell>
@@ -221,29 +298,22 @@ export default function Services() {
                       <TableCell className="hidden lg:table-cell text-sm text-muted-foreground">
                         {formatDate(s.date)}
                       </TableCell>
+                      <TableCell className="hidden xl:table-cell">
+                        <StarDisplay rating={(s as any).satisfactionRating} />
+                      </TableCell>
                       <TableCell>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              className="h-8 w-8 p-0"
-                            >
+                            <Button variant="ghost" className="h-8 w-8 p-0">
                               <MoreHorizontal className="h-4 w-4" />
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem
-                              onClick={() => setEditService(s)}
-                            >
-                              <Pencil className="mr-2 h-4 w-4" />
-                              Edit
+                            <DropdownMenuItem onClick={() => setEditService(s)}>
+                              <Pencil className="mr-2 h-4 w-4" /> Edit
                             </DropdownMenuItem>
-                            <DropdownMenuItem
-                              className="text-destructive"
-                              onClick={() => setDeleteId(s.id)}
-                            >
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              Delete
+                            <DropdownMenuItem className="text-destructive" onClick={() => setDeleteId(s.id)}>
+                              <Trash2 className="mr-2 h-4 w-4" /> Delete
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>

@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Plus, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { Plus, MoreHorizontal, Pencil, Trash2, Download } from "lucide-react";
 import {
   useListExpenses,
   getListExpensesQueryKey,
@@ -52,6 +52,12 @@ import {
 import { ExpenseFormDialog } from "@/components/expense-form-dialog";
 import { formatCurrency, formatDate } from "@/lib/format";
 import {
+  DateRangeFilter,
+  getDefaultDateFilter,
+  isInDateRange,
+  type DateFilter,
+} from "@/components/date-range-filter";
+import {
   ResponsiveContainer,
   BarChart,
   Bar,
@@ -80,23 +86,20 @@ export default function Expenses() {
   const [editExpense, setEditExpense] = useState<Expense | null>(null);
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [filter, setFilter] = useState<string>("all");
+  const [dateFilter, setDateFilter] = useState<DateFilter>(getDefaultDateFilter());
 
-  const params =
-    filter !== "all"
-      ? {
-          category: filter as
-            | "ads"
-            | "salary"
-            | "hosting"
-            | "tools"
-            | "travel"
-            | "office"
-            | "misc",
-        }
-      : undefined;
-  const { data: expenses, isLoading } = useListExpenses(params, {
-    query: { queryKey: getListExpensesQueryKey(params) },
+  const { data: allExpenses, isLoading } = useListExpenses(undefined, {
+    query: { queryKey: getListExpensesQueryKey() },
   });
+
+  const expenses = useMemo(() => {
+    if (!allExpenses) return [];
+    return allExpenses.filter((e) => {
+      if (filter !== "all" && e.category !== filter) return false;
+      if (!isInDateRange(e.date, dateFilter)) return false;
+      return true;
+    });
+  }, [allExpenses, filter, dateFilter]);
   const { data: breakdown } = useGetExpenseBreakdown({
     query: { queryKey: getGetExpenseBreakdownQueryKey() },
   });
@@ -126,11 +129,8 @@ export default function Expenses() {
     }
   };
 
-  const totalExpenses = (expenses ?? []).reduce(
-    (sum, e) => sum + Number(e.amount),
-    0,
-  );
-  const isEmpty = !isLoading && (expenses?.length ?? 0) === 0;
+  const totalExpenses = expenses.reduce((sum, e) => sum + Number(e.amount), 0);
+  const isEmpty = !isLoading && expenses.length === 0;
 
   return (
     <div className="space-y-6">
@@ -204,6 +204,8 @@ export default function Expenses() {
         </CardContent>
       </Card>
 
+      <DateRangeFilter value={dateFilter} onChange={setDateFilter} />
+
       <div className="flex flex-wrap items-center justify-between gap-2">
         <Select value={filter} onValueChange={setFilter}>
           <SelectTrigger className="w-full sm:w-[200px]">
@@ -257,7 +259,7 @@ export default function Expenses() {
                       ))}
                     </TableRow>
                   ))
-                : expenses?.map((e) => (
+                : expenses.map((e) => (
                     <TableRow key={e.id}>
                       <TableCell>
                         <Badge variant="secondary" className="capitalize">

@@ -7,14 +7,21 @@
  */
 import type { UpdateServiceDeliveryStatus } from "./updateServiceDeliveryStatus";
 import type { UpdateServicePaymentStatus } from "./updateServicePaymentStatus";
+import type { UpdateServiceServiceType } from "./updateServiceServiceType";
 
 export interface UpdateService {
+  serviceType?: UpdateServiceServiceType;
   serviceName?: string;
   priceSold?: number;
   costPrice?: number;
   paymentStatus?: UpdateServicePaymentStatus;
   amountPaid?: number;
   deliveryStatus?: UpdateServiceDeliveryStatus;
+  /**
+   * @minimum 1
+   * @maximum 5
+   */
+  satisfactionRating?: number | null;
   date?: Date;
   notes?: string | null;
 }

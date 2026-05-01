@@ -24,6 +24,15 @@ export interface Customer {
   createdAt: string;
 }
 
+export type ServiceServiceType =
+  (typeof ServiceServiceType)[keyof typeof ServiceServiceType];
+
+export const ServiceServiceType = {
+  web: "web",
+  digital: "digital",
+  other: "other",
+} as const;
+
 export type ServicePaymentStatus =
   (typeof ServicePaymentStatus)[keyof typeof ServicePaymentStatus];
 
@@ -46,6 +55,7 @@ export interface Service {
   id: number;
   customerId: number;
   customerName: string;
+  serviceType: ServiceServiceType;
   serviceName: string;
   priceSold: number;
   costPrice: number;
@@ -53,6 +63,11 @@ export interface Service {
   paymentStatus: ServicePaymentStatus;
   amountPaid: number;
   deliveryStatus: ServiceDeliveryStatus;
+  /**
+   * @minimum 1
+   * @maximum 5
+   */
+  satisfactionRating?: number | null;
   date: string;
   notes?: string | null;
 }
@@ -83,6 +98,15 @@ export interface UpdateCustomer {
   notes?: string | null;
 }
 
+export type CreateServiceServiceType =
+  (typeof CreateServiceServiceType)[keyof typeof CreateServiceServiceType];
+
+export const CreateServiceServiceType = {
+  web: "web",
+  digital: "digital",
+  other: "other",
+} as const;
+
 export type CreateServicePaymentStatus =
   (typeof CreateServicePaymentStatus)[keyof typeof CreateServicePaymentStatus];
 
@@ -103,15 +127,30 @@ export const CreateServiceDeliveryStatus = {
 
 export interface CreateService {
   customerId: number;
+  serviceType: CreateServiceServiceType;
   serviceName: string;
   priceSold: number;
   costPrice: number;
   paymentStatus: CreateServicePaymentStatus;
   amountPaid: number;
   deliveryStatus: CreateServiceDeliveryStatus;
+  /**
+   * @minimum 1
+   * @maximum 5
+   */
+  satisfactionRating?: number | null;
   date: string;
   notes?: string | null;
 }
+
+export type UpdateServiceServiceType =
+  (typeof UpdateServiceServiceType)[keyof typeof UpdateServiceServiceType];
+
+export const UpdateServiceServiceType = {
+  web: "web",
+  digital: "digital",
+  other: "other",
+} as const;
 
 export type UpdateServicePaymentStatus =
   (typeof UpdateServicePaymentStatus)[keyof typeof UpdateServicePaymentStatus];
@@ -132,13 +171,163 @@ export const UpdateServiceDeliveryStatus = {
 } as const;
 
 export interface UpdateService {
+  serviceType?: UpdateServiceServiceType;
   serviceName?: string;
   priceSold?: number;
   costPrice?: number;
   paymentStatus?: UpdateServicePaymentStatus;
   amountPaid?: number;
   deliveryStatus?: UpdateServiceDeliveryStatus;
+  /**
+   * @minimum 1
+   * @maximum 5
+   */
+  satisfactionRating?: number | null;
   date?: string;
+  notes?: string | null;
+}
+
+export type MonthlyWebsiteServiceStatus =
+  (typeof MonthlyWebsiteServiceStatus)[keyof typeof MonthlyWebsiteServiceStatus];
+
+export const MonthlyWebsiteServiceStatus = {
+  active: "active",
+  paused: "paused",
+  cancelled: "cancelled",
+} as const;
+
+export interface MonthlyCompletion {
+  id: number;
+  serviceId: number;
+  year: number;
+  month: number;
+  completed: boolean;
+  paidAmount: number;
+  notes?: string | null;
+  completedAt?: string | null;
+}
+
+export interface MonthlyWebsiteService {
+  id: number;
+  customerId: number;
+  customerName: string;
+  websiteName: string;
+  monthlyCost: number;
+  monthlyCharge: number;
+  discount: number;
+  startDate: string;
+  status: MonthlyWebsiteServiceStatus;
+  notes?: string | null;
+  completions?: MonthlyCompletion[];
+}
+
+export type MonthlyDigitalServiceStatus =
+  (typeof MonthlyDigitalServiceStatus)[keyof typeof MonthlyDigitalServiceStatus];
+
+export const MonthlyDigitalServiceStatus = {
+  active: "active",
+  paused: "paused",
+  cancelled: "cancelled",
+} as const;
+
+export interface MonthlyDigitalService {
+  id: number;
+  customerId: number;
+  customerName: string;
+  serviceName: string;
+  platform?: string | null;
+  monthlyCost: number;
+  monthlyCharge: number;
+  discount: number;
+  startDate: string;
+  status: MonthlyDigitalServiceStatus;
+  notes?: string | null;
+  completions?: MonthlyCompletion[];
+}
+
+export type CreateMonthlyWebsiteServiceStatus =
+  (typeof CreateMonthlyWebsiteServiceStatus)[keyof typeof CreateMonthlyWebsiteServiceStatus];
+
+export const CreateMonthlyWebsiteServiceStatus = {
+  active: "active",
+  paused: "paused",
+  cancelled: "cancelled",
+} as const;
+
+export interface CreateMonthlyWebsiteService {
+  customerId: number;
+  websiteName: string;
+  monthlyCost: number;
+  monthlyCharge: number;
+  discount?: number;
+  startDate: string;
+  status?: CreateMonthlyWebsiteServiceStatus;
+  notes?: string | null;
+}
+
+export type UpdateMonthlyWebsiteServiceStatus =
+  (typeof UpdateMonthlyWebsiteServiceStatus)[keyof typeof UpdateMonthlyWebsiteServiceStatus];
+
+export const UpdateMonthlyWebsiteServiceStatus = {
+  active: "active",
+  paused: "paused",
+  cancelled: "cancelled",
+} as const;
+
+export interface UpdateMonthlyWebsiteService {
+  websiteName?: string;
+  monthlyCost?: number;
+  monthlyCharge?: number;
+  discount?: number;
+  startDate?: string;
+  status?: UpdateMonthlyWebsiteServiceStatus;
+  notes?: string | null;
+}
+
+export type CreateMonthlyDigitalServiceStatus =
+  (typeof CreateMonthlyDigitalServiceStatus)[keyof typeof CreateMonthlyDigitalServiceStatus];
+
+export const CreateMonthlyDigitalServiceStatus = {
+  active: "active",
+  paused: "paused",
+  cancelled: "cancelled",
+} as const;
+
+export interface CreateMonthlyDigitalService {
+  customerId: number;
+  serviceName: string;
+  platform?: string | null;
+  monthlyCost: number;
+  monthlyCharge: number;
+  discount?: number;
+  startDate: string;
+  status?: CreateMonthlyDigitalServiceStatus;
+  notes?: string | null;
+}
+
+export type UpdateMonthlyDigitalServiceStatus =
+  (typeof UpdateMonthlyDigitalServiceStatus)[keyof typeof UpdateMonthlyDigitalServiceStatus];
+
+export const UpdateMonthlyDigitalServiceStatus = {
+  active: "active",
+  paused: "paused",
+  cancelled: "cancelled",
+} as const;
+
+export interface UpdateMonthlyDigitalService {
+  serviceName?: string;
+  platform?: string | null;
+  monthlyCost?: number;
+  monthlyCharge?: number;
+  discount?: number;
+  startDate?: string;
+  status?: UpdateMonthlyDigitalServiceStatus;
+  notes?: string | null;
+}
+
+export interface ToggleMonthlyCompletion {
+  completed: boolean;
+  paidAmount?: number;
   notes?: string | null;
 }
 
@@ -377,3 +566,13 @@ export const ListTransactionsType = {
   credit: "credit",
   debit: "debit",
 } as const;
+
+export type ListMonthlyWebsiteServicesParams = {
+  customerId?: number;
+  status?: string;
+};
+
+export type ListMonthlyDigitalServicesParams = {
+  customerId?: number;
+  status?: string;
+};

@@ -7,15 +7,22 @@
  */
 import type { CreateServiceDeliveryStatus } from "./createServiceDeliveryStatus";
 import type { CreateServicePaymentStatus } from "./createServicePaymentStatus";
+import type { CreateServiceServiceType } from "./createServiceServiceType";
 
 export interface CreateService {
   customerId: number;
+  serviceType: CreateServiceServiceType;
   serviceName: string;
   priceSold: number;
   costPrice: number;
   paymentStatus: CreateServicePaymentStatus;
   amountPaid: number;
   deliveryStatus: CreateServiceDeliveryStatus;
+  /**
+   * @minimum 1
+   * @maximum 5
+   */
+  satisfactionRating?: number | null;
   date: Date;
   notes?: string | null;
 }

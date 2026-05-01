@@ -448,6 +448,251 @@ paths:
                 items:
                   $ref: "#/components/schemas/Notification"
 
+  /monthly-website:
+    get:
+      operationId: listMonthlyWebsiteServices
+      tags: [services]
+      summary: List all monthly website services
+      parameters:
+        - in: query
+          name: customerId
+          required: false
+          schema:
+            type: integer
+        - in: query
+          name: status
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Monthly website services
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MonthlyWebsiteService"
+    post:
+      operationId: createMonthlyWebsiteService
+      tags: [services]
+      summary: Create a monthly website service
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateMonthlyWebsiteService"
+      responses:
+        "200":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MonthlyWebsiteService"
+
+  /monthly-website/{id}:
+    patch:
+      operationId: updateMonthlyWebsiteService
+      tags: [services]
+      summary: Update a monthly website service
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateMonthlyWebsiteService"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MonthlyWebsiteService"
+    delete:
+      operationId: deleteMonthlyWebsiteService
+      tags: [services]
+      summary: Delete a monthly website service
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeletedResponse"
+
+  /monthly-website/{id}/completion:
+    post:
+      operationId: toggleMonthlyWebsiteCompletion
+      tags: [services]
+      summary: Toggle month completion for a website service
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ToggleMonthlyCompletion"
+            example:
+              year: 2025
+              month: 5
+              completed: true
+              paidAmount: 5000
+      responses:
+        "200":
+          description: Updated completion
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MonthlyCompletion"
+
+  /monthly-digital:
+    get:
+      operationId: listMonthlyDigitalServices
+      tags: [services]
+      summary: List all monthly digital marketing services
+      parameters:
+        - in: query
+          name: customerId
+          required: false
+          schema:
+            type: integer
+        - in: query
+          name: status
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Monthly digital services
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MonthlyDigitalService"
+    post:
+      operationId: createMonthlyDigitalService
+      tags: [services]
+      summary: Create a monthly digital marketing service
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateMonthlyDigitalService"
+      responses:
+        "200":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MonthlyDigitalService"
+
+  /monthly-digital/{id}:
+    patch:
+      operationId: updateMonthlyDigitalService
+      tags: [services]
+      summary: Update a monthly digital service
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateMonthlyDigitalService"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MonthlyDigitalService"
+    delete:
+      operationId: deleteMonthlyDigitalService
+      tags: [services]
+      summary: Delete a monthly digital service
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeletedResponse"
+
+  /monthly-digital/{id}/completion:
+    post:
+      operationId: toggleMonthlyDigitalCompletion
+      tags: [services]
+      summary: Toggle month completion for a digital service
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ToggleMonthlyCompletion"
+            example:
+              year: 2025
+              month: 5
+              completed: true
+              paidAmount: 8000
+      responses:
+        "200":
+          description: Updated completion
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MonthlyCompletion"
+
+  /service-names:
+    get:
+      operationId: listServiceNames
+      tags: [services]
+      summary: List previously used service names for autocomplete
+      responses:
+        "200":
+          description: Service names
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+
 components:
   schemas:
     HealthStatus:
@@ -560,6 +805,9 @@ components:
           type: integer
         customerName:
           type: string
+        serviceType:
+          type: string
+          enum: [web, digital, other]
         serviceName:
           type: string
         priceSold:
@@ -576,19 +824,27 @@ components:
         deliveryStatus:
           type: string
           enum: [pending, in_progress, delivered]
+        satisfactionRating:
+          type: integer
+          minimum: 1
+          maximum: 5
+          nullable: true
         date:
           type: string
           format: date
         notes:
           type: string
           nullable: true
-      required: [id, customerId, customerName, serviceName, priceSold, costPrice, profit, paymentStatus, amountPaid, deliveryStatus, date]
+      required: [id, customerId, customerName, serviceType, serviceName, priceSold, costPrice, profit, paymentStatus, amountPaid, deliveryStatus, date]
 
     CreateService:
       type: object
       properties:
         customerId:
           type: integer
+        serviceType:
+          type: string
+          enum: [web, digital, other]
         serviceName:
           type: string
         priceSold:
@@ -603,17 +859,25 @@ components:
         deliveryStatus:
           type: string
           enum: [pending, in_progress, delivered]
+        satisfactionRating:
+          type: integer
+          minimum: 1
+          maximum: 5
+          nullable: true
         date:
           type: string
           format: date
         notes:
           type: string
           nullable: true
-      required: [customerId, serviceName, priceSold, costPrice, paymentStatus, amountPaid, deliveryStatus, date]
+      required: [customerId, serviceType, serviceName, priceSold, costPrice, paymentStatus, amountPaid, deliveryStatus, date]
 
     UpdateService:
       type: object
       properties:
+        serviceType:
+          type: string
+          enum: [web, digital, other]
         serviceName:
           type: string
         priceSold:
@@ -628,12 +892,215 @@ components:
         deliveryStatus:
           type: string
           enum: [pending, in_progress, delivered]
+        satisfactionRating:
+          type: integer
+          minimum: 1
+          maximum: 5
+          nullable: true
         date:
           type: string
           format: date
         notes:
           type: string
           nullable: true
+
+    MonthlyWebsiteService:
+      type: object
+      properties:
+        id:
+          type: integer
+        customerId:
+          type: integer
+        customerName:
+          type: string
+        websiteName:
+          type: string
+        monthlyCost:
+          type: number
+        monthlyCharge:
+          type: number
+        discount:
+          type: number
+        startDate:
+          type: string
+          format: date
+        status:
+          type: string
+          enum: [active, paused, cancelled]
+        notes:
+          type: string
+          nullable: true
+        completions:
+          type: array
+          items:
+            $ref: "#/components/schemas/MonthlyCompletion"
+      required: [id, customerId, customerName, websiteName, monthlyCost, monthlyCharge, discount, startDate, status]
+
+    MonthlyDigitalService:
+      type: object
+      properties:
+        id:
+          type: integer
+        customerId:
+          type: integer
+        customerName:
+          type: string
+        serviceName:
+          type: string
+        platform:
+          type: string
+          nullable: true
+        monthlyCost:
+          type: number
+        monthlyCharge:
+          type: number
+        discount:
+          type: number
+        startDate:
+          type: string
+          format: date
+        status:
+          type: string
+          enum: [active, paused, cancelled]
+        notes:
+          type: string
+          nullable: true
+        completions:
+          type: array
+          items:
+            $ref: "#/components/schemas/MonthlyCompletion"
+      required: [id, customerId, customerName, serviceName, monthlyCost, monthlyCharge, discount, startDate, status]
+
+    MonthlyCompletion:
+      type: object
+      properties:
+        id:
+          type: integer
+        serviceId:
+          type: integer
+        year:
+          type: integer
+        month:
+          type: integer
+        completed:
+          type: boolean
+        paidAmount:
+          type: number
+        notes:
+          type: string
+          nullable: true
+        completedAt:
+          type: string
+          nullable: true
+      required: [id, serviceId, year, month, completed, paidAmount]
+
+    CreateMonthlyWebsiteService:
+      type: object
+      properties:
+        customerId:
+          type: integer
+        websiteName:
+          type: string
+        monthlyCost:
+          type: number
+        monthlyCharge:
+          type: number
+        discount:
+          type: number
+        startDate:
+          type: string
+          format: date
+        status:
+          type: string
+          enum: [active, paused, cancelled]
+        notes:
+          type: string
+          nullable: true
+      required: [customerId, websiteName, monthlyCost, monthlyCharge, startDate]
+
+    UpdateMonthlyWebsiteService:
+      type: object
+      properties:
+        websiteName:
+          type: string
+        monthlyCost:
+          type: number
+        monthlyCharge:
+          type: number
+        discount:
+          type: number
+        startDate:
+          type: string
+          format: date
+        status:
+          type: string
+          enum: [active, paused, cancelled]
+        notes:
+          type: string
+          nullable: true
+
+    CreateMonthlyDigitalService:
+      type: object
+      properties:
+        customerId:
+          type: integer
+        serviceName:
+          type: string
+        platform:
+          type: string
+          nullable: true
+        monthlyCost:
+          type: number
+        monthlyCharge:
+          type: number
+        discount:
+          type: number
+        startDate:
+          type: string
+          format: date
+        status:
+          type: string
+          enum: [active, paused, cancelled]
+        notes:
+          type: string
+          nullable: true
+      required: [customerId, serviceName, monthlyCost, monthlyCharge, startDate]
+
+    UpdateMonthlyDigitalService:
+      type: object
+      properties:
+        serviceName:
+          type: string
+        platform:
+          type: string
+          nullable: true
+        monthlyCost:
+          type: number
+        monthlyCharge:
+          type: number
+        discount:
+          type: number
+        startDate:
+          type: string
+          format: date
+        status:
+          type: string
+          enum: [active, paused, cancelled]
+        notes:
+          type: string
+          nullable: true
+
+    ToggleMonthlyCompletion:
+      type: object
+      properties:
+        completed:
+          type: boolean
+        paidAmount:
+          type: number
+        notes:
+          type: string
+          nullable: true
+      required: [completed]
 
     Expense:
       type: object

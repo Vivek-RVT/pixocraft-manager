@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
@@ -51,17 +51,32 @@ import {
 } from "@/components/ui/tabs";
 import { TransactionFormDialog } from "@/components/transaction-form-dialog";
 import { formatCurrency, formatDate } from "@/lib/format";
+import {
+  DateRangeFilter,
+  getDefaultDateFilter,
+  isInDateRange,
+  type DateFilter,
+} from "@/components/date-range-filter";
 
 export default function Transactions() {
   const queryClient = useQueryClient();
   const [createOpen, setCreateOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [tab, setTab] = useState<"all" | "credit" | "debit">("all");
+  const [dateFilter, setDateFilter] = useState<DateFilter>(getDefaultDateFilter());
 
-  const params = tab !== "all" ? { type: tab } : undefined;
-  const { data: transactions, isLoading } = useListTransactions(params, {
-    query: { queryKey: getListTransactionsQueryKey(params) },
+  const { data: allTransactions, isLoading } = useListTransactions(undefined, {
+    query: { queryKey: getListTransactionsQueryKey() },
   });
+
+  const transactions = useMemo(() => {
+    if (!allTransactions) return [];
+    return allTransactions.filter((t) => {
+      if (tab !== "all" && t.type !== tab) return false;
+      if (!isInDateRange(t.date, dateFilter)) return false;
+      return true;
+    });
+  }, [allTransactions, tab, dateFilter]);
 
   const deleteMutation = useDeleteTransaction();
 
@@ -86,14 +101,10 @@ export default function Transactions() {
     }
   };
 
-  const credits = (transactions ?? [])
-    .filter((t) => t.type === "credit")
-    .reduce((s, t) => s + Number(t.amount), 0);
-  const debits = (transactions ?? [])
-    .filter((t) => t.type === "debit")
-    .reduce((s, t) => s + Number(t.amount), 0);
+  const credits = transactions.filter((t) => t.type === "credit").reduce((s, t) => s + Number(t.amount), 0);
+  const debits = transactions.filter((t) => t.type === "debit").reduce((s, t) => s + Number(t.amount), 0);
   const net = credits - debits;
-  const isEmpty = !isLoading && (transactions?.length ?? 0) === 0;
+  const isEmpty = !isLoading && transactions.length === 0;
 
   return (
     <div className="space-y-6">

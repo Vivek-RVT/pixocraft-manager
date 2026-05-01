@@ -63,6 +63,8 @@ export const GetCustomerParams = zod.object({
   id: zod.coerce.number(),
 });
 
+export const getCustomerResponseServicesItemSatisfactionRatingMax = 5;
+
 export const GetCustomerResponse = zod.object({
   customer: zod.object({
     id: zod.number(),
@@ -79,6 +81,7 @@ export const GetCustomerResponse = zod.object({
       id: zod.number(),
       customerId: zod.number(),
       customerName: zod.string(),
+      serviceType: zod.enum(["web", "digital", "other"]),
       serviceName: zod.string(),
       priceSold: zod.number(),
       costPrice: zod.number(),
@@ -86,6 +89,11 @@ export const GetCustomerResponse = zod.object({
       paymentStatus: zod.enum(["paid", "pending", "partial"]),
       amountPaid: zod.number(),
       deliveryStatus: zod.enum(["pending", "in_progress", "delivered"]),
+      satisfactionRating: zod
+        .number()
+        .min(1)
+        .max(getCustomerResponseServicesItemSatisfactionRatingMax)
+        .nullish(),
       date: zod.coerce.date(),
       notes: zod.string().nullish(),
     }),
@@ -141,10 +149,13 @@ export const ListServicesQueryParams = zod.object({
   paymentStatus: zod.enum(["paid", "pending", "partial"]).optional(),
 });
 
+export const listServicesResponseSatisfactionRatingMax = 5;
+
 export const ListServicesResponseItem = zod.object({
   id: zod.number(),
   customerId: zod.number(),
   customerName: zod.string(),
+  serviceType: zod.enum(["web", "digital", "other"]),
   serviceName: zod.string(),
   priceSold: zod.number(),
   costPrice: zod.number(),
@@ -152,6 +163,11 @@ export const ListServicesResponseItem = zod.object({
   paymentStatus: zod.enum(["paid", "pending", "partial"]),
   amountPaid: zod.number(),
   deliveryStatus: zod.enum(["pending", "in_progress", "delivered"]),
+  satisfactionRating: zod
+    .number()
+    .min(1)
+    .max(listServicesResponseSatisfactionRatingMax)
+    .nullish(),
   date: zod.coerce.date(),
   notes: zod.string().nullish(),
 });
@@ -160,22 +176,33 @@ export const ListServicesResponse = zod.array(ListServicesResponseItem);
 /**
  * @summary Create a service sold record
  */
+export const createServiceBodySatisfactionRatingMax = 5;
+
 export const CreateServiceBody = zod.object({
   customerId: zod.number(),
+  serviceType: zod.enum(["web", "digital", "other"]),
   serviceName: zod.string(),
   priceSold: zod.number(),
   costPrice: zod.number(),
   paymentStatus: zod.enum(["paid", "pending", "partial"]),
   amountPaid: zod.number(),
   deliveryStatus: zod.enum(["pending", "in_progress", "delivered"]),
+  satisfactionRating: zod
+    .number()
+    .min(1)
+    .max(createServiceBodySatisfactionRatingMax)
+    .nullish(),
   date: zod.coerce.date(),
   notes: zod.string().nullish(),
 });
+
+export const createServiceResponseSatisfactionRatingMax = 5;
 
 export const CreateServiceResponse = zod.object({
   id: zod.number(),
   customerId: zod.number(),
   customerName: zod.string(),
+  serviceType: zod.enum(["web", "digital", "other"]),
   serviceName: zod.string(),
   priceSold: zod.number(),
   costPrice: zod.number(),
@@ -183,6 +210,11 @@ export const CreateServiceResponse = zod.object({
   paymentStatus: zod.enum(["paid", "pending", "partial"]),
   amountPaid: zod.number(),
   deliveryStatus: zod.enum(["pending", "in_progress", "delivered"]),
+  satisfactionRating: zod
+    .number()
+    .min(1)
+    .max(createServiceResponseSatisfactionRatingMax)
+    .nullish(),
   date: zod.coerce.date(),
   notes: zod.string().nullish(),
 });
@@ -194,21 +226,32 @@ export const UpdateServiceParams = zod.object({
   id: zod.coerce.number(),
 });
 
+export const updateServiceBodySatisfactionRatingMax = 5;
+
 export const UpdateServiceBody = zod.object({
+  serviceType: zod.enum(["web", "digital", "other"]).optional(),
   serviceName: zod.string().optional(),
   priceSold: zod.number().optional(),
   costPrice: zod.number().optional(),
   paymentStatus: zod.enum(["paid", "pending", "partial"]).optional(),
   amountPaid: zod.number().optional(),
   deliveryStatus: zod.enum(["pending", "in_progress", "delivered"]).optional(),
+  satisfactionRating: zod
+    .number()
+    .min(1)
+    .max(updateServiceBodySatisfactionRatingMax)
+    .nullish(),
   date: zod.coerce.date().optional(),
   notes: zod.string().nullish(),
 });
+
+export const updateServiceResponseSatisfactionRatingMax = 5;
 
 export const UpdateServiceResponse = zod.object({
   id: zod.number(),
   customerId: zod.number(),
   customerName: zod.string(),
+  serviceType: zod.enum(["web", "digital", "other"]),
   serviceName: zod.string(),
   priceSold: zod.number(),
   costPrice: zod.number(),
@@ -216,6 +259,11 @@ export const UpdateServiceResponse = zod.object({
   paymentStatus: zod.enum(["paid", "pending", "partial"]),
   amountPaid: zod.number(),
   deliveryStatus: zod.enum(["pending", "in_progress", "delivered"]),
+  satisfactionRating: zod
+    .number()
+    .min(1)
+    .max(updateServiceResponseSatisfactionRatingMax)
+    .nullish(),
   date: zod.coerce.date(),
   notes: zod.string().nullish(),
 });
@@ -475,3 +523,330 @@ export const GetNotificationsResponseItem = zod.object({
   createdAt: zod.coerce.date(),
 });
 export const GetNotificationsResponse = zod.array(GetNotificationsResponseItem);
+
+/**
+ * @summary List all monthly website services
+ */
+export const ListMonthlyWebsiteServicesQueryParams = zod.object({
+  customerId: zod.coerce.number().optional(),
+  status: zod.coerce.string().optional(),
+});
+
+export const ListMonthlyWebsiteServicesResponseItem = zod.object({
+  id: zod.number(),
+  customerId: zod.number(),
+  customerName: zod.string(),
+  websiteName: zod.string(),
+  monthlyCost: zod.number(),
+  monthlyCharge: zod.number(),
+  discount: zod.number(),
+  startDate: zod.coerce.date(),
+  status: zod.enum(["active", "paused", "cancelled"]),
+  notes: zod.string().nullish(),
+  completions: zod
+    .array(
+      zod.object({
+        id: zod.number(),
+        serviceId: zod.number(),
+        year: zod.number(),
+        month: zod.number(),
+        completed: zod.boolean(),
+        paidAmount: zod.number(),
+        notes: zod.string().nullish(),
+        completedAt: zod.string().nullish(),
+      }),
+    )
+    .optional(),
+});
+export const ListMonthlyWebsiteServicesResponse = zod.array(
+  ListMonthlyWebsiteServicesResponseItem,
+);
+
+/**
+ * @summary Create a monthly website service
+ */
+export const CreateMonthlyWebsiteServiceBody = zod.object({
+  customerId: zod.number(),
+  websiteName: zod.string(),
+  monthlyCost: zod.number(),
+  monthlyCharge: zod.number(),
+  discount: zod.number().optional(),
+  startDate: zod.coerce.date(),
+  status: zod.enum(["active", "paused", "cancelled"]).optional(),
+  notes: zod.string().nullish(),
+});
+
+export const CreateMonthlyWebsiteServiceResponse = zod.object({
+  id: zod.number(),
+  customerId: zod.number(),
+  customerName: zod.string(),
+  websiteName: zod.string(),
+  monthlyCost: zod.number(),
+  monthlyCharge: zod.number(),
+  discount: zod.number(),
+  startDate: zod.coerce.date(),
+  status: zod.enum(["active", "paused", "cancelled"]),
+  notes: zod.string().nullish(),
+  completions: zod
+    .array(
+      zod.object({
+        id: zod.number(),
+        serviceId: zod.number(),
+        year: zod.number(),
+        month: zod.number(),
+        completed: zod.boolean(),
+        paidAmount: zod.number(),
+        notes: zod.string().nullish(),
+        completedAt: zod.string().nullish(),
+      }),
+    )
+    .optional(),
+});
+
+/**
+ * @summary Update a monthly website service
+ */
+export const UpdateMonthlyWebsiteServiceParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const UpdateMonthlyWebsiteServiceBody = zod.object({
+  websiteName: zod.string().optional(),
+  monthlyCost: zod.number().optional(),
+  monthlyCharge: zod.number().optional(),
+  discount: zod.number().optional(),
+  startDate: zod.coerce.date().optional(),
+  status: zod.enum(["active", "paused", "cancelled"]).optional(),
+  notes: zod.string().nullish(),
+});
+
+export const UpdateMonthlyWebsiteServiceResponse = zod.object({
+  id: zod.number(),
+  customerId: zod.number(),
+  customerName: zod.string(),
+  websiteName: zod.string(),
+  monthlyCost: zod.number(),
+  monthlyCharge: zod.number(),
+  discount: zod.number(),
+  startDate: zod.coerce.date(),
+  status: zod.enum(["active", "paused", "cancelled"]),
+  notes: zod.string().nullish(),
+  completions: zod
+    .array(
+      zod.object({
+        id: zod.number(),
+        serviceId: zod.number(),
+        year: zod.number(),
+        month: zod.number(),
+        completed: zod.boolean(),
+        paidAmount: zod.number(),
+        notes: zod.string().nullish(),
+        completedAt: zod.string().nullish(),
+      }),
+    )
+    .optional(),
+});
+
+/**
+ * @summary Delete a monthly website service
+ */
+export const DeleteMonthlyWebsiteServiceParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const DeleteMonthlyWebsiteServiceResponse = zod.object({
+  success: zod.boolean(),
+});
+
+/**
+ * @summary Toggle month completion for a website service
+ */
+export const ToggleMonthlyWebsiteCompletionParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const ToggleMonthlyWebsiteCompletionBody = zod.object({
+  completed: zod.boolean(),
+  paidAmount: zod.number().optional(),
+  notes: zod.string().nullish(),
+});
+
+export const ToggleMonthlyWebsiteCompletionResponse = zod.object({
+  id: zod.number(),
+  serviceId: zod.number(),
+  year: zod.number(),
+  month: zod.number(),
+  completed: zod.boolean(),
+  paidAmount: zod.number(),
+  notes: zod.string().nullish(),
+  completedAt: zod.string().nullish(),
+});
+
+/**
+ * @summary List all monthly digital marketing services
+ */
+export const ListMonthlyDigitalServicesQueryParams = zod.object({
+  customerId: zod.coerce.number().optional(),
+  status: zod.coerce.string().optional(),
+});
+
+export const ListMonthlyDigitalServicesResponseItem = zod.object({
+  id: zod.number(),
+  customerId: zod.number(),
+  customerName: zod.string(),
+  serviceName: zod.string(),
+  platform: zod.string().nullish(),
+  monthlyCost: zod.number(),
+  monthlyCharge: zod.number(),
+  discount: zod.number(),
+  startDate: zod.coerce.date(),
+  status: zod.enum(["active", "paused", "cancelled"]),
+  notes: zod.string().nullish(),
+  completions: zod
+    .array(
+      zod.object({
+        id: zod.number(),
+        serviceId: zod.number(),
+        year: zod.number(),
+        month: zod.number(),
+        completed: zod.boolean(),
+        paidAmount: zod.number(),
+        notes: zod.string().nullish(),
+        completedAt: zod.string().nullish(),
+      }),
+    )
+    .optional(),
+});
+export const ListMonthlyDigitalServicesResponse = zod.array(
+  ListMonthlyDigitalServicesResponseItem,
+);
+
+/**
+ * @summary Create a monthly digital marketing service
+ */
+export const CreateMonthlyDigitalServiceBody = zod.object({
+  customerId: zod.number(),
+  serviceName: zod.string(),
+  platform: zod.string().nullish(),
+  monthlyCost: zod.number(),
+  monthlyCharge: zod.number(),
+  discount: zod.number().optional(),
+  startDate: zod.coerce.date(),
+  status: zod.enum(["active", "paused", "cancelled"]).optional(),
+  notes: zod.string().nullish(),
+});
+
+export const CreateMonthlyDigitalServiceResponse = zod.object({
+  id: zod.number(),
+  customerId: zod.number(),
+  customerName: zod.string(),
+  serviceName: zod.string(),
+  platform: zod.string().nullish(),
+  monthlyCost: zod.number(),
+  monthlyCharge: zod.number(),
+  discount: zod.number(),
+  startDate: zod.coerce.date(),
+  status: zod.enum(["active", "paused", "cancelled"]),
+  notes: zod.string().nullish(),
+  completions: zod
+    .array(
+      zod.object({
+        id: zod.number(),
+        serviceId: zod.number(),
+        year: zod.number(),
+        month: zod.number(),
+        completed: zod.boolean(),
+        paidAmount: zod.number(),
+        notes: zod.string().nullish(),
+        completedAt: zod.string().nullish(),
+      }),
+    )
+    .optional(),
+});
+
+/**
+ * @summary Update a monthly digital service
+ */
+export const UpdateMonthlyDigitalServiceParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const UpdateMonthlyDigitalServiceBody = zod.object({
+  serviceName: zod.string().optional(),
+  platform: zod.string().nullish(),
+  monthlyCost: zod.number().optional(),
+  monthlyCharge: zod.number().optional(),
+  discount: zod.number().optional(),
+  startDate: zod.coerce.date().optional(),
+  status: zod.enum(["active", "paused", "cancelled"]).optional(),
+  notes: zod.string().nullish(),
+});
+
+export const UpdateMonthlyDigitalServiceResponse = zod.object({
+  id: zod.number(),
+  customerId: zod.number(),
+  customerName: zod.string(),
+  serviceName: zod.string(),
+  platform: zod.string().nullish(),
+  monthlyCost: zod.number(),
+  monthlyCharge: zod.number(),
+  discount: zod.number(),
+  startDate: zod.coerce.date(),
+  status: zod.enum(["active", "paused", "cancelled"]),
+  notes: zod.string().nullish(),
+  completions: zod
+    .array(
+      zod.object({
+        id: zod.number(),
+        serviceId: zod.number(),
+        year: zod.number(),
+        month: zod.number(),
+        completed: zod.boolean(),
+        paidAmount: zod.number(),
+        notes: zod.string().nullish(),
+        completedAt: zod.string().nullish(),
+      }),
+    )
+    .optional(),
+});
+
+/**
+ * @summary Delete a monthly digital service
+ */
+export const DeleteMonthlyDigitalServiceParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const DeleteMonthlyDigitalServiceResponse = zod.object({
+  success: zod.boolean(),
+});
+
+/**
+ * @summary Toggle month completion for a digital service
+ */
+export const ToggleMonthlyDigitalCompletionParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const ToggleMonthlyDigitalCompletionBody = zod.object({
+  completed: zod.boolean(),
+  paidAmount: zod.number().optional(),
+  notes: zod.string().nullish(),
+});
+
+export const ToggleMonthlyDigitalCompletionResponse = zod.object({
+  id: zod.number(),
+  serviceId: zod.number(),
+  year: zod.number(),
+  month: zod.number(),
+  completed: zod.boolean(),
+  paidAmount: zod.number(),
+  notes: zod.string().nullish(),
+  completedAt: zod.string().nullish(),
+});
+
+/**
+ * @summary List previously used service names for autocomplete
+ */
+export const ListServiceNamesResponseItem = zod.string();
+export const ListServiceNamesResponse = zod.array(ListServiceNamesResponseItem);

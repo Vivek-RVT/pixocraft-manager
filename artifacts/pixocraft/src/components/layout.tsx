@@ -11,6 +11,7 @@ import {
   LogOut,
   Menu,
   Plus,
+  CalendarDays,
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
@@ -32,6 +33,7 @@ const navItems = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
   { name: "Customers", href: "/customers", icon: Users },
   { name: "Services", href: "/services", icon: Briefcase },
+  { name: "Monthly", href: "/monthly-services", icon: CalendarDays },
   { name: "Expenses", href: "/expenses", icon: Receipt },
   { name: "Transactions", href: "/transactions", icon: ArrowLeftRight },
   { name: "Reports", href: "/reports", icon: BarChart3 },
