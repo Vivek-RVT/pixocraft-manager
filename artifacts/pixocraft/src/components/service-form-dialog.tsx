@@ -2,8 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { format } from "date-fns";
-import { CalendarIcon, Star, Plus, Trash2 } from "lucide-react";
+import { Star, Plus, Trash2 } from "lucide-react";
+import { CalendarDatePicker } from "@/components/ui/calendar-date-picker";
 import {
   useCreateService,
   useUpdateService,
@@ -38,12 +38,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/format";
 
@@ -123,45 +117,6 @@ function StarRating({
   );
 }
 
-function CalendarDatePicker({
-  value,
-  onChange,
-}: {
-  value: string;
-  onChange: (v: string) => void;
-}) {
-  const [open, setOpen] = useState(false);
-  return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          type="button"
-          variant="outline"
-          className={cn(
-            "w-full justify-start text-left font-normal",
-            !value && "text-muted-foreground",
-          )}
-        >
-          <CalendarIcon className="mr-2 h-4 w-4" />
-          {value
-            ? format(new Date(value + "T00:00:00"), "dd MMM yyyy")
-            : "Pick a date"}
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-auto p-0" align="start">
-        <Calendar
-          mode="single"
-          selected={value ? new Date(value + "T00:00:00") : undefined}
-          onSelect={(d) => {
-            if (d) onChange(d.toISOString().slice(0, 10));
-            setOpen(false);
-          }}
-          initialFocus
-        />
-      </PopoverContent>
-    </Popover>
-  );
-}
 
 function ServiceRow({
   idx,
@@ -490,7 +445,7 @@ export function ServiceFormDialog({
             paymentStatus: row.paymentStatus,
             deliveryStatus: row.deliveryStatus,
             satisfactionRating: row.satisfactionRating,
-            date: new Date(row.date).toISOString(),
+            date: (row.date + "T00:00:00.000Z" as unknown as Date),
             notes: row.notes.trim() || undefined,
           },
         });
@@ -508,7 +463,7 @@ export function ServiceFormDialog({
               paymentStatus: row.paymentStatus,
               deliveryStatus: row.deliveryStatus,
               satisfactionRating: row.satisfactionRating,
-              date: new Date(row.date).toISOString(),
+              date: (row.date + "T00:00:00.000Z" as unknown as Date),
               notes: row.notes.trim() || undefined,
             },
           });

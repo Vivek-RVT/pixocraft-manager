@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
@@ -22,6 +22,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { CalendarDatePicker } from "@/components/ui/calendar-date-picker";
 
 type FormValues = {
   name: string;
@@ -61,7 +62,7 @@ export function CustomerFormDialog({ open, onOpenChange, customerId }: Props) {
     },
   });
 
-  const { register, handleSubmit, reset, formState } = useForm<FormValues>({
+  const { register, handleSubmit, reset, control, formState } = useForm<FormValues>({
     defaultValues: {
       name: "",
       phone: "",
@@ -110,7 +111,7 @@ export function CustomerFormDialog({ open, onOpenChange, customerId }: Props) {
       address: values.address.trim() || undefined,
       notes: values.notes.trim() || undefined,
       contactedAt: values.contactedAt
-        ? new Date(values.contactedAt)
+        ? (values.contactedAt + "T00:00:00.000Z" as unknown as Date)
         : undefined,
     };
     try {
@@ -187,11 +188,17 @@ export function CustomerFormDialog({ open, onOpenChange, customerId }: Props) {
               />
             </div>
             <div className="space-y-2 sm:col-span-2">
-              <Label htmlFor="contactedAt">First contact date</Label>
-              <Input
-                id="contactedAt"
-                type="date"
-                {...register("contactedAt")}
+              <Label>First contact date</Label>
+              <Controller
+                control={control}
+                name="contactedAt"
+                render={({ field }) => (
+                  <CalendarDatePicker
+                    value={field.value}
+                    onChange={field.onChange}
+                    placeholder="Pick a date"
+                  />
+                )}
               />
               <p className="text-xs text-muted-foreground">When did you first connect with this customer?</p>
             </div>

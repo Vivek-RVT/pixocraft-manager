@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useForm, Controller, useWatch } from "react-hook-form";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { CalendarDatePicker } from "@/components/ui/calendar-date-picker";
 import {
   useCreateExpense,
   useUpdateExpense,
@@ -132,7 +133,7 @@ export function ExpenseFormDialog({ open, onOpenChange, expense }: Props) {
     const payload = {
       category: values.category,
       amount: Number(values.amount),
-      date: new Date(values.date).toISOString(),
+      date: (values.date + "T00:00:00.000Z" as unknown as Date),
       notes: finalNotes || undefined,
     };
     try {
@@ -224,8 +225,15 @@ export function ExpenseFormDialog({ open, onOpenChange, expense }: Props) {
             )}
 
             <div className="space-y-2 sm:col-span-2">
-              <Label htmlFor="date">Date *</Label>
-              <Input id="date" type="date" {...register("date", { required: true })} />
+              <Label>Date *</Label>
+              <Controller
+                control={control}
+                name="date"
+                rules={{ required: true }}
+                render={({ field }) => (
+                  <CalendarDatePicker value={field.value} onChange={field.onChange} />
+                )}
+              />
             </div>
 
             <div className="space-y-2 sm:col-span-2">

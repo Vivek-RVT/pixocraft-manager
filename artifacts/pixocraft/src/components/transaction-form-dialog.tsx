@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useForm, Controller } from "react-hook-form";
+import { CalendarDatePicker } from "@/components/ui/calendar-date-picker";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
@@ -85,7 +86,7 @@ export function TransactionFormDialog({ open, onOpenChange }: Props) {
       source: values.source.trim(),
       accountName: values.accountName.trim(),
       method: values.method,
-      date: new Date(values.date).toISOString(),
+      date: (values.date + "T00:00:00.000Z" as unknown as Date),
       notes: values.notes.trim() || undefined,
     };
     try {
@@ -180,8 +181,15 @@ export function TransactionFormDialog({ open, onOpenChange }: Props) {
               />
             </div>
             <div className="space-y-2 sm:col-span-2">
-              <Label htmlFor="date">Date *</Label>
-              <Input id="date" type="date" {...register("date", { required: true })} />
+              <Label>Date *</Label>
+              <Controller
+                control={control}
+                name="date"
+                rules={{ required: true }}
+                render={({ field }) => (
+                  <CalendarDatePicker value={field.value} onChange={field.onChange} />
+                )}
+              />
             </div>
             <div className="space-y-2 sm:col-span-2">
               <Label htmlFor="notes">Notes</Label>
