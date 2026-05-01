@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { CalendarDatePicker } from "@/components/ui/calendar-date-picker";
+import { useFormDraft } from "@/hooks/use-form-draft";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
@@ -50,21 +51,24 @@ const today = () => new Date().toISOString().slice(0, 10);
 export function TransactionFormDialog({ open, onOpenChange }: Props) {
   const queryClient = useQueryClient();
 
-  const { register, handleSubmit, reset, control, formState } =
-    useForm<FormValues>({
-      defaultValues: {
-        type: "credit",
-        amount: "",
-        source: "",
-        accountName: "HDFC Current",
-        method: "bank",
-        date: today(),
-        notes: "",
-      },
-    });
+  const form = useForm<FormValues>({
+    defaultValues: {
+      type: "credit",
+      amount: "",
+      source: "",
+      accountName: "HDFC Current",
+      method: "bank",
+      date: today(),
+      notes: "",
+    },
+  });
+  const { register, handleSubmit, reset, control, formState } = form;
+
+  const { clearDraft, loadDraft } = useFormDraft("new-transaction", form);
 
   useEffect(() => {
     if (open) {
+      const draft = loadDraft();
       reset({
         type: "credit",
         amount: "",
@@ -73,6 +77,7 @@ export function TransactionFormDialog({ open, onOpenChange }: Props) {
         method: "bank",
         date: today(),
         notes: "",
+        ...draft,
       });
     }
   }, [open, reset]);
@@ -91,6 +96,7 @@ export function TransactionFormDialog({ open, onOpenChange }: Props) {
     };
     try {
       await createMutation.mutateAsync({ data: payload });
+      clearDraft();
       toast.success("Transaction recorded");
       queryClient.invalidateQueries({
         queryKey: getListTransactionsQueryKey(),

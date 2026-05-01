@@ -3,6 +3,7 @@ import { useForm, Controller, useWatch } from "react-hook-form";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { CalendarDatePicker } from "@/components/ui/calendar-date-picker";
+import { useFormDraft } from "@/hooks/use-form-draft";
 import {
   useCreateExpense,
   useUpdateExpense,
@@ -77,16 +78,20 @@ export function ExpenseFormDialog({ open, onOpenChange, expense }: Props) {
   const queryClient = useQueryClient();
   const isEdit = !!expense;
 
-  const { register, handleSubmit, reset, control, formState } =
-    useForm<FormValues>({
-      defaultValues: {
-        category: "ads",
-        member: "",
-        amount: "",
-        date: today(),
-        notes: "",
-      },
-    });
+  const form = useForm<FormValues>({
+    defaultValues: {
+      category: "ads",
+      member: "",
+      amount: "",
+      date: today(),
+      notes: "",
+    },
+  });
+  const { register, handleSubmit, reset, control, formState } = form;
+
+  const { clearDraft, loadDraft } = useFormDraft("new-expense", form, {
+    enabled: !isEdit,
+  });
 
   const category = useWatch({ control, name: "category" });
   const isSalary = category === "salary";
@@ -109,7 +114,8 @@ export function ExpenseFormDialog({ open, onOpenChange, expense }: Props) {
         notes,
       });
     } else {
-      reset({ category: "ads", member: "", amount: "", date: today(), notes: "" });
+      const draft = loadDraft();
+      reset({ category: "ads", member: "", amount: "", date: today(), notes: "", ...draft });
     }
   }, [open, expense, reset]);
 
@@ -142,6 +148,7 @@ export function ExpenseFormDialog({ open, onOpenChange, expense }: Props) {
         toast.success("Expense updated");
       } else {
         await createMutation.mutateAsync({ data: payload });
+        clearDraft();
         toast.success("Expense logged");
       }
       invalidateAll();

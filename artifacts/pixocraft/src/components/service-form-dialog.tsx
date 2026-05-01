@@ -4,6 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Star, Plus, Trash2 } from "lucide-react";
 import { CalendarDatePicker } from "@/components/ui/calendar-date-picker";
+import { useFormDraft } from "@/hooks/use-form-draft";
 import {
   useCreateService,
   useUpdateService,
@@ -346,11 +347,28 @@ export function ServiceFormDialog({
     },
   });
 
-  const { control, handleSubmit, reset, formState } = useForm<FormValues>({
+  const form = useForm<FormValues>({
     defaultValues: { customerId: "" },
   });
+  const { control, handleSubmit, reset, formState } = form;
+
+  const { clearDraft: clearFormDraft, loadDraft: loadFormDraft } = useFormDraft(
+    "new-service",
+    form,
+    { enabled: !isEdit },
+  );
+
+  const ROWS_DRAFT_KEY = "pixocraft_draft_new-service-rows";
 
   const [rows, setRows] = useState<ServiceRowValues[]>([defaultRow()]);
+
+  useEffect(() => {
+    if (!isEdit) {
+      try {
+        localStorage.setItem(ROWS_DRAFT_KEY, JSON.stringify(rows));
+      } catch {}
+    }
+  }, [rows, isEdit]);
 
   useEffect(() => {
     if (!open) return;
@@ -375,10 +393,17 @@ export function ServiceFormDialog({
         },
       ]);
     } else {
+      const formDraft = loadFormDraft();
       reset({
         customerId: presetCustomerId ? String(presetCustomerId) : "",
+        ...formDraft,
       });
-      setRows([defaultRow()]);
+      try {
+        const savedRows = localStorage.getItem(ROWS_DRAFT_KEY);
+        setRows(savedRows ? JSON.parse(savedRows) : [defaultRow()]);
+      } catch {
+        setRows([defaultRow()]);
+      }
     }
   }, [open, service, presetCustomerId, reset]);
 
@@ -468,6 +493,8 @@ export function ServiceFormDialog({
             },
           });
         }
+        clearFormDraft();
+        try { localStorage.removeItem(ROWS_DRAFT_KEY); } catch {}
         toast.success(
           rows.length === 1
             ? "Service added"

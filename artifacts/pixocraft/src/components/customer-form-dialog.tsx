@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useForm, Controller } from "react-hook-form";
+import { useFormDraft } from "@/hooks/use-form-draft";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
@@ -62,7 +63,7 @@ export function CustomerFormDialog({ open, onOpenChange, customerId }: Props) {
     },
   });
 
-  const { register, handleSubmit, reset, control, formState } = useForm<FormValues>({
+  const form = useForm<FormValues>({
     defaultValues: {
       name: "",
       phone: "",
@@ -72,6 +73,11 @@ export function CustomerFormDialog({ open, onOpenChange, customerId }: Props) {
       notes: "",
       contactedAt: today(),
     },
+  });
+  const { register, handleSubmit, reset, control, formState } = form;
+
+  const { clearDraft, loadDraft } = useFormDraft("new-customer", form, {
+    enabled: !isEdit,
   });
 
   useEffect(() => {
@@ -87,6 +93,7 @@ export function CustomerFormDialog({ open, onOpenChange, customerId }: Props) {
         contactedAt: toDateInput(c.contactedAt) || today(),
       });
     } else if (open && !isEdit) {
+      const draft = loadDraft();
       reset({
         name: "",
         phone: "",
@@ -95,6 +102,7 @@ export function CustomerFormDialog({ open, onOpenChange, customerId }: Props) {
         address: "",
         notes: "",
         contactedAt: today(),
+        ...draft,
       });
     }
   }, [open, isEdit, existing, reset]);
@@ -123,6 +131,7 @@ export function CustomerFormDialog({ open, onOpenChange, customerId }: Props) {
         });
       } else {
         await createMutation.mutateAsync({ data: payload });
+        clearDraft();
         toast.success("Customer added");
       }
       queryClient.invalidateQueries({ queryKey: getListCustomersQueryKey() });
