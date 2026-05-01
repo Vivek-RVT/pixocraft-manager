@@ -1,4 +1,4 @@
-import { Switch, Route, Router as WouterRouter, Redirect } from "wouter";
+import { Switch, Route, Router as WouterRouter } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -17,15 +17,18 @@ import Transactions from "@/pages/transactions";
 import Reports from "@/pages/reports";
 import Settings from "@/pages/settings";
 
-function ProtectedRoutes() {
+function AppRoutes() {
   const { isLoggedIn } = useAuth();
 
-  if (!isLoggedIn) return <Redirect to="/login" />;
+  if (!isLoggedIn) {
+    return <Login />;
+  }
 
   return (
     <Layout>
       <Switch>
         <Route path="/" component={Dashboard} />
+        <Route path="/login" component={Dashboard} />
         <Route path="/customers" component={Customers} />
         <Route path="/customers/:id" component={CustomerDetail} />
         <Route path="/services" component={Services} />
@@ -36,15 +39,6 @@ function ProtectedRoutes() {
         <Route component={NotFound} />
       </Switch>
     </Layout>
-  );
-}
-
-function Router() {
-  return (
-    <Switch>
-      <Route path="/login" component={Login} />
-      <Route path="/:rest*" component={ProtectedRoutes} />
-    </Switch>
   );
 }
 
@@ -64,8 +58,8 @@ function App() {
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <AuthProvider>
-            <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-              <Router />
+            <WouterRouter>
+              <AppRoutes />
             </WouterRouter>
           </AuthProvider>
           <Toaster richColors position="top-right" />
