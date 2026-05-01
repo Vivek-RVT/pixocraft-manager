@@ -60,7 +60,7 @@ const queryClient = new QueryClient({
 
 function App() {
   return (
-    <ThemeProvider defaultTheme="system" storageKey="pixocraft-theme">
+    <ThemeProvider defaultTheme="light" storageKey="pixocraft-theme-v2">
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <AuthProvider>
