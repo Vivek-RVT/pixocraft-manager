@@ -1,3 +1,4 @@
+import { useMemo, useState } from "react";
 import { Download, FileSpreadsheet } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -35,22 +36,18 @@ import {
   CartesianGrid,
   Legend,
 } from "recharts";
+import {
+  DateRangeFilter,
+  getDefaultDateFilter,
+  isInDateRange,
+  type DateFilter,
+} from "@/components/date-range-filter";
 
 const monthLabel = (m: string) => {
   const [, mm] = m.split("-");
   const months = [
-    "Jan",
-    "Feb",
-    "Mar",
-    "Apr",
-    "May",
-    "Jun",
-    "Jul",
-    "Aug",
-    "Sep",
-    "Oct",
-    "Nov",
-    "Dec",
+    "Jan","Feb","Mar","Apr","May","Jun",
+    "Jul","Aug","Sep","Oct","Nov","Dec",
   ];
   return months[Number(mm) - 1] ?? m;
 };
@@ -94,6 +91,8 @@ const downloadCsv = (filename: string, rows: Record<string, unknown>[]) => {
 };
 
 export default function Reports() {
+  const [dateFilter, setDateFilter] = useState<DateFilter>(getDefaultDateFilter());
+
   const { data: summary } = useGetDashboardSummary({
     query: { queryKey: getGetDashboardSummaryQueryKey() },
   });
@@ -113,6 +112,26 @@ export default function Reports() {
     query: { queryKey: getListTransactionsQueryKey() },
   });
 
+  const filteredServices = useMemo(
+    () => (services ?? []).filter((s) => isInDateRange(s.date, dateFilter)),
+    [services, dateFilter],
+  );
+  const filteredExpenses = useMemo(
+    () => (expenses ?? []).filter((e) => isInDateRange(e.date, dateFilter)),
+    [expenses, dateFilter],
+  );
+  const filteredTransactions = useMemo(
+    () => (transactions ?? []).filter((t) => isInDateRange(t.date, dateFilter)),
+    [transactions, dateFilter],
+  );
+
+  const periodStats = useMemo(() => {
+    const revenue = filteredServices.reduce((a, s) => a + Number(s.priceSold), 0);
+    const profit = filteredServices.reduce((a, s) => a + Number(s.profit ?? 0), 0);
+    const expTotal = filteredExpenses.reduce((a, e) => a + Number(e.amount), 0);
+    return { revenue, profit, expenses: expTotal };
+  }, [filteredServices, filteredExpenses]);
+
   const yearTotals = (trend ?? []).reduce(
     (acc, t) => {
       acc.revenue += t.revenue;
@@ -125,31 +144,12 @@ export default function Reports() {
 
   const exports = [
     {
-      title: "Customers",
-      description: `${customers?.length ?? 0} customer record${
-        customers?.length === 1 ? "" : "s"
-      }`,
-      onClick: () =>
-        downloadCsv(
-          "pixocraft-customers.csv",
-          (customers ?? []).map((c) => ({
-            id: c.id,
-            name: c.name,
-            business: c.businessName ?? "",
-            email: c.email ?? "",
-            phone: c.phone ?? "",
-            address: c.address ?? "",
-            createdAt: c.createdAt,
-          })),
-        ),
-    },
-    {
-      title: "Services",
-      description: `${services?.length ?? 0} service entries`,
+      title: "Services (period)",
+      description: `${filteredServices.length} service entries in selected period`,
       onClick: () =>
         downloadCsv(
           "pixocraft-services.csv",
-          (services ?? []).map((s) => ({
+          filteredServices.map((s) => ({
             id: s.id,
             customer: s.customerName,
             service: s.serviceName,
@@ -165,12 +165,12 @@ export default function Reports() {
         ),
     },
     {
-      title: "Expenses",
-      description: `${expenses?.length ?? 0} expense entries`,
+      title: "Expenses (period)",
+      description: `${filteredExpenses.length} expense entries in selected period`,
       onClick: () =>
         downloadCsv(
           "pixocraft-expenses.csv",
-          (expenses ?? []).map((e) => ({
+          filteredExpenses.map((e) => ({
             id: e.id,
             category: e.category,
             amount: e.amount,
@@ -180,12 +180,12 @@ export default function Reports() {
         ),
     },
     {
-      title: "Transactions",
-      description: `${transactions?.length ?? 0} ledger entries`,
+      title: "Transactions (period)",
+      description: `${filteredTransactions.length} ledger entries in selected period`,
       onClick: () =>
         downloadCsv(
           "pixocraft-transactions.csv",
-          (transactions ?? []).map((t) => ({
+          filteredTransactions.map((t) => ({
             id: t.id,
             type: t.type,
             amount: t.amount,
@@ -194,6 +194,23 @@ export default function Reports() {
             method: t.method,
             date: t.date,
             notes: t.notes ?? "",
+          })),
+        ),
+    },
+    {
+      title: "All customers",
+      description: `${customers?.length ?? 0} customer records`,
+      onClick: () =>
+        downloadCsv(
+          "pixocraft-customers.csv",
+          (customers ?? []).map((c) => ({
+            id: c.id,
+            name: c.name,
+            business: c.businessName ?? "",
+            email: c.email ?? "",
+            phone: c.phone ?? "",
+            address: c.address ?? "",
+            createdAt: c.createdAt,
           })),
         ),
     },
@@ -218,6 +235,21 @@ export default function Reports() {
             />
           </>
         )}
+      </div>
+
+      <div className="space-y-3">
+        <div>
+          <h3 className="text-base font-semibold">Period breakdown</h3>
+          <p className="text-sm text-muted-foreground">
+            Filter by date to see revenue, profit, and expenses for any time range.
+          </p>
+        </div>
+        <DateRangeFilter value={dateFilter} onChange={setDateFilter} />
+        <div className="grid gap-3 sm:gap-4 grid-cols-3">
+          <SummaryStat label="Period revenue" value={periodStats.revenue} />
+          <SummaryStat label="Period expenses" value={periodStats.expenses} />
+          <SummaryStat label="Period profit" value={periodStats.profit} positive />
+        </div>
       </div>
 
       <Card>
@@ -330,8 +362,7 @@ export default function Reports() {
         <div>
           <h3 className="text-base font-semibold">Export records</h3>
           <p className="text-sm text-muted-foreground">
-            Download CSVs you can open in Excel, Google Sheets, or share with
-            your CA.
+            Downloads reflect the selected date range above. Open in Excel, Google Sheets, or share with your CA.
           </p>
         </div>
         <div className="grid gap-3 sm:grid-cols-2">

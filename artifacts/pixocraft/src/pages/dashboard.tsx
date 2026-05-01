@@ -1,4 +1,5 @@
 import { Link } from "wouter";
+import { useQuery } from "@tanstack/react-query";
 import {
   useGetDashboardSummary,
   getGetDashboardSummaryQueryKey,
@@ -13,6 +14,7 @@ import {
   useGetExpenseBreakdown,
   getGetExpenseBreakdownQueryKey,
 } from "@workspace/api-client-react";
+
 import {
   Card,
   CardContent,
@@ -52,6 +54,14 @@ import {
   Cell,
   Legend,
 } from "recharts";
+
+const BASE_PATH = import.meta.env.BASE_URL ?? "/";
+async function apiFetch(path: string) {
+  const base = BASE_PATH.endsWith("/") ? BASE_PATH.slice(0, -1) : BASE_PATH;
+  const res = await fetch(`${base}/api${path}`);
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
 
 const PIE_COLORS = [
   "hsl(var(--chart-1))",
@@ -109,6 +119,18 @@ export default function Dashboard() {
   });
   const { data: breakdown } = useGetExpenseBreakdown({
     query: { queryKey: getGetExpenseBreakdownQueryKey() },
+  });
+
+  type ServiceTypeRow = {
+    serviceType: string;
+    totalRevenue: number;
+    totalCost: number;
+    totalProfit: number;
+    count: number;
+  };
+  const { data: serviceTypeBreakdown } = useQuery<ServiceTypeRow[]>({
+    queryKey: ["dashboard", "service-type-breakdown"],
+    queryFn: () => apiFetch("/dashboard/service-type-breakdown"),
   });
 
   const stats = summary
@@ -517,6 +539,61 @@ export default function Dashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {serviceTypeBreakdown && serviceTypeBreakdown.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base font-semibold flex items-center gap-2">
+              <Briefcase className="w-4 h-4" /> Service type profitability
+            </CardTitle>
+            <CardDescription>Revenue, cost, and profit by service type</CardDescription>
+          </CardHeader>
+          <CardContent className="h-[280px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={serviceTypeBreakdown}
+                margin={{ top: 4, right: 12, left: 0, bottom: 0 }}
+              >
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke="hsl(var(--border))"
+                  vertical={false}
+                />
+                <XAxis
+                  dataKey="serviceType"
+                  stroke="hsl(var(--muted-foreground))"
+                  fontSize={11}
+                  tickLine={false}
+                  axisLine={false}
+                />
+                <YAxis
+                  stroke="hsl(var(--muted-foreground))"
+                  fontSize={11}
+                  tickLine={false}
+                  axisLine={false}
+                  tickFormatter={(v: number) => compactRupee(Number(v))}
+                />
+                <Tooltip
+                  contentStyle={{
+                    background: "hsl(var(--popover))",
+                    border: "1px solid hsl(var(--border))",
+                    borderRadius: 8,
+                    fontSize: 12,
+                  }}
+                  formatter={(value: number, name: string) => [
+                    formatCurrency(Number(value)),
+                    name.charAt(0).toUpperCase() + name.slice(1),
+                  ]}
+                />
+                <Legend iconType="circle" wrapperStyle={{ fontSize: 11, paddingTop: 8 }} />
+                <Bar dataKey="totalRevenue" name="revenue" fill="hsl(var(--chart-1))" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="totalCost" name="cost" fill="hsl(var(--chart-4))" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="totalProfit" name="profit" fill="hsl(var(--chart-3))" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">

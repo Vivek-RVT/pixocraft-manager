@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "wouter";
-import { Plus, Search, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { Plus, Search, MoreHorizontal, Pencil, Trash2, Download } from "lucide-react";
 import {
   useListCustomers,
   getListCustomersQueryKey,
@@ -39,6 +39,41 @@ import {
 } from "@/components/ui/alert-dialog";
 import { CustomerFormDialog } from "@/components/customer-form-dialog";
 import { formatDate } from "@/lib/format";
+import {
+  DateRangeFilter,
+  getDefaultDateFilter,
+  isInDateRange,
+  type DateFilter,
+} from "@/components/date-range-filter";
+
+function exportCustomersCsv(customers: any[]) {
+  if (!customers.length) {
+    toast.error("Nothing to export");
+    return;
+  }
+  const rows = [
+    ["ID", "Name", "Business", "Email", "Phone", "Address", "Notes", "Added"],
+    ...customers.map((c) => [
+      c.id,
+      c.name,
+      c.businessName ?? "",
+      c.email ?? "",
+      c.phone ?? "",
+      c.address ?? "",
+      (c.notes ?? "").replace(/"/g, '""'),
+      c.createdAt ? c.createdAt.slice(0, 10) : "",
+    ]),
+  ];
+  const csv = rows.map((r) => r.map((v) => `"${v}"`).join(",")).join("\n");
+  const blob = new Blob([csv], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `customers-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast.success("Customers exported");
+}
 
 export default function Customers() {
   const [search, setSearch] = useState("");
@@ -46,6 +81,7 @@ export default function Customers() {
   const [customerToDelete, setCustomerToDelete] = useState<number | null>(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [customerToEdit, setCustomerToEdit] = useState<number | null>(null);
+  const [dateFilter, setDateFilter] = useState<DateFilter>(getDefaultDateFilter());
 
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
@@ -57,9 +93,17 @@ export default function Customers() {
 
   const params = debouncedSearch ? { search: debouncedSearch } : undefined;
 
-  const { data: customers, isLoading } = useListCustomers(params, {
+  const { data: allCustomers, isLoading } = useListCustomers(params, {
     query: { queryKey: getListCustomersQueryKey(params) },
   });
+
+  const customers = useMemo(() => {
+    if (!allCustomers) return [];
+    return allCustomers.filter((c) => {
+      if (!c.createdAt) return true;
+      return isInDateRange(c.createdAt, dateFilter);
+    });
+  }, [allCustomers, dateFilter]);
 
   const deleteMutation = useDeleteCustomer();
 
@@ -76,7 +120,7 @@ export default function Customers() {
     }
   };
 
-  const isEmpty = !isLoading && (customers?.length ?? 0) === 0;
+  const isEmpty = !isLoading && customers.length === 0;
 
   return (
     <div className="space-y-6">
@@ -86,10 +130,20 @@ export default function Customers() {
             Manage your clients and their relationships.
           </p>
         </div>
-        <Button onClick={() => setIsCreateOpen(true)} className="gap-2">
-          <Plus className="h-4 w-4" />
-          Add Customer
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => exportCustomersCsv(customers)}
+            disabled={customers.length === 0}
+          >
+            <Download className="h-4 w-4 mr-1" /> Export
+          </Button>
+          <Button onClick={() => setIsCreateOpen(true)} className="gap-2">
+            <Plus className="h-4 w-4" />
+            Add Customer
+          </Button>
+        </div>
       </div>
 
       <div className="flex items-center gap-2 max-w-sm">
@@ -105,6 +159,11 @@ export default function Customers() {
         </div>
       </div>
 
+      <DateRangeFilter
+        value={dateFilter}
+        onChange={setDateFilter}
+      />
+
       {isEmpty ? (
         <motion.div
           initial={{ opacity: 0, y: 8 }}
@@ -115,12 +174,12 @@ export default function Customers() {
             <Plus className="w-5 h-5" />
           </div>
           <div className="font-medium">
-            {search ? "No matching customers" : "No customers yet"}
+            {search ? "No matching customers" : "No customers in this period"}
           </div>
           <p className="text-sm text-muted-foreground mb-4">
             {search
               ? "Try adjusting your search."
-              : "Add your first customer to start tracking work and revenue."}
+              : "Try changing the date range or add your first customer."}
           </p>
           {search ? (
             <Button variant="outline" onClick={() => setSearch("")}>

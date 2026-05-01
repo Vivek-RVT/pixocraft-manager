@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useRoute } from "wouter";
+import { useQuery } from "@tanstack/react-query";
 import {
   useGetCustomer,
   getGetCustomerQueryKey,
@@ -14,8 +15,13 @@ import {
   Pencil,
   Plus,
   Briefcase,
+  Globe,
+  Megaphone,
+  CheckCircle2,
+  Circle,
 } from "lucide-react";
 import { motion } from "framer-motion";
+import { getYear, getMonth } from "date-fns";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -30,6 +36,85 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { CustomerFormDialog } from "@/components/customer-form-dialog";
 import { ServiceFormDialog } from "@/components/service-form-dialog";
 import { formatCurrency, formatDate } from "@/lib/format";
+import { cn } from "@/lib/utils";
+
+const BASE_PATH = import.meta.env.BASE_URL ?? "/";
+
+async function apiFetch(path: string) {
+  const base = BASE_PATH.endsWith("/") ? BASE_PATH.slice(0, -1) : BASE_PATH;
+  const res = await fetch(`${base}/api${path}`);
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const currentYear = getYear(new Date());
+const currentMonth = getMonth(new Date()) + 1;
+
+type MonthlyCompletion = {
+  id: number;
+  serviceId: number;
+  year: number;
+  month: number;
+  completed: boolean;
+  paidAmount: number;
+};
+
+type MonthlyWebService = {
+  id: number;
+  websiteName: string;
+  monthlyCost: number;
+  monthlyCharge: number;
+  discount: number;
+  startDate: string;
+  status: string;
+  completions: MonthlyCompletion[];
+};
+
+type MonthlyDigitalService = {
+  id: number;
+  serviceName: string;
+  platform: string | null;
+  monthlyCost: number;
+  monthlyCharge: number;
+  discount: number;
+  startDate: string;
+  status: string;
+  completions: MonthlyCompletion[];
+};
+
+function MiniMonthGrid({ completions }: { completions: MonthlyCompletion[] }) {
+  const map = new Map<number, boolean>();
+  for (const c of completions) {
+    if (c.year === currentYear) map.set(c.month, c.completed);
+  }
+  return (
+    <div className="grid grid-cols-12 gap-0.5 mt-2">
+      {MONTHS.map((m, i) => {
+        const monthNum = i + 1;
+        const done = map.get(monthNum) ?? false;
+        const isFuture = monthNum > currentMonth;
+        return (
+          <div
+            key={m}
+            title={`${m}: ${done ? "Done" : isFuture ? "Future" : "Pending"}`}
+            className={cn(
+              "flex flex-col items-center rounded py-1 text-[9px] font-medium gap-0.5",
+              isFuture ? "opacity-25" : done ? "text-emerald-700" : "text-muted-foreground",
+            )}
+          >
+            <span>{m}</span>
+            {done ? (
+              <CheckCircle2 className="w-2.5 h-2.5 text-emerald-500" />
+            ) : (
+              <Circle className="w-2.5 h-2.5 text-muted-foreground/40" />
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 const paymentBadge = (status: string) => {
   switch (status) {
@@ -64,6 +149,18 @@ export default function CustomerDetail() {
     },
   );
 
+  const { data: webServices = [] } = useQuery<MonthlyWebService[]>({
+    queryKey: ["monthly-website", id],
+    queryFn: () => apiFetch(`/monthly-website?customerId=${id}`),
+    enabled: Number.isFinite(id),
+  });
+
+  const { data: digitalServices = [] } = useQuery<MonthlyDigitalService[]>({
+    queryKey: ["monthly-digital", id],
+    queryFn: () => apiFetch(`/monthly-digital?customerId=${id}`),
+    enabled: Number.isFinite(id),
+  });
+
   const totals = (services ?? []).reduce(
     (acc, s) => {
       acc.revenue += Number(s.priceSold);
@@ -74,6 +171,13 @@ export default function CustomerDetail() {
     },
     { revenue: 0, profit: 0, paid: 0, pending: 0 },
   );
+
+  const webMRR = webServices
+    .filter((s) => s.status === "active")
+    .reduce((acc, s) => acc + s.monthlyCharge, 0);
+  const digitalMRR = digitalServices
+    .filter((s) => s.status === "active")
+    .reduce((acc, s) => acc + s.monthlyCharge, 0);
 
   if (isLoading) {
     return (
@@ -182,6 +286,136 @@ export default function CustomerDetail() {
           )}
         </CardContent>
       </Card>
+
+      {(webServices.length > 0 || digitalServices.length > 0) && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base font-semibold">
+              Monthly services
+            </CardTitle>
+            <CardDescription>
+              Recurring website and digital marketing subscriptions
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {(webMRR > 0 || digitalMRR > 0) && (
+              <div className="grid grid-cols-2 gap-3 mb-4">
+                {webMRR > 0 && (
+                  <div className="rounded-lg border bg-blue-50 dark:bg-blue-950/20 p-3">
+                    <div className="flex items-center gap-1.5 text-xs text-blue-600 dark:text-blue-400 font-medium">
+                      <Globe className="w-3.5 h-3.5" /> Website MRR
+                    </div>
+                    <div className="text-lg font-bold text-blue-700 dark:text-blue-300 mt-0.5">
+                      {formatCurrency(webMRR)}
+                    </div>
+                  </div>
+                )}
+                {digitalMRR > 0 && (
+                  <div className="rounded-lg border bg-purple-50 dark:bg-purple-950/20 p-3">
+                    <div className="flex items-center gap-1.5 text-xs text-purple-600 dark:text-purple-400 font-medium">
+                      <Megaphone className="w-3.5 h-3.5" /> Digital MRR
+                    </div>
+                    <div className="text-lg font-bold text-purple-700 dark:text-purple-300 mt-0.5">
+                      {formatCurrency(digitalMRR)}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {webServices.length > 0 && (
+              <div>
+                <div className="flex items-center gap-1.5 text-sm font-semibold text-blue-600 dark:text-blue-400 mb-2">
+                  <Globe className="w-3.5 h-3.5" /> Website services
+                </div>
+                <div className="space-y-3">
+                  {webServices.map((ws) => (
+                    <div
+                      key={ws.id}
+                      className="border rounded-lg p-3 bg-muted/20"
+                    >
+                      <div className="flex items-center justify-between gap-2 mb-1">
+                        <span className="font-medium text-sm">{ws.websiteName}</span>
+                        <Badge
+                          variant="outline"
+                          className={cn(
+                            "text-xs capitalize",
+                            ws.status === "active" && "border-emerald-400 text-emerald-600",
+                            ws.status === "paused" && "border-amber-400 text-amber-600",
+                            ws.status === "cancelled" && "border-red-400 text-red-500",
+                          )}
+                        >
+                          {ws.status}
+                        </Badge>
+                      </div>
+                      <div className="flex gap-4 text-xs text-muted-foreground mb-2">
+                        <span>Charge: {formatCurrency(ws.monthlyCharge)}/mo</span>
+                        <span>Cost: {formatCurrency(ws.monthlyCost)}/mo</span>
+                        {ws.discount > 0 && <span>Discount: {formatCurrency(ws.discount)}</span>}
+                        <span>Since: {formatDate(ws.startDate)}</span>
+                      </div>
+                      <div className="text-xs font-medium text-muted-foreground mb-1">
+                        {currentYear} completion
+                      </div>
+                      <MiniMonthGrid completions={ws.completions} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {digitalServices.length > 0 && (
+              <div>
+                <div className="flex items-center gap-1.5 text-sm font-semibold text-purple-600 dark:text-purple-400 mb-2">
+                  <Megaphone className="w-3.5 h-3.5" /> Digital marketing services
+                </div>
+                <div className="space-y-3">
+                  {digitalServices.map((ds) => (
+                    <div
+                      key={ds.id}
+                      className="border rounded-lg p-3 bg-muted/20"
+                    >
+                      <div className="flex items-center justify-between gap-2 mb-1">
+                        <span className="font-medium text-sm">{ds.serviceName}</span>
+                        <Badge
+                          variant="outline"
+                          className={cn(
+                            "text-xs capitalize",
+                            ds.status === "active" && "border-emerald-400 text-emerald-600",
+                            ds.status === "paused" && "border-amber-400 text-amber-600",
+                            ds.status === "cancelled" && "border-red-400 text-red-500",
+                          )}
+                        >
+                          {ds.status}
+                        </Badge>
+                      </div>
+                      <div className="flex flex-wrap gap-4 text-xs text-muted-foreground mb-2">
+                        {ds.platform && <span>Platform: {ds.platform}</span>}
+                        <span>Charge: {formatCurrency(ds.monthlyCharge)}/mo</span>
+                        <span>Cost: {formatCurrency(ds.monthlyCost)}/mo</span>
+                        {ds.discount > 0 && <span>Discount: {formatCurrency(ds.discount)}</span>}
+                        <span>Since: {formatDate(ds.startDate)}</span>
+                      </div>
+                      <div className="text-xs font-medium text-muted-foreground mb-1">
+                        {currentYear} completion
+                      </div>
+                      <MiniMonthGrid completions={ds.completions} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="pt-2 border-t">
+              <Link href="/monthly-services">
+                <Button variant="ghost" size="sm" className="text-xs text-muted-foreground">
+                  Manage monthly services →
+                </Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between gap-3">

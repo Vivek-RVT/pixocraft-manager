@@ -254,6 +254,25 @@ router.get("/dashboard/expense-breakdown", async (_req, res): Promise<void> => {
   res.json(GetExpenseBreakdownResponse.parse(items));
 });
 
+router.get("/dashboard/service-type-breakdown", async (_req, res): Promise<void> => {
+  const services = await db.select().from(servicesTable);
+  const types = ["web", "digital", "other"] as const;
+  const result = types.map((type) => {
+    const filtered = services.filter((s) => (s.serviceType ?? "other") === type);
+    const revenue = filtered.reduce((acc, s) => acc + Number(s.priceSold), 0);
+    const cost = filtered.reduce((acc, s) => acc + Number(s.costPrice), 0);
+    return {
+      serviceType: type,
+      label: type === "web" ? "Pixocraft Web" : type === "digital" ? "Pixocraft Digital" : "Other",
+      revenue,
+      cost,
+      profit: revenue - cost,
+      count: filtered.length,
+    };
+  });
+  res.json(result);
+});
+
 router.get("/dashboard/notifications", async (_req, res): Promise<void> => {
   const services = await db
     .select({
