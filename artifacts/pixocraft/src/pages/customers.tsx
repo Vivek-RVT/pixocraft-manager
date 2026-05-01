@@ -199,7 +199,7 @@ export default function Customers() {
                 <TableHead>Name</TableHead>
                 <TableHead className="hidden md:table-cell">Business</TableHead>
                 <TableHead className="hidden lg:table-cell">Contact</TableHead>
-                <TableHead className="hidden md:table-cell">Added</TableHead>
+                <TableHead className="hidden md:table-cell">First Contact</TableHead>
                 <TableHead className="w-[60px]" />
               </TableRow>
             </TableHeader>
@@ -251,9 +251,11 @@ export default function Customers() {
                         </div>
                       </TableCell>
                       <TableCell className="hidden md:table-cell text-sm text-muted-foreground">
-                        {customer.createdAt
-                          ? formatDate(customer.createdAt)
-                          : "—"}
+                        {customer.contactedAt
+                          ? formatDate(customer.contactedAt)
+                          : customer.createdAt
+                            ? formatDate(customer.createdAt)
+                            : "—"}
                       </TableCell>
                       <TableCell onClick={(e) => e.stopPropagation()}>
                         <DropdownMenu>

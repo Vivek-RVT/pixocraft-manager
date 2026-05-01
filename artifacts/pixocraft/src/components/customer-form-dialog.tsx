@@ -30,12 +30,24 @@ type FormValues = {
   businessName: string;
   address: string;
   notes: string;
+  contactedAt: string;
 };
 
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   customerId?: number;
+}
+
+const today = () => new Date().toISOString().slice(0, 10);
+
+function toDateInput(d: Date | string | null | undefined): string {
+  if (!d) return "";
+  try {
+    return new Date(d).toISOString().slice(0, 10);
+  } catch {
+    return "";
+  }
 }
 
 export function CustomerFormDialog({ open, onOpenChange, customerId }: Props) {
@@ -57,6 +69,7 @@ export function CustomerFormDialog({ open, onOpenChange, customerId }: Props) {
       businessName: "",
       address: "",
       notes: "",
+      contactedAt: today(),
     },
   });
 
@@ -70,6 +83,7 @@ export function CustomerFormDialog({ open, onOpenChange, customerId }: Props) {
         businessName: c.businessName ?? "",
         address: c.address ?? "",
         notes: c.notes ?? "",
+        contactedAt: toDateInput(c.contactedAt) || today(),
       });
     } else if (open && !isEdit) {
       reset({
@@ -79,6 +93,7 @@ export function CustomerFormDialog({ open, onOpenChange, customerId }: Props) {
         businessName: "",
         address: "",
         notes: "",
+        contactedAt: today(),
       });
     }
   }, [open, isEdit, existing, reset]);
@@ -94,6 +109,9 @@ export function CustomerFormDialog({ open, onOpenChange, customerId }: Props) {
       businessName: values.businessName.trim() || undefined,
       address: values.address.trim() || undefined,
       notes: values.notes.trim() || undefined,
+      contactedAt: values.contactedAt
+        ? new Date(values.contactedAt)
+        : undefined,
     };
     try {
       if (isEdit && customerId) {
@@ -169,11 +187,20 @@ export function CustomerFormDialog({ open, onOpenChange, customerId }: Props) {
               />
             </div>
             <div className="space-y-2 sm:col-span-2">
+              <Label htmlFor="contactedAt">First contact date</Label>
+              <Input
+                id="contactedAt"
+                type="date"
+                {...register("contactedAt")}
+              />
+              <p className="text-xs text-muted-foreground">When did you first connect with this customer?</p>
+            </div>
+            <div className="space-y-2 sm:col-span-2">
               <Label htmlFor="notes">Notes</Label>
               <Textarea
                 id="notes"
                 {...register("notes")}
-                rows={3}
+                rows={2}
                 placeholder="Anything worth remembering"
               />
             </div>

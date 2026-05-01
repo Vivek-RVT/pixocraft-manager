@@ -14,5 +14,6 @@ export interface Customer {
   businessName?: string | null;
   address?: string | null;
   notes?: string | null;
+  contactedAt?: Date | null;
   createdAt: Date;
 }

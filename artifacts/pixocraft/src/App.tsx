@@ -19,7 +19,18 @@ import Settings from "@/pages/settings";
 import MonthlyServices from "@/pages/monthly-services";
 
 function AppRoutes() {
-  const { isLoggedIn } = useAuth();
+  const { isLoggedIn, isChecking } = useAuth();
+
+  if (isChecking) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-4">
+          <img src="/logo.webp" alt="Pixocraft" className="w-14 h-14 rounded-xl animate-pulse" />
+          <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+        </div>
+      </div>
+    );
+  }
 
   if (!isLoggedIn) {
     return <Login />;

@@ -259,8 +259,8 @@ type WebsiteFormData = {
   customerId: string;
   websiteName: string;
   monthlyCost: string;
+  standardRate: string;
   monthlyCharge: string;
-  discount: string;
   startDate: string;
   status: "active" | "paused" | "cancelled";
   notes: string;
@@ -271,8 +271,8 @@ type DigitalFormData = {
   serviceName: string;
   platform: string;
   monthlyCost: string;
+  standardRate: string;
   monthlyCharge: string;
-  discount: string;
   startDate: string;
   status: "active" | "paused" | "cancelled";
   notes: string;
@@ -294,8 +294,8 @@ function WebsiteServiceDialog({
     customerId: "",
     websiteName: "",
     monthlyCost: "",
+    standardRate: "",
     monthlyCharge: "",
-    discount: "0",
     startDate: new Date().toISOString().slice(0, 10),
     status: "active",
     notes: "",
@@ -305,12 +305,13 @@ function WebsiteServiceDialog({
   useMemo(() => {
     if (!open) return;
     if (editing) {
+      const reconstructed = editing.monthlyCharge + editing.discount;
       setForm({
         customerId: String(editing.customerId),
         websiteName: editing.websiteName,
         monthlyCost: String(editing.monthlyCost),
+        standardRate: reconstructed > editing.monthlyCharge ? String(reconstructed) : "",
         monthlyCharge: String(editing.monthlyCharge),
-        discount: String(editing.discount),
         startDate: editing.startDate,
         status: editing.status,
         notes: editing.notes ?? "",
@@ -320,8 +321,8 @@ function WebsiteServiceDialog({
         customerId: "",
         websiteName: "",
         monthlyCost: "",
+        standardRate: "",
         monthlyCharge: "",
-        discount: "0",
         startDate: new Date().toISOString().slice(0, 10),
         status: "active",
         notes: "",
@@ -336,12 +337,15 @@ function WebsiteServiceDialog({
     e.preventDefault();
     setLoading(true);
     try {
+      const stdRate = Number(form.standardRate || 0);
+      const charge = Number(form.monthlyCharge || 0);
+      const discount = stdRate > charge ? stdRate - charge : 0;
       const body = {
         customerId: Number(form.customerId),
         websiteName: form.websiteName,
-        monthlyCost: Number(form.monthlyCost),
-        monthlyCharge: Number(form.monthlyCharge),
-        discount: Number(form.discount || 0),
+        monthlyCost: Number(form.monthlyCost || 0),
+        monthlyCharge: charge,
+        discount,
         startDate: form.startDate,
         status: form.status,
         notes: form.notes || null,
@@ -399,17 +403,29 @@ function WebsiteServiceDialog({
               <Input required value={form.websiteName} onChange={(e) => set("websiteName", e.target.value)} placeholder="client.com" />
             </div>
             <div className="space-y-2">
-              <Label>Monthly cost (₹)</Label>
+              <Label>Your cost (₹)</Label>
               <Input type="number" value={form.monthlyCost} onChange={(e) => set("monthlyCost", e.target.value)} placeholder="0" />
             </div>
             <div className="space-y-2">
-              <Label>Monthly charge (₹)</Label>
-              <Input type="number" value={form.monthlyCharge} onChange={(e) => set("monthlyCharge", e.target.value)} placeholder="0" />
+              <Label>Standard rate (₹)</Label>
+              <Input type="number" value={form.standardRate} onChange={(e) => set("standardRate", e.target.value)} placeholder="Your normal list price" />
             </div>
             <div className="space-y-2">
-              <Label>Discount (₹)</Label>
-              <Input type="number" value={form.discount} onChange={(e) => set("discount", e.target.value)} placeholder="0" />
+              <Label>Client rate (₹) *</Label>
+              <Input required type="number" value={form.monthlyCharge} onChange={(e) => set("monthlyCharge", e.target.value)} placeholder="What this client pays" />
             </div>
+            {(() => {
+              const std = Number(form.standardRate || 0);
+              const charge = Number(form.monthlyCharge || 0);
+              const disc = std > charge && charge > 0 ? std - charge : 0;
+              const pct = std > 0 && disc > 0 ? Math.round((disc / std) * 100) : 0;
+              return disc > 0 ? (
+                <div className="col-span-2 rounded-md bg-emerald-50 border border-emerald-200 px-3 py-2 text-sm text-emerald-700 flex items-center gap-2">
+                  <span className="text-emerald-500">✓</span>
+                  Discount: <span className="font-semibold">₹{disc.toLocaleString()}/mo</span> — {pct}% off standard rate
+                </div>
+              ) : null;
+            })()}
             <div className="space-y-2">
               <Label>Start date</Label>
               <DatePickerField value={form.startDate} onChange={(v) => set("startDate", v)} />
@@ -457,8 +473,8 @@ function DigitalServiceDialog({
     serviceName: "",
     platform: "",
     monthlyCost: "",
+    standardRate: "",
     monthlyCharge: "",
-    discount: "0",
     startDate: new Date().toISOString().slice(0, 10),
     status: "active",
     notes: "",
@@ -468,13 +484,14 @@ function DigitalServiceDialog({
   useMemo(() => {
     if (!open) return;
     if (editing) {
+      const reconstructed = editing.monthlyCharge + editing.discount;
       setForm({
         customerId: String(editing.customerId),
         serviceName: editing.serviceName,
         platform: editing.platform ?? "",
         monthlyCost: String(editing.monthlyCost),
+        standardRate: reconstructed > editing.monthlyCharge ? String(reconstructed) : "",
         monthlyCharge: String(editing.monthlyCharge),
-        discount: String(editing.discount),
         startDate: editing.startDate,
         status: editing.status,
         notes: editing.notes ?? "",
@@ -485,8 +502,8 @@ function DigitalServiceDialog({
         serviceName: "",
         platform: "",
         monthlyCost: "",
+        standardRate: "",
         monthlyCharge: "",
-        discount: "0",
         startDate: new Date().toISOString().slice(0, 10),
         status: "active",
         notes: "",
@@ -501,13 +518,16 @@ function DigitalServiceDialog({
     e.preventDefault();
     setLoading(true);
     try {
+      const stdRate = Number(form.standardRate || 0);
+      const charge = Number(form.monthlyCharge || 0);
+      const discount = stdRate > charge ? stdRate - charge : 0;
       const body = {
         customerId: Number(form.customerId),
         serviceName: form.serviceName,
         platform: form.platform || null,
-        monthlyCost: Number(form.monthlyCost),
-        monthlyCharge: Number(form.monthlyCharge),
-        discount: Number(form.discount || 0),
+        monthlyCost: Number(form.monthlyCost || 0),
+        monthlyCharge: charge,
+        discount,
         startDate: form.startDate,
         status: form.status,
         notes: form.notes || null,
@@ -569,17 +589,29 @@ function DigitalServiceDialog({
               <Input value={form.platform} onChange={(e) => set("platform", e.target.value)} placeholder="Instagram, Google..." />
             </div>
             <div className="space-y-2">
-              <Label>Monthly cost (₹)</Label>
+              <Label>Your cost (₹)</Label>
               <Input type="number" value={form.monthlyCost} onChange={(e) => set("monthlyCost", e.target.value)} placeholder="0" />
             </div>
             <div className="space-y-2">
-              <Label>Monthly charge (₹)</Label>
-              <Input type="number" value={form.monthlyCharge} onChange={(e) => set("monthlyCharge", e.target.value)} placeholder="0" />
+              <Label>Standard rate (₹)</Label>
+              <Input type="number" value={form.standardRate} onChange={(e) => set("standardRate", e.target.value)} placeholder="Your normal list price" />
             </div>
             <div className="space-y-2">
-              <Label>Discount (₹)</Label>
-              <Input type="number" value={form.discount} onChange={(e) => set("discount", e.target.value)} placeholder="0" />
+              <Label>Client rate (₹) *</Label>
+              <Input required type="number" value={form.monthlyCharge} onChange={(e) => set("monthlyCharge", e.target.value)} placeholder="What this client pays" />
             </div>
+            {(() => {
+              const std = Number(form.standardRate || 0);
+              const charge = Number(form.monthlyCharge || 0);
+              const disc = std > charge && charge > 0 ? std - charge : 0;
+              const pct = std > 0 && disc > 0 ? Math.round((disc / std) * 100) : 0;
+              return disc > 0 ? (
+                <div className="col-span-2 rounded-md bg-emerald-50 border border-emerald-200 px-3 py-2 text-sm text-emerald-700 flex items-center gap-2">
+                  <span className="text-emerald-500">✓</span>
+                  Discount: <span className="font-semibold">₹{disc.toLocaleString()}/mo</span> — {pct}% off standard rate
+                </div>
+              ) : null;
+            })()}
             <div className="space-y-2">
               <Label>Start date</Label>
               <DatePickerField value={form.startDate} onChange={(v) => set("startDate", v)} />
@@ -626,6 +658,10 @@ function WebsiteServiceCard({
   const doneThisYear = service.completions.filter(
     (c) => c.year === year && c.completed,
   ).length;
+  const standardRate = service.monthlyCharge + service.discount;
+  const discountPct = service.discount > 0 && standardRate > 0
+    ? Math.round((service.discount / standardRate) * 100)
+    : 0;
 
   return (
     <div className="border rounded-lg overflow-hidden">
@@ -638,10 +674,20 @@ function WebsiteServiceCard({
             <div className="flex items-center gap-2 flex-wrap">
               <p className="font-semibold text-sm truncate">{service.websiteName}</p>
               <StatusBadge status={service.status} />
+              {service.discount > 0 && (
+                <span className="inline-flex items-center rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-semibold px-2 py-0.5 border border-emerald-200">
+                  {discountPct}% off
+                </span>
+              )}
             </div>
             <p className="text-xs text-muted-foreground">{service.customerName}</p>
             <div className="flex gap-3 text-xs text-muted-foreground mt-1 flex-wrap">
-              <span>Charge: <span className="font-medium text-foreground">{formatCurrency(service.monthlyCharge)}/mo</span></span>
+              <span>
+                Rate: <span className="font-semibold text-foreground">{formatCurrency(service.monthlyCharge)}/mo</span>
+                {service.discount > 0 && (
+                  <span className="ml-1 line-through text-muted-foreground/60">{formatCurrency(standardRate)}</span>
+                )}
+              </span>
               <span>Cost: <span className="font-medium text-foreground">{formatCurrency(service.monthlyCost)}/mo</span></span>
               <span className={profit >= 0 ? "text-emerald-600" : "text-red-500"}>
                 Profit: <span className="font-medium">{formatCurrency(profit)}/mo</span>
@@ -693,6 +739,10 @@ function DigitalServiceCard({
   const doneThisYear = service.completions.filter(
     (c) => c.year === year && c.completed,
   ).length;
+  const standardRate = service.monthlyCharge + service.discount;
+  const discountPct = service.discount > 0 && standardRate > 0
+    ? Math.round((service.discount / standardRate) * 100)
+    : 0;
 
   return (
     <div className="border rounded-lg overflow-hidden">
@@ -708,10 +758,20 @@ function DigitalServiceCard({
               {service.platform && (
                 <Badge variant="secondary" className="text-xs">{service.platform}</Badge>
               )}
+              {service.discount > 0 && (
+                <span className="inline-flex items-center rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-semibold px-2 py-0.5 border border-emerald-200">
+                  {discountPct}% off
+                </span>
+              )}
             </div>
             <p className="text-xs text-muted-foreground">{service.customerName}</p>
             <div className="flex gap-3 text-xs text-muted-foreground mt-1 flex-wrap">
-              <span>Charge: <span className="font-medium text-foreground">{formatCurrency(service.monthlyCharge)}/mo</span></span>
+              <span>
+                Rate: <span className="font-semibold text-foreground">{formatCurrency(service.monthlyCharge)}/mo</span>
+                {service.discount > 0 && (
+                  <span className="ml-1 line-through text-muted-foreground/60">{formatCurrency(standardRate)}</span>
+                )}
+              </span>
               <span>Cost: <span className="font-medium text-foreground">{formatCurrency(service.monthlyCost)}/mo</span></span>
               <span className={profit >= 0 ? "text-emerald-600" : "text-red-500"}>
                 Profit: <span className="font-medium">{formatCurrency(profit)}/mo</span>

@@ -74,3 +74,11 @@ externalPort = 3000
 
 [nix]
 channel = "stable-25_05"
+
+[userenv]
+
+[userenv.shared]
+HASH_SURAJ = "ddd4d201fa68575af7ce5f6bcb5e71ac1c163dddf665deb1f051f230bd382457"
+HASH_VIVEK = "244b12b2a7b2c24547c2d4bcc016df085b7b17f73a91e4a2ed8f79fc5af5f682"
+JWT_SECRET = "ef4e5991abf5cd34f73ae51968300cba50ed0a7f873198f3ad2fc86565a1359d5709b04c4842bbab8739698de4f0939d"
+AUTH_PEPPER = "pixocraft-secret-2026"

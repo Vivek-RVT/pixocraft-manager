@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useForm, Controller } from "react-hook-form";
+import { useForm, Controller, useWatch } from "react-hook-form";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
@@ -43,8 +43,16 @@ const CATEGORIES = [
   { value: "misc", label: "Miscellaneous" },
 ] as const;
 
+const MEMBERS = [
+  { value: "Vivek Rawat", label: "Vivek Rawat — Founder" },
+  { value: "Suraj Chumber", label: "Suraj Chumber — Co-founder" },
+] as const;
+
+type Category = (typeof CATEGORIES)[number]["value"];
+
 type FormValues = {
-  category: (typeof CATEGORIES)[number]["value"];
+  category: Category;
+  member: string;
   amount: string;
   date: string;
   notes: string;
@@ -58,6 +66,12 @@ interface Props {
 
 const today = () => new Date().toISOString().slice(0, 10);
 
+function parseMemberFromNotes(notes: string | null | undefined): string {
+  if (!notes) return "";
+  const match = notes.match(/^Paid to: (.+?)(?:\n|$)/);
+  return match ? match[1] : "";
+}
+
 export function ExpenseFormDialog({ open, onOpenChange, expense }: Props) {
   const queryClient = useQueryClient();
   const isEdit = !!expense;
@@ -66,23 +80,35 @@ export function ExpenseFormDialog({ open, onOpenChange, expense }: Props) {
     useForm<FormValues>({
       defaultValues: {
         category: "ads",
+        member: "",
         amount: "",
         date: today(),
         notes: "",
       },
     });
 
+  const category = useWatch({ control, name: "category" });
+  const isSalary = category === "salary";
+
   useEffect(() => {
     if (!open) return;
     if (expense) {
+      const member = expense.category === "salary"
+        ? parseMemberFromNotes(expense.notes)
+        : "";
+      const rawNotes = expense.notes ?? "";
+      const notes = member
+        ? rawNotes.replace(/^Paid to: .+?\n?/, "").trim()
+        : rawNotes;
       reset({
-        category: expense.category,
+        category: expense.category as Category,
+        member,
         amount: String(expense.amount),
         date: expense.date,
-        notes: expense.notes ?? "",
+        notes,
       });
     } else {
-      reset({ category: "ads", amount: "", date: today(), notes: "" });
+      reset({ category: "ads", member: "", amount: "", date: today(), notes: "" });
     }
   }, [open, expense, reset]);
 
@@ -91,22 +117,23 @@ export function ExpenseFormDialog({ open, onOpenChange, expense }: Props) {
 
   const invalidateAll = () => {
     queryClient.invalidateQueries({ queryKey: getListExpensesQueryKey() });
-    queryClient.invalidateQueries({
-      queryKey: getGetDashboardSummaryQueryKey(),
-    });
+    queryClient.invalidateQueries({ queryKey: getGetDashboardSummaryQueryKey() });
     queryClient.invalidateQueries({ queryKey: getGetRevenueTrendQueryKey() });
-    queryClient.invalidateQueries({
-      queryKey: getGetExpenseBreakdownQueryKey(),
-    });
+    queryClient.invalidateQueries({ queryKey: getGetExpenseBreakdownQueryKey() });
     queryClient.invalidateQueries({ queryKey: getGetRecentActivityQueryKey() });
   };
 
   const onSubmit = async (values: FormValues) => {
+    let finalNotes = values.notes.trim();
+    if (values.category === "salary" && values.member) {
+      finalNotes = `Paid to: ${values.member}${finalNotes ? "\n" + finalNotes : ""}`;
+    }
+
     const payload = {
       category: values.category,
       amount: Number(values.amount),
       date: new Date(values.date).toISOString(),
-      notes: values.notes.trim() || undefined,
+      notes: finalNotes || undefined,
     };
     try {
       if (isEdit && expense) {
@@ -131,9 +158,7 @@ export function ExpenseFormDialog({ open, onOpenChange, expense }: Props) {
         <DialogHeader>
           <DialogTitle>{isEdit ? "Edit expense" : "New expense"}</DialogTitle>
           <DialogDescription>
-            {isEdit
-              ? "Update this expense entry."
-              : "Log a business expense."}
+            {isEdit ? "Update this expense entry." : "Log a business expense."}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -144,10 +169,7 @@ export function ExpenseFormDialog({ open, onOpenChange, expense }: Props) {
                 control={control}
                 name="category"
                 render={({ field }) => (
-                  <Select
-                    value={field.value}
-                    onValueChange={(v) => field.onChange(v)}
-                  >
+                  <Select value={field.value} onValueChange={(v) => field.onChange(v)}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -162,6 +184,7 @@ export function ExpenseFormDialog({ open, onOpenChange, expense }: Props) {
                 )}
               />
             </div>
+
             <div className="space-y-2">
               <Label htmlFor="amount">Amount (₹) *</Label>
               <Input
@@ -175,21 +198,43 @@ export function ExpenseFormDialog({ open, onOpenChange, expense }: Props) {
                 <p className="text-xs text-destructive">Amount is required</p>
               )}
             </div>
+
+            {isSalary && (
+              <div className="space-y-2 sm:col-span-2">
+                <Label>Pay to</Label>
+                <Controller
+                  control={control}
+                  name="member"
+                  render={({ field }) => (
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select team member" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {MEMBERS.map((m) => (
+                          <SelectItem key={m.value} value={m.value}>
+                            {m.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+              </div>
+            )}
+
             <div className="space-y-2 sm:col-span-2">
               <Label htmlFor="date">Date *</Label>
               <Input id="date" type="date" {...register("date", { required: true })} />
             </div>
+
             <div className="space-y-2 sm:col-span-2">
               <Label htmlFor="notes">Notes</Label>
-              <Textarea id="notes" {...register("notes")} rows={3} />
+              <Textarea id="notes" {...register("notes")} rows={2} placeholder="Optional note..." />
             </div>
           </div>
           <DialogFooter>
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => onOpenChange(false)}
-            >
+            <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
             <Button type="submit" disabled={pending}>

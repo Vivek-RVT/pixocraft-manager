@@ -8,6 +8,7 @@ export const customersTable = pgTable("customers", {
   businessName: text("business_name"),
   address: text("address"),
   notes: text("notes"),
+  contactedAt: timestamp("contacted_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),

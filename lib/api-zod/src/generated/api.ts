@@ -29,6 +29,7 @@ export const ListCustomersResponseItem = zod.object({
   businessName: zod.string().nullish(),
   address: zod.string().nullish(),
   notes: zod.string().nullish(),
+  contactedAt: zod.coerce.date().nullish(),
   createdAt: zod.coerce.date(),
 });
 export const ListCustomersResponse = zod.array(ListCustomersResponseItem);
@@ -43,6 +44,7 @@ export const CreateCustomerBody = zod.object({
   businessName: zod.string().nullish(),
   address: zod.string().nullish(),
   notes: zod.string().nullish(),
+  contactedAt: zod.coerce.date().nullish(),
 });
 
 export const CreateCustomerResponse = zod.object({
@@ -53,6 +55,7 @@ export const CreateCustomerResponse = zod.object({
   businessName: zod.string().nullish(),
   address: zod.string().nullish(),
   notes: zod.string().nullish(),
+  contactedAt: zod.coerce.date().nullish(),
   createdAt: zod.coerce.date(),
 });
 
@@ -74,6 +77,7 @@ export const GetCustomerResponse = zod.object({
     businessName: zod.string().nullish(),
     address: zod.string().nullish(),
     notes: zod.string().nullish(),
+    contactedAt: zod.coerce.date().nullish(),
     createdAt: zod.coerce.date(),
   }),
   services: zod.array(
@@ -117,6 +121,7 @@ export const UpdateCustomerBody = zod.object({
   businessName: zod.string().nullish(),
   address: zod.string().nullish(),
   notes: zod.string().nullish(),
+  contactedAt: zod.coerce.date().nullish(),
 });
 
 export const UpdateCustomerResponse = zod.object({
@@ -127,6 +132,7 @@ export const UpdateCustomerResponse = zod.object({
   businessName: zod.string().nullish(),
   address: zod.string().nullish(),
   notes: zod.string().nullish(),
+  contactedAt: zod.coerce.date().nullish(),
   createdAt: zod.coerce.date(),
 });
 

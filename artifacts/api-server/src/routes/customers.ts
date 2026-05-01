@@ -26,6 +26,7 @@ function rowToCustomer(c: typeof customersTable.$inferSelect) {
     businessName: c.businessName,
     address: c.address,
     notes: c.notes,
+    contactedAt: c.contactedAt ? c.contactedAt.toISOString() : null,
     createdAt: c.createdAt.toISOString(),
   };
 }

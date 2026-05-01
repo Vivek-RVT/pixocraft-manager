@@ -19,6 +19,7 @@ import {
   Megaphone,
   CheckCircle2,
   Circle,
+  CalendarDays,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { getYear, getMonth } from "date-fns";
@@ -278,6 +279,17 @@ export default function CustomerDetail() {
                 <span>{customer.address}</span>
               </div>
             )}
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <CalendarDays className="w-4 h-4" />
+              <span>
+                First contact:{" "}
+                <span className="text-foreground font-medium">
+                  {customer.contactedAt
+                    ? formatDate(customer.contactedAt)
+                    : formatDate(customer.createdAt)}
+                </span>
+              </span>
+            </div>
           </div>
           {customer.notes && (
             <div className="mt-4 text-sm text-muted-foreground italic">

@@ -7,10 +7,12 @@ import transactionsRouter from "./transactions";
 import dashboardRouter from "./dashboard";
 import monthlyWebsiteRouter from "./monthly-website";
 import monthlyDigitalRouter from "./monthly-digital";
+import authRouter from "./auth";
 
 const router: IRouter = Router();
 
 router.use(healthRouter);
+router.use(authRouter);
 router.use(customersRouter);
 router.use(servicesRouter);
 router.use(expensesRouter);

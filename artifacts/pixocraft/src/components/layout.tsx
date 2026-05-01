@@ -55,12 +55,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
   const SidebarContent = ({ onNavigate }: { onNavigate?: () => void }) => (
     <div className="flex flex-col h-full bg-sidebar border-r border-sidebar-border">
-      <div className="p-6">
-        <div className="flex items-center gap-2.5 font-semibold text-base text-sidebar-foreground tracking-tight">
-          <div className="w-8 h-8 rounded-md bg-gradient-to-br from-primary to-chart-2 flex items-center justify-center text-primary-foreground font-bold shadow-md shadow-primary/20">
-            P
-          </div>
-          <span className="text-foreground">Pixocraft</span>
+      <div className="px-5 py-5">
+        <div className="flex items-center gap-3 font-semibold text-base text-sidebar-foreground tracking-tight">
+          <img src="/logo.webp" alt="Pixocraft" className="w-8 h-8 rounded-lg shadow-md" />
+          <span className="text-foreground font-bold">Pixocraft</span>
         </div>
       </div>
       <nav className="flex-1 px-3 space-y-0.5 overflow-y-auto">
@@ -72,13 +70,16 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <Link key={item.name} href={item.href} onClick={onNavigate}>
               <a
                 className={cn(
-                  "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                  "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 relative",
                   isActive
-                    ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                    : "text-sidebar-foreground hover:bg-sidebar-accent/60",
+                    ? "bg-sidebar-accent text-white shadow-sm shadow-black/30"
+                    : "text-sidebar-foreground/60 hover:text-white hover:bg-sidebar-accent/50",
                 )}
               >
-                <item.icon className="w-4 h-4" />
+                {isActive && (
+                  <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-r bg-cyan-400" />
+                )}
+                <item.icon className={cn("w-4 h-4", isActive && "text-cyan-400")} />
                 {item.name}
               </a>
             </Link>
@@ -152,7 +153,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   variant="ghost"
                   className="h-9 px-1.5 sm:px-2 gap-2 rounded-full"
                 >
-                  <div className="w-7 h-7 rounded-full bg-primary text-primary-foreground text-xs font-semibold flex items-center justify-center">
+                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-cyan-400 to-violet-600 text-white text-xs font-bold flex items-center justify-center shadow-sm">
                     {initials}
                   </div>
                 </Button>
