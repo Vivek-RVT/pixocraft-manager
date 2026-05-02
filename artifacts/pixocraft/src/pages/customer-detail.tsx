@@ -150,6 +150,52 @@ type ServiceProject = {
   expectedDelivery: string | null;
 };
 
+type DMReport = {
+  id: number;
+  year: number;
+  month: number;
+  platforms: string | null;
+  plan: string | null;
+  targetVideos: number;
+  targetPosts: number;
+  targetReels: number;
+  targetStories: number;
+  uploadedVideos: number;
+  uploadedPosts: number;
+  uploadedReels: number;
+  uploadedStories: number;
+  followersGained: number;
+  engagementGrowth: string | null;
+  leadsGenerated: number;
+  adSpend: string;
+  summaryNotes: string | null;
+};
+
+type SeoReport = {
+  id: number;
+  year: number;
+  month: number;
+  blogsPosted: number;
+  keywordsRanked: number;
+  trafficGrowth: string | null;
+  backlinksAdded: number;
+  seoScore: number | null;
+  notes: string | null;
+};
+
+type DMFormData = {
+  year: string; month: string; platforms: string; plan: string;
+  targetVideos: string; targetPosts: string; targetReels: string; targetStories: string;
+  uploadedVideos: string; uploadedPosts: string; uploadedReels: string; uploadedStories: string;
+  followersGained: string; engagementGrowth: string; leadsGenerated: string;
+  adSpend: string; summaryNotes: string;
+};
+
+type SeoFormData = {
+  year: string; month: string; blogsPosted: string; keywordsRanked: string;
+  trafficGrowth: string; backlinksAdded: string; seoScore: string; notes: string;
+};
+
 function MiniMonthGrid({ completions }: { completions: MonthlyCompletion[] }) {
   const map = new Map<number, boolean>();
   for (const c of completions) {
@@ -381,6 +427,26 @@ export default function CustomerDetail() {
   const [projectDialog, setProjectDialog] = useState(false);
   const [editProject, setEditProject] = useState<ServiceProject | undefined>();
   const [showReports, setShowReports] = useState(false);
+  const [reportTab, setReportTab] = useState<"dm" | "seo">("dm");
+  const [dmDialog, setDmDialog] = useState(false);
+  const [seoDialog, setSeoDialog] = useState(false);
+  const [editDm, setEditDm] = useState<DMReport | undefined>();
+  const [editSeo, setEditSeo] = useState<SeoReport | undefined>();
+
+  const blankDm = (): DMFormData => ({
+    year: String(currentYear), month: String(currentMonth), platforms: "", plan: "",
+    targetVideos: "0", targetPosts: "0", targetReels: "0", targetStories: "0",
+    uploadedVideos: "0", uploadedPosts: "0", uploadedReels: "0", uploadedStories: "0",
+    followersGained: "0", engagementGrowth: "", leadsGenerated: "0", adSpend: "0", summaryNotes: "",
+  });
+  const blankSeo = (): SeoFormData => ({
+    year: String(currentYear), month: String(currentMonth),
+    blogsPosted: "0", keywordsRanked: "0", trafficGrowth: "", backlinksAdded: "0",
+    seoScore: "", notes: "",
+  });
+
+  const [dmForm, setDmForm] = useState<DMFormData>(blankDm);
+  const [seoForm, setSeoForm] = useState<SeoFormData>(blankSeo);
 
   const { data: detail, isLoading } = useGetCustomer(id, {
     query: { queryKey: getGetCustomerQueryKey(id), enabled: Number.isFinite(id) },
@@ -421,6 +487,18 @@ export default function CustomerDetail() {
     enabled: Number.isFinite(id),
   });
 
+  const { data: dmReports = [] } = useQuery<DMReport[]>({
+    queryKey: ["dm-reports", id],
+    queryFn: () => apiFetch(`/admin/dm-reports/${id}`),
+    enabled: Number.isFinite(id),
+  });
+
+  const { data: seoReports = [] } = useQuery<SeoReport[]>({
+    queryKey: ["seo-reports", id],
+    queryFn: () => apiFetch(`/admin/seo-reports/${id}`),
+    enabled: Number.isFinite(id),
+  });
+
   const activatePortal = useMutation({
     mutationFn: () =>
       apiFetch(`/admin/portal/${id}`, {
@@ -457,6 +535,54 @@ export default function CustomerDetail() {
       qc.invalidateQueries({ queryKey: ["projects", id] });
       toast.success("Project removed");
     },
+  });
+
+  const saveDmReport = useMutation({
+    mutationFn: (data: DMFormData) =>
+      apiFetch(`/admin/dm-reports/${id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          year: Number(data.year), month: Number(data.month),
+          platforms: data.platforms || null, plan: data.plan || null,
+          targetVideos: Number(data.targetVideos), targetPosts: Number(data.targetPosts),
+          targetReels: Number(data.targetReels), targetStories: Number(data.targetStories),
+          uploadedVideos: Number(data.uploadedVideos), uploadedPosts: Number(data.uploadedPosts),
+          uploadedReels: Number(data.uploadedReels), uploadedStories: Number(data.uploadedStories),
+          followersGained: Number(data.followersGained), engagementGrowth: data.engagementGrowth || null,
+          leadsGenerated: Number(data.leadsGenerated), adSpend: data.adSpend || "0",
+          summaryNotes: data.summaryNotes || null,
+        }),
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["dm-reports", id] });
+      qc.invalidateQueries({ queryKey: ["client-dashboard"] });
+      setDmDialog(false);
+      toast.success("DM report saved");
+    },
+    onError: () => toast.error("Failed to save report"),
+  });
+
+  const saveSeoReport = useMutation({
+    mutationFn: (data: SeoFormData) =>
+      apiFetch(`/admin/seo-reports/${id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          year: Number(data.year), month: Number(data.month),
+          blogsPosted: Number(data.blogsPosted), keywordsRanked: Number(data.keywordsRanked),
+          trafficGrowth: data.trafficGrowth || null, backlinksAdded: Number(data.backlinksAdded),
+          seoScore: data.seoScore ? Number(data.seoScore) : null,
+          notes: data.notes || null,
+        }),
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["seo-reports", id] });
+      qc.invalidateQueries({ queryKey: ["client-dashboard"] });
+      setSeoDialog(false);
+      toast.success("SEO report saved");
+    },
+    onError: () => toast.error("Failed to save report"),
   });
 
   const totals = (services ?? []).reduce(
@@ -952,6 +1078,167 @@ export default function CustomerDetail() {
         </CardContent>
       </Card>
 
+      {/* Monthly Reports Card */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <CardTitle className="text-base font-semibold flex items-center gap-2">
+                <Megaphone className="w-4 h-4 shrink-0" /> Monthly Reports
+              </CardTitle>
+              <CardDescription>DM and SEO reports visible in client portal</CardDescription>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant={reportTab === "dm" ? "default" : "outline"}
+                onClick={() => setReportTab("dm")}
+              >
+                DM
+              </Button>
+              <Button
+                size="sm"
+                variant={reportTab === "seo" ? "default" : "outline"}
+                onClick={() => setReportTab("seo")}
+              >
+                SEO
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {reportTab === "dm" && (
+            <div className="space-y-3">
+              <Button
+                size="sm"
+                variant="outline"
+                className="w-full"
+                onClick={() => {
+                  setDmForm(blankDm());
+                  setDmDialog(true);
+                }}
+              >
+                <Plus className="mr-2 h-3.5 w-3.5" /> Add / Update DM Report
+              </Button>
+              {dmReports.length === 0 ? (
+                <div className="text-center py-6 text-sm text-muted-foreground">No DM reports yet.</div>
+              ) : (
+                <div className="space-y-2">
+                  {dmReports
+                    .slice()
+                    .sort((a, b) => b.year !== a.year ? b.year - a.year : b.month - a.month)
+                    .map((r) => {
+                      const total = (r.uploadedVideos ?? 0) + (r.uploadedPosts ?? 0) + (r.uploadedReels ?? 0) + (r.uploadedStories ?? 0);
+                      const target = (r.targetVideos ?? 0) + (r.targetPosts ?? 0) + (r.targetReels ?? 0) + (r.targetStories ?? 0);
+                      return (
+                        <div key={r.id} className="border rounded-lg p-3 text-sm">
+                          <div className="flex items-center justify-between gap-2 mb-1">
+                            <div className="font-semibold">{MONTHS[r.month - 1]} {r.year}</div>
+                            <div className="flex gap-3 text-xs text-muted-foreground">
+                              <span>📦 {total}/{target}</span>
+                              <span>👥 +{r.followersGained ?? 0}</span>
+                              <span>🎯 {r.leadsGenerated ?? 0} leads</span>
+                            </div>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-7 w-7 shrink-0"
+                              onClick={() => {
+                                const platforms = r.platforms ?? "";
+                                setDmForm({
+                                  year: String(r.year), month: String(r.month),
+                                  platforms, plan: r.plan ?? "",
+                                  targetVideos: String(r.targetVideos ?? 0),
+                                  targetPosts: String(r.targetPosts ?? 0),
+                                  targetReels: String(r.targetReels ?? 0),
+                                  targetStories: String(r.targetStories ?? 0),
+                                  uploadedVideos: String(r.uploadedVideos ?? 0),
+                                  uploadedPosts: String(r.uploadedPosts ?? 0),
+                                  uploadedReels: String(r.uploadedReels ?? 0),
+                                  uploadedStories: String(r.uploadedStories ?? 0),
+                                  followersGained: String(r.followersGained ?? 0),
+                                  engagementGrowth: r.engagementGrowth ?? "",
+                                  leadsGenerated: String(r.leadsGenerated ?? 0),
+                                  adSpend: r.adSpend ?? "0",
+                                  summaryNotes: r.summaryNotes ?? "",
+                                });
+                                setDmDialog(true);
+                              }}
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                          {r.summaryNotes && (
+                            <div className="text-xs text-muted-foreground italic truncate">{r.summaryNotes}</div>
+                          )}
+                        </div>
+                      );
+                    })}
+                </div>
+              )}
+            </div>
+          )}
+          {reportTab === "seo" && (
+            <div className="space-y-3">
+              <Button
+                size="sm"
+                variant="outline"
+                className="w-full"
+                onClick={() => {
+                  setSeoForm(blankSeo());
+                  setSeoDialog(true);
+                }}
+              >
+                <Plus className="mr-2 h-3.5 w-3.5" /> Add / Update SEO Report
+              </Button>
+              {seoReports.length === 0 ? (
+                <div className="text-center py-6 text-sm text-muted-foreground">No SEO reports yet.</div>
+              ) : (
+                <div className="space-y-2">
+                  {seoReports
+                    .slice()
+                    .sort((a, b) => b.year !== a.year ? b.year - a.year : b.month - a.month)
+                    .map((r) => (
+                      <div key={r.id} className="border rounded-lg p-3 text-sm">
+                        <div className="flex items-center justify-between gap-2 mb-1">
+                          <div className="font-semibold">{MONTHS[r.month - 1]} {r.year}</div>
+                          <div className="flex gap-3 text-xs text-muted-foreground">
+                            <span>📝 {r.blogsPosted} blogs</span>
+                            <span>🔑 {r.keywordsRanked} kw</span>
+                            {r.seoScore != null && <span>⭐ {r.seoScore}/100</span>}
+                          </div>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-7 w-7 shrink-0"
+                            onClick={() => {
+                              setSeoForm({
+                                year: String(r.year), month: String(r.month),
+                                blogsPosted: String(r.blogsPosted ?? 0),
+                                keywordsRanked: String(r.keywordsRanked ?? 0),
+                                trafficGrowth: r.trafficGrowth ?? "",
+                                backlinksAdded: String(r.backlinksAdded ?? 0),
+                                seoScore: r.seoScore != null ? String(r.seoScore) : "",
+                                notes: r.notes ?? "",
+                              });
+                              setSeoDialog(true);
+                            }}
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                        {r.notes && (
+                          <div className="text-xs text-muted-foreground italic truncate">{r.notes}</div>
+                        )}
+                      </div>
+                    ))}
+                </div>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Dialogs */}
       <Dialog open={pwDialog} onOpenChange={setPwDialog}>
         <DialogContent className="max-w-sm">
@@ -1003,6 +1290,177 @@ export default function CustomerDetail() {
         onOpenChange={setServiceOpen}
         presetCustomerId={customer.id}
       />
+
+      {/* DM Report Dialog */}
+      <Dialog open={dmDialog} onOpenChange={setDmDialog}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Digital Marketing Report</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs">Year</Label>
+                <Input className="mt-1" type="number" value={dmForm.year}
+                  onChange={e => setDmForm(f => ({ ...f, year: e.target.value }))} />
+              </div>
+              <div>
+                <Label className="text-xs">Month</Label>
+                <Select value={dmForm.month} onValueChange={v => setDmForm(f => ({ ...f, month: v }))}>
+                  <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {MONTHS.map((m, i) => <SelectItem key={m} value={String(i + 1)}>{m}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs">Platforms (e.g. Instagram, Facebook)</Label>
+                <Input className="mt-1" value={dmForm.platforms}
+                  onChange={e => setDmForm(f => ({ ...f, platforms: e.target.value }))}
+                  placeholder="Instagram, Facebook" />
+              </div>
+              <div>
+                <Label className="text-xs">Plan</Label>
+                <Select value={dmForm.plan} onValueChange={v => setDmForm(f => ({ ...f, plan: v }))}>
+                  <SelectTrigger className="mt-1"><SelectValue placeholder="Select plan" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="basic">Basic</SelectItem>
+                    <SelectItem value="standard">Standard</SelectItem>
+                    <SelectItem value="premium">Premium</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="border rounded-lg p-3 space-y-2">
+              <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Content Targets</div>
+              <div className="grid grid-cols-4 gap-2">
+                {(["Videos","Posts","Reels","Stories"] as const).map((label) => {
+                  const key = `target${label}` as keyof DMFormData;
+                  return (
+                    <div key={label}>
+                      <Label className="text-[10px]">Target {label}</Label>
+                      <Input className="mt-0.5 h-8 text-sm" type="number" value={dmForm[key]}
+                        onChange={e => setDmForm(f => ({ ...f, [key]: e.target.value }))} />
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="border rounded-lg p-3 space-y-2">
+              <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Delivered</div>
+              <div className="grid grid-cols-4 gap-2">
+                {(["Videos","Posts","Reels","Stories"] as const).map((label) => {
+                  const key = `uploaded${label}` as keyof DMFormData;
+                  return (
+                    <div key={label}>
+                      <Label className="text-[10px]">Done {label}</Label>
+                      <Input className="mt-0.5 h-8 text-sm" type="number" value={dmForm[key]}
+                        onChange={e => setDmForm(f => ({ ...f, [key]: e.target.value }))} />
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <Label className="text-xs">Followers Gained</Label>
+                <Input className="mt-1" type="number" value={dmForm.followersGained}
+                  onChange={e => setDmForm(f => ({ ...f, followersGained: e.target.value }))} />
+              </div>
+              <div>
+                <Label className="text-xs">Engagement Growth</Label>
+                <Input className="mt-1" value={dmForm.engagementGrowth} placeholder="e.g. +12%"
+                  onChange={e => setDmForm(f => ({ ...f, engagementGrowth: e.target.value }))} />
+              </div>
+              <div>
+                <Label className="text-xs">Leads Generated</Label>
+                <Input className="mt-1" type="number" value={dmForm.leadsGenerated}
+                  onChange={e => setDmForm(f => ({ ...f, leadsGenerated: e.target.value }))} />
+              </div>
+            </div>
+            <div>
+              <Label className="text-xs">Summary Notes</Label>
+              <Textarea className="mt-1" rows={3} value={dmForm.summaryNotes} placeholder="Client-visible summary..."
+                onChange={e => setDmForm(f => ({ ...f, summaryNotes: e.target.value }))} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDmDialog(false)}>Cancel</Button>
+            <Button onClick={() => saveDmReport.mutate(dmForm)} disabled={saveDmReport.isPending}>
+              {saveDmReport.isPending ? "Saving…" : "Save Report"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* SEO Report Dialog */}
+      <Dialog open={seoDialog} onOpenChange={setSeoDialog}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>SEO Report</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs">Year</Label>
+                <Input className="mt-1" type="number" value={seoForm.year}
+                  onChange={e => setSeoForm(f => ({ ...f, year: e.target.value }))} />
+              </div>
+              <div>
+                <Label className="text-xs">Month</Label>
+                <Select value={seoForm.month} onValueChange={v => setSeoForm(f => ({ ...f, month: v }))}>
+                  <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {MONTHS.map((m, i) => <SelectItem key={m} value={String(i + 1)}>{m}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs">Blogs Posted</Label>
+                <Input className="mt-1" type="number" value={seoForm.blogsPosted}
+                  onChange={e => setSeoForm(f => ({ ...f, blogsPosted: e.target.value }))} />
+              </div>
+              <div>
+                <Label className="text-xs">Keywords Ranked</Label>
+                <Input className="mt-1" type="number" value={seoForm.keywordsRanked}
+                  onChange={e => setSeoForm(f => ({ ...f, keywordsRanked: e.target.value }))} />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs">Traffic Growth (e.g. +18%)</Label>
+                <Input className="mt-1" value={seoForm.trafficGrowth} placeholder="+18%"
+                  onChange={e => setSeoForm(f => ({ ...f, trafficGrowth: e.target.value }))} />
+              </div>
+              <div>
+                <Label className="text-xs">Backlinks Added</Label>
+                <Input className="mt-1" type="number" value={seoForm.backlinksAdded}
+                  onChange={e => setSeoForm(f => ({ ...f, backlinksAdded: e.target.value }))} />
+              </div>
+            </div>
+            <div>
+              <Label className="text-xs">SEO Score (0–100)</Label>
+              <Input className="mt-1" type="number" value={seoForm.seoScore} placeholder="e.g. 78"
+                onChange={e => setSeoForm(f => ({ ...f, seoScore: e.target.value }))} />
+            </div>
+            <div>
+              <Label className="text-xs">Notes</Label>
+              <Textarea className="mt-1" rows={3} value={seoForm.notes} placeholder="Client-visible notes..."
+                onChange={e => setSeoForm(f => ({ ...f, notes: e.target.value }))} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSeoDialog(false)}>Cancel</Button>
+            <Button onClick={() => saveSeoReport.mutate(seoForm)} disabled={saveSeoReport.isPending}>
+              {saveSeoReport.isPending ? "Saving…" : "Save Report"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
