@@ -691,10 +691,13 @@ function WebsiteServiceCard({
   onDelete: () => void;
 }) {
   const [expanded, setExpanded] = useState(true);
-  const profit = service.monthlyCharge - service.monthlyCost - service.discount;
+  const profit = service.monthlyCharge - service.monthlyCost;
   const doneThisYear = service.completions.filter(
     (c) => c.year === year && c.completed,
   ).length;
+  const collectedThisYear = service.completions
+    .filter((c) => c.year === year && c.completed)
+    .reduce((sum, c) => sum + c.paidAmount, 0);
   const standardRate = service.monthlyCharge + service.discount;
   const discountPct = service.discount > 0 && standardRate > 0
     ? Math.round((service.discount / standardRate) * 100)
@@ -733,7 +736,12 @@ function WebsiteServiceCard({
           </div>
         </div>
         <div className="flex items-center gap-1 shrink-0">
-          <span className="text-xs text-muted-foreground mr-2">{doneThisYear}/12 done</span>
+          <div className="flex flex-col items-end mr-2 gap-0.5">
+            <span className="text-xs text-muted-foreground">{doneThisYear}/12 done</span>
+            {collectedThisYear > 0 && (
+              <span className="text-xs font-semibold text-emerald-600">{formatCurrency(collectedThisYear)}</span>
+            )}
+          </div>
           <Button size="icon" variant="ghost" className="h-7 w-7" onClick={onEdit}>
             <Pencil className="h-3.5 w-3.5" />
           </Button>
@@ -773,10 +781,13 @@ function DigitalServiceCard({
   onDelete: () => void;
 }) {
   const [expanded, setExpanded] = useState(true);
-  const profit = service.monthlyCharge - service.monthlyCost - service.discount;
+  const profit = service.monthlyCharge - service.monthlyCost;
   const doneThisYear = service.completions.filter(
     (c) => c.year === year && c.completed,
   ).length;
+  const collectedThisYear = service.completions
+    .filter((c) => c.year === year && c.completed)
+    .reduce((sum, c) => sum + c.paidAmount, 0);
   const standardRate = service.monthlyCharge + service.discount;
   const discountPct = service.discount > 0 && standardRate > 0
     ? Math.round((service.discount / standardRate) * 100)
@@ -818,7 +829,12 @@ function DigitalServiceCard({
           </div>
         </div>
         <div className="flex items-center gap-1 shrink-0">
-          <span className="text-xs text-muted-foreground mr-2">{doneThisYear}/12 done</span>
+          <div className="flex flex-col items-end mr-2 gap-0.5">
+            <span className="text-xs text-muted-foreground">{doneThisYear}/12 done</span>
+            {collectedThisYear > 0 && (
+              <span className="text-xs font-semibold text-emerald-600">{formatCurrency(collectedThisYear)}</span>
+            )}
+          </div>
           <Button size="icon" variant="ghost" className="h-7 w-7" onClick={onEdit}>
             <Pencil className="h-3.5 w-3.5" />
           </Button>
