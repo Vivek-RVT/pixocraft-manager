@@ -26,7 +26,8 @@ export function CalendarDatePicker({
 }: CalendarDatePickerProps) {
   const [open, setOpen] = useState(false);
 
-  const selected = value ? new Date(value + "T00:00:00") : undefined;
+  const parsed = value ? new Date(value + "T00:00:00") : undefined;
+  const selected = parsed && !isNaN(parsed.getTime()) ? parsed : undefined;
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
