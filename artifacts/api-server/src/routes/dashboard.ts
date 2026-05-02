@@ -1,11 +1,15 @@
 import { Router, type IRouter } from "express";
-import { desc, sql } from "drizzle-orm";
+import { desc, sql, eq } from "drizzle-orm";
 import {
   db,
   customersTable,
   servicesTable,
   expensesTable,
   transactionsTable,
+  monthlyWebsiteServicesTable,
+  monthlyWebsiteCompletionsTable,
+  monthlyDigitalServicesTable,
+  monthlyDigitalCompletionsTable,
 } from "@workspace/db";
 import {
   GetDashboardSummaryResponse,
@@ -20,29 +24,44 @@ import {
 const router: IRouter = Router();
 
 router.get("/dashboard/summary", async (_req, res): Promise<void> => {
-  const customers = await db.select().from(customersTable);
-  const services = await db.select().from(servicesTable);
-  const expenses = await db.select().from(expensesTable);
+  const [customers, services, expenses, webCompletions, digitalCompletions, webServices, digitalServices] = await Promise.all([
+    db.select().from(customersTable),
+    db.select().from(servicesTable),
+    db.select().from(expensesTable),
+    db.select().from(monthlyWebsiteCompletionsTable).where(eq(monthlyWebsiteCompletionsTable.completed, true)),
+    db.select().from(monthlyDigitalCompletionsTable).where(eq(monthlyDigitalCompletionsTable.completed, true)),
+    db.select().from(monthlyWebsiteServicesTable),
+    db.select().from(monthlyDigitalServicesTable),
+  ]);
 
-  const totalRevenue = services.reduce(
-    (acc, s) => acc + Number(s.priceSold),
-    0,
-  );
+  const webCostMap = new Map(webServices.map((s) => [s.id, Number(s.monthlyCost)]));
+  const digitalCostMap = new Map(digitalServices.map((s) => [s.id, Number(s.monthlyCost)]));
+  const allMonthly = [
+    ...webCompletions.map((c) => ({ year: c.year, month: c.month, paid: Number(c.paidAmount), cost: webCostMap.get(c.serviceId) ?? 0 })),
+    ...digitalCompletions.map((c) => ({ year: c.year, month: c.month, paid: Number(c.paidAmount), cost: digitalCostMap.get(c.serviceId) ?? 0 })),
+  ];
+
+  const totalRevenue = services.reduce((acc, s) => acc + Number(s.priceSold), 0)
+    + allMonthly.reduce((acc, c) => acc + c.paid, 0);
   const totalExpenses = expenses.reduce((acc, e) => acc + Number(e.amount), 0);
   const netProfit =
-    services.reduce(
-      (acc, s) => acc + (Number(s.priceSold) - Number(s.costPrice)),
-      0,
-    ) - totalExpenses;
+    services.reduce((acc, s) => acc + (Number(s.priceSold) - Number(s.costPrice)), 0)
+    + allMonthly.reduce((acc, c) => acc + (c.paid - c.cost), 0)
+    - totalExpenses;
   const pendingPayments = services.reduce(
     (acc, s) => acc + Math.max(0, Number(s.priceSold) - Number(s.amountPaid)),
     0,
   );
 
   const now = new Date();
+  const thisYear = now.getFullYear();
+  const thisMonthNum = now.getMonth() + 1;
+  const prevDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const prevYear = prevDate.getFullYear();
+  const prevMonthNum = prevDate.getMonth() + 1;
+
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
   const startOfPrevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-  const startOfThisMonth = startOfMonth;
 
   const isInMonth = (dateStr: string, monthStart: Date) => {
     const d = new Date(dateStr);
@@ -52,22 +71,26 @@ router.get("/dashboard/summary", async (_req, res): Promise<void> => {
     );
   };
 
+  const monthlyThisMonth = allMonthly.filter((c) => c.year === thisYear && c.month === thisMonthNum);
+  const monthlyPrevMonth = allMonthly.filter((c) => c.year === prevYear && c.month === prevMonthNum);
+
   const thisMonthRevenue = services
-    .filter((s) => isInMonth(s.date, startOfThisMonth))
-    .reduce((acc, s) => acc + Number(s.priceSold), 0);
+    .filter((s) => isInMonth(s.date, startOfMonth))
+    .reduce((acc, s) => acc + Number(s.priceSold), 0)
+    + monthlyThisMonth.reduce((acc, c) => acc + c.paid, 0);
   const lastMonthRevenue = services
     .filter((s) => isInMonth(s.date, startOfPrevMonth))
-    .reduce((acc, s) => acc + Number(s.priceSold), 0);
+    .reduce((acc, s) => acc + Number(s.priceSold), 0)
+    + monthlyPrevMonth.reduce((acc, c) => acc + c.paid, 0);
   const thisMonthExpenses = expenses
-    .filter((e) => isInMonth(e.date, startOfThisMonth))
+    .filter((e) => isInMonth(e.date, startOfMonth))
     .reduce((acc, e) => acc + Number(e.amount), 0);
   const thisMonthProfit =
     services
-      .filter((s) => isInMonth(s.date, startOfThisMonth))
-      .reduce(
-        (acc, s) => acc + (Number(s.priceSold) - Number(s.costPrice)),
-        0,
-      ) - thisMonthExpenses;
+      .filter((s) => isInMonth(s.date, startOfMonth))
+      .reduce((acc, s) => acc + (Number(s.priceSold) - Number(s.costPrice)), 0)
+    + monthlyThisMonth.reduce((acc, c) => acc + (c.paid - c.cost), 0)
+    - thisMonthExpenses;
 
   const revenueGrowthPercent =
     lastMonthRevenue > 0
@@ -93,8 +116,21 @@ router.get("/dashboard/summary", async (_req, res): Promise<void> => {
 });
 
 router.get("/dashboard/revenue-trend", async (_req, res): Promise<void> => {
-  const services = await db.select().from(servicesTable);
-  const expenses = await db.select().from(expensesTable);
+  const [services, expenses, webCompletions, digitalCompletions, webServices, digitalServices] = await Promise.all([
+    db.select().from(servicesTable),
+    db.select().from(expensesTable),
+    db.select().from(monthlyWebsiteCompletionsTable).where(eq(monthlyWebsiteCompletionsTable.completed, true)),
+    db.select().from(monthlyDigitalCompletionsTable).where(eq(monthlyDigitalCompletionsTable.completed, true)),
+    db.select().from(monthlyWebsiteServicesTable),
+    db.select().from(monthlyDigitalServicesTable),
+  ]);
+
+  const webCostMap = new Map(webServices.map((s) => [s.id, Number(s.monthlyCost)]));
+  const digitalCostMap = new Map(digitalServices.map((s) => [s.id, Number(s.monthlyCost)]));
+  const allMonthly = [
+    ...webCompletions.map((c) => ({ year: c.year, month: c.month, paid: Number(c.paidAmount), cost: webCostMap.get(c.serviceId) ?? 0 })),
+    ...digitalCompletions.map((c) => ({ year: c.year, month: c.month, paid: Number(c.paidAmount), cost: digitalCostMap.get(c.serviceId) ?? 0 })),
+  ];
 
   const now = new Date();
   const months: { key: string; label: string; year: number; month: number }[] =
@@ -106,32 +142,38 @@ router.get("/dashboard/revenue-trend", async (_req, res): Promise<void> => {
       month: "short",
       year: "2-digit",
     });
-    months.push({ key, label, year: d.getFullYear(), month: d.getMonth() });
+    months.push({ key, label, year: d.getFullYear(), month: d.getMonth() + 1 });
   }
 
   const series = months.map((m) => {
     const rev = services
       .filter((s) => {
         const d = new Date(s.date);
-        return d.getFullYear() === m.year && d.getMonth() === m.month;
+        return d.getFullYear() === m.year && d.getMonth() + 1 === m.month;
       })
       .reduce((acc, s) => acc + Number(s.priceSold), 0);
     const cogs = services
       .filter((s) => {
         const d = new Date(s.date);
-        return d.getFullYear() === m.year && d.getMonth() === m.month;
+        return d.getFullYear() === m.year && d.getMonth() + 1 === m.month;
       })
       .reduce((acc, s) => acc + Number(s.costPrice), 0);
     const exp = expenses
       .filter((e) => {
         const d = new Date(e.date);
-        return d.getFullYear() === m.year && d.getMonth() === m.month;
+        return d.getFullYear() === m.year && d.getMonth() + 1 === m.month;
       })
       .reduce((acc, e) => acc + Number(e.amount), 0);
-    const profit = rev - cogs - exp;
+    const monthlyRev = allMonthly
+      .filter((c) => c.year === m.year && c.month === m.month)
+      .reduce((acc, c) => acc + c.paid, 0);
+    const monthlyCogs = allMonthly
+      .filter((c) => c.year === m.year && c.month === m.month)
+      .reduce((acc, c) => acc + c.cost, 0);
+    const profit = (rev + monthlyRev) - (cogs + monthlyCogs) - exp;
     return {
       month: m.label,
-      revenue: rev,
+      revenue: rev + monthlyRev,
       expenses: exp,
       profit,
     };
