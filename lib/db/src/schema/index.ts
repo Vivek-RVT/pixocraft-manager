@@ -4,3 +4,7 @@ export * from "./expenses";
 export * from "./transactions";
 export * from "./monthly-website-services";
 export * from "./monthly-digital-services";
+export * from "./client-portals";
+export * from "./service-projects";
+export * from "./digital-marketing-reports";
+export * from "./seo-reports";

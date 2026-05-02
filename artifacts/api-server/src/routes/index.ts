@@ -8,11 +8,17 @@ import dashboardRouter from "./dashboard";
 import monthlyWebsiteRouter from "./monthly-website";
 import monthlyDigitalRouter from "./monthly-digital";
 import authRouter from "./auth";
+import clientAuthRouter from "./client-auth";
+import clientPortalRouter from "./client-portal";
+import portalAdminRouter from "./portal-admin";
 
 const router: IRouter = Router();
 
 router.use(healthRouter);
 router.use(authRouter);
+router.use(clientAuthRouter);
+router.use(clientPortalRouter);
+router.use(portalAdminRouter);
 router.use(customersRouter);
 router.use(servicesRouter);
 router.use(expensesRouter);

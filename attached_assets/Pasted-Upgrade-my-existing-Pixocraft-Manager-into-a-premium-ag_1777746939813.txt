@@ -1,0 +1,240 @@
+Upgrade my existing Pixocraft Manager into a premium agency operating system with two admin accounts (Vivek and Suraj) and client password-based dashboards.
+
+CORE SYSTEM STRUCTURE:
+Build two main panels:
+
+1. ADMIN PANEL (for Vivek & Suraj only)
+2. CLIENT DASHBOARD PANEL (for clients)
+
+====================================
+ADMIN LOGIN SYSTEM
+====================================
+
+Create secure admin login for:
+- Vivek
+- Suraj
+
+Only these two admins can access full management dashboard.
+
+====================================
+CLIENT MANAGEMENT SYSTEM
+====================================
+
+In admin panel, first create “Add Client” system.
+
+Client fields:
+- Client Name
+- Business Name
+- Phone Number
+- Email (optional)
+- Purchased Services
+- Start Date
+- Renewal Date
+- Notes
+
+After client is added, admin gets option:
+
+[ Activate Client Dashboard ]
+
+When activating dashboard:
+- Generate custom password manually by admin
+- Client login uses PASSWORD ONLY
+- No username required
+- No email required
+- Just password access
+
+====================================
+CLIENT DASHBOARD LOGIN
+====================================
+
+Client enters password only and opens their dashboard.
+
+====================================
+CLIENT DASHBOARD UI
+====================================
+
+Premium clean modern UI.
+Dark + white + elegant business style.
+Responsive for mobile/tablet/desktop.
+
+Sections:
+
+1. Welcome Section
+- Client Name
+- Business Name
+- Active Status
+
+2. Purchased Services
+Show all active services.
+
+3. Progress Section
+Live progress bars and stages.
+
+4. Recommended Services / Add-ons
+Show Pixocraft upsells dynamically.
+
+5. Monthly Reports
+
+6. Support Contact Button
+
+====================================
+SERVICE MODULES
+====================================
+
+A) WEBSITE DEVELOPMENT SERVICE
+
+If client purchased website:
+
+Show website project card.
+
+Admin can update from admin panel:
+
+- Current Stage
+  (Planning / UI Design / Development / Testing / SEO / Completed)
+
+- Progress Percentage
+
+- Completed Work Notes
+
+- Pending Work Notes
+
+- Live Website Link
+
+- Expected Delivery Date
+
+Client can click website section and see all updates.
+
+====================================
+B) WEB APP DEVELOPMENT SERVICE
+
+If client purchased web app:
+
+Admin can update:
+
+- Current Development Stage
+- Modules Completed
+- Pending Features
+- Progress %
+- Testing Status
+- Launch Date
+
+Client can see full project progress.
+
+====================================
+C) DIGITAL MARKETING SERVICE
+
+If client purchased marketing:
+
+Admin can update monthly:
+
+- Platforms Active
+  (Instagram / Facebook / YouTube / Google / LinkedIn)
+
+- Selected Plan
+  (Basic / Growth / Premium)
+
+- Monthly Target:
+  - Videos Count
+  - Posts Count
+  - Reels Count
+  - Stories Count
+
+- Current Uploaded Count
+
+- Followers Gained
+
+- Engagement Growth
+
+- Leads Generated
+
+- Ad Spend (optional)
+
+- Monthly Summary Notes
+
+Client sees real monthly report dashboard.
+
+====================================
+D) SEO / BLOG SERVICE
+
+If client purchased SEO:
+
+Admin updates:
+
+- Blogs posted this month
+- Keywords ranked
+- Traffic growth
+- Backlinks added
+- Current SEO score
+
+====================================
+ADMIN CONTROL FEATURES
+====================================
+
+Admin can:
+
+- Add client
+- Edit client
+- Activate/deactivate dashboard
+- Change client password
+- Add services
+- Remove services
+- Update progress
+- Upload files
+- Add reports
+- Add notes
+- Show upsell offers
+
+====================================
+UPSELL / SALES SYSTEM
+====================================
+
+Inside client dashboard show:
+
+Recommended for Your Growth:
+- Google Ads
+- Social Media Management
+- SEO Plan
+- WhatsApp Automation
+- CRM System
+- Website Upgrade
+- Branding Package
+
+With “Request Now” button.
+
+====================================
+DESIGN REQUIREMENTS
+====================================
+
+- Premium animations
+- Fast loading
+- Beautiful cards
+- Progress bars
+- Mobile first responsive
+- Professional fonts
+- Dashboard feel like expensive SaaS
+
+====================================
+TECH REQUIREMENTS
+====================================
+
+Use modern scalable architecture.
+Use secure database.
+Use role-based auth for admins.
+Password-based auth for clients.
+Realtime updates preferred.
+
+====================================
+IMPORTANT
+====================================
+
+Use my current Pixocraft Manager as base and upgrade it instead of rebuilding from scratch.
+
+Keep existing:
+- Profit tracking
+- Expense tracking
+- Service records
+- Client records
+
+Add all new dashboard modules professionally.
+
+Make it production-ready and scalable.

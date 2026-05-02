@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/hooks/use-auth";
+import { ClientAuthProvider } from "@/hooks/use-client-auth";
 import { ThemeProvider } from "@/components/theme-provider";
 import NotFound from "@/pages/not-found";
 import { Layout } from "@/components/layout";
@@ -17,8 +18,10 @@ import Transactions from "@/pages/transactions";
 import Reports from "@/pages/reports";
 import Settings from "@/pages/settings";
 import MonthlyServices from "@/pages/monthly-services";
+import PortalLogin from "@/pages/portal-login";
+import PortalDashboard from "@/pages/portal-dashboard";
 
-function AppRoutes() {
+function AdminRoutes() {
   const { isLoggedIn, isChecking } = useAuth();
 
   if (isChecking) {
@@ -70,11 +73,25 @@ function App() {
     <ThemeProvider defaultTheme="light" storageKey="pixocraft-theme-v2">
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
-          <AuthProvider>
-            <WouterRouter>
-              <AppRoutes />
-            </WouterRouter>
-          </AuthProvider>
+          <WouterRouter>
+            <Switch>
+              <Route path="/portal">
+                <ClientAuthProvider>
+                  <PortalLogin />
+                </ClientAuthProvider>
+              </Route>
+              <Route path="/portal/dashboard">
+                <ClientAuthProvider>
+                  <PortalDashboard />
+                </ClientAuthProvider>
+              </Route>
+              <Route>
+                <AuthProvider>
+                  <AdminRoutes />
+                </AuthProvider>
+              </Route>
+            </Switch>
+          </WouterRouter>
           <Toaster richColors position="top-right" />
         </TooltipProvider>
       </QueryClientProvider>
