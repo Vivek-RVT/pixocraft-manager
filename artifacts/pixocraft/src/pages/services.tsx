@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Plus, MoreHorizontal, Pencil, Trash2, Download, Star, Globe, Megaphone } from "lucide-react";
+import { Plus, MoreHorizontal, Pencil, Trash2, Download, Star, Globe, Megaphone, RefreshCw } from "lucide-react";
 import {
   useListServices,
   getListServicesQueryKey,
@@ -17,7 +17,7 @@ import {
 } from "@workspace/api-client-react";
 import {
   DateRangeFilter,
-  getDefaultDateFilter,
+  getAllTimeDateFilter,
   isInDateRange,
   type DateFilter,
 } from "@/components/date-range-filter";
@@ -115,10 +115,22 @@ export default function Services() {
   const [customerFilter, setCustomerFilter] = useState<string>("all");
   const [paymentFilter, setPaymentFilter] = useState<string>("all");
   const [typeFilter, setTypeFilter] = useState<string>("all");
-  const [dateFilter, setDateFilter] = useState<DateFilter>(getDefaultDateFilter());
+  const [dateFilter, setDateFilter] = useState<DateFilter>(getAllTimeDateFilter());
 
   const { data: allServices, isLoading } = useListServices(undefined, {
     query: { queryKey: getListServicesQueryKey() },
+  });
+
+  const apiFetch = (path: string) =>
+    fetch(path).then((r) => (r.ok ? r.json() : Promise.reject()));
+
+  const { data: monthlyWebsite = [] } = useQuery<any[]>({
+    queryKey: ["monthly-website"],
+    queryFn: () => apiFetch("/api/monthly-website"),
+  });
+  const { data: monthlyDigital = [] } = useQuery<any[]>({
+    queryKey: ["monthly-digital"],
+    queryFn: () => apiFetch("/api/monthly-digital"),
   });
 
   const services = useMemo(() => {
@@ -322,6 +334,76 @@ export default function Services() {
                   ))}
             </TableBody>
           </Table>
+        </div>
+      )}
+
+      {(monthlyWebsite.length > 0 || monthlyDigital.length > 0) && (
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <RefreshCw className="w-4 h-4 text-muted-foreground" />
+            <h2 className="text-base font-semibold">Monthly Retainers</h2>
+            <Badge variant="secondary">{monthlyWebsite.length + monthlyDigital.length}</Badge>
+          </div>
+          <div className="rounded-md border bg-card overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Service</TableHead>
+                  <TableHead className="hidden md:table-cell">Customer</TableHead>
+                  <TableHead className="text-right">Monthly charge</TableHead>
+                  <TableHead className="text-right hidden lg:table-cell">Total collected</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="hidden md:table-cell">Start date</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {[
+                  ...monthlyWebsite.map((s: any) => ({ ...s, kind: "web" as const })),
+                  ...monthlyDigital.map((s: any) => ({ ...s, kind: "digital" as const })),
+                ].map((s) => {
+                  const totalCollected = (s.completions ?? []).reduce(
+                    (sum: number, c: any) => sum + Number(c.paidAmount ?? 0),
+                    0,
+                  );
+                  return (
+                    <TableRow key={`${s.kind}-${s.id}`}>
+                      <TableCell className="font-medium">
+                        <div className="flex items-center gap-1.5">
+                          {s.kind === "web"
+                            ? <Globe className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                            : <Megaphone className="w-3.5 h-3.5 text-purple-500 shrink-0" />}
+                          <span>{s.websiteName ?? s.serviceName}</span>
+                        </div>
+                        <div className="text-xs text-muted-foreground md:hidden">{s.customerName}</div>
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell">{s.customerName}</TableCell>
+                      <TableCell className="text-right tabular-nums">{formatCurrency(Number(s.monthlyCharge))}</TableCell>
+                      <TableCell className="text-right tabular-nums hidden lg:table-cell text-emerald-600 dark:text-emerald-400">
+                        {formatCurrency(totalCollected)}
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant="outline"
+                          className={
+                            s.status === "active"
+                              ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
+                              : s.status === "paused"
+                                ? "bg-amber-500/10 text-amber-600 border-amber-500/20"
+                                : "bg-rose-500/10 text-rose-600 border-rose-500/20"
+                          }
+                        >
+                          {s.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell text-sm text-muted-foreground">
+                        {s.startDate ? formatDate(s.startDate) : "—"}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
         </div>
       )}
 

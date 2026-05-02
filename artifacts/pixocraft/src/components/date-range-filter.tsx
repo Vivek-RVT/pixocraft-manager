@@ -11,7 +11,7 @@ import { Calendar } from "@/components/ui/calendar";
 import type { DateRange } from "react-day-picker";
 import { cn } from "@/lib/utils";
 
-export type DateFilterPreset = "this_month" | "last_2_months" | "last_3_months" | "custom";
+export type DateFilterPreset = "all_time" | "this_month" | "last_2_months" | "last_3_months" | "custom";
 
 export interface DateFilter {
   preset: DateFilterPreset;
@@ -19,9 +19,14 @@ export interface DateFilter {
   to: Date;
 }
 
+const ALL_TIME_FROM = new Date(2000, 0, 1);
+const ALL_TIME_TO = new Date(2099, 11, 31);
+
 function getPresetRange(preset: DateFilterPreset, customFrom?: Date, customTo?: Date): { from: Date; to: Date } {
   const now = new Date();
   switch (preset) {
+    case "all_time":
+      return { from: ALL_TIME_FROM, to: ALL_TIME_TO };
     case "this_month":
       return { from: startOfMonth(now), to: endOfMonth(now) };
     case "last_2_months":
@@ -41,6 +46,10 @@ export function getDefaultDateFilter(): DateFilter {
   return { preset: "this_month", ...range };
 }
 
+export function getAllTimeDateFilter(): DateFilter {
+  return { preset: "all_time", from: ALL_TIME_FROM, to: ALL_TIME_TO };
+}
+
 interface Props {
   value: DateFilter;
   onChange: (filter: DateFilter) => void;
@@ -48,6 +57,7 @@ interface Props {
 }
 
 const PRESETS: { label: string; value: DateFilterPreset }[] = [
+  { label: "All time", value: "all_time" },
   { label: "This month", value: "this_month" },
   { label: "Last 2 months", value: "last_2_months" },
   { label: "Last 3 months", value: "last_3_months" },

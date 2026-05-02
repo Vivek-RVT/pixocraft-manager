@@ -134,30 +134,34 @@ function MonthGrid({
   serviceId,
   endpoint,
   monthlyCharge,
+  monthlyCost,
 }: {
   completions: MonthlyCompletion[];
   year: number;
   serviceId: number;
   endpoint: "monthly-website" | "monthly-digital";
   monthlyCharge: number;
+  monthlyCost: number;
 }) {
   const qc = useQueryClient();
+
+  const [pendingMonth, setPendingMonth] = useState<number | null>(null);
+  const [amountCharged, setAmountCharged] = useState("");
+  const [costPrice, setCostPrice] = useState("");
+
   const toggleMutation = useMutation({
     mutationFn: async ({
       month,
       completed,
+      paidAmount,
     }: {
       month: number;
       completed: boolean;
+      paidAmount: number;
     }) =>
       apiFetch(`/${endpoint}/${serviceId}/completion`, {
         method: "POST",
-        body: JSON.stringify({
-          year,
-          month,
-          completed,
-          paidAmount: completed ? monthlyCharge : 0,
-        }),
+        body: JSON.stringify({ year, month, completed, paidAmount }),
       }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: [endpoint] });
@@ -173,41 +177,118 @@ function MonthGrid({
     return map;
   }, [completions, year]);
 
+  let maxAllowedMonth = currentMonth + 1;
+  let maxAllowedYear = currentYear;
+  if (maxAllowedMonth > 12) { maxAllowedMonth = 1; maxAllowedYear = currentYear + 1; }
+
+  const handleMonthClick = (monthNum: number, done: boolean) => {
+    if (done) {
+      toggleMutation.mutate({ month: monthNum, completed: false, paidAmount: 0 });
+    } else {
+      setAmountCharged(String(monthlyCharge));
+      setCostPrice(String(monthlyCost));
+      setPendingMonth(monthNum);
+    }
+  };
+
+  const confirmCompletion = () => {
+    if (pendingMonth === null) return;
+    toggleMutation.mutate({
+      month: pendingMonth,
+      completed: true,
+      paidAmount: Number(amountCharged) || monthlyCharge,
+    });
+    setPendingMonth(null);
+  };
+
   return (
-    <div className="grid grid-cols-6 gap-1.5 mt-2">
-      {MONTHS.map((m, i) => {
-        const monthNum = i + 1;
-        const comp = completionMap.get(monthNum);
-        const done = comp?.completed ?? false;
-        const isFuture =
-          year > currentYear ||
-          (year === currentYear && monthNum > currentMonth);
-        return (
-          <button
-            key={m}
-            disabled={isFuture || toggleMutation.isPending}
-            onClick={() =>
-              toggleMutation.mutate({ month: monthNum, completed: !done })
-            }
-            className={cn(
-              "flex flex-col items-center justify-center rounded-md border py-1.5 text-xs font-medium transition-colors gap-0.5",
-              isFuture
-                ? "opacity-30 cursor-not-allowed border-dashed"
-                : done
-                  ? "bg-emerald-50 border-emerald-400 text-emerald-700 hover:bg-emerald-100"
-                  : "hover:bg-accent cursor-pointer",
-            )}
-          >
-            <span>{m}</span>
-            {done ? (
-              <CheckCircle2 className="w-3 h-3 text-emerald-500" />
-            ) : (
-              <Circle className="w-3 h-3 text-muted-foreground/40" />
-            )}
-          </button>
-        );
-      })}
-    </div>
+    <>
+      <div className="grid grid-cols-6 gap-1.5 mt-2">
+        {MONTHS.map((m, i) => {
+          const monthNum = i + 1;
+          const comp = completionMap.get(monthNum);
+          const done = comp?.completed ?? false;
+          const isFuture =
+            year > maxAllowedYear ||
+            (year === maxAllowedYear && monthNum > maxAllowedMonth);
+          const isNextMonth =
+            !done && !isFuture &&
+            ((year === currentYear && monthNum === currentMonth + 1) ||
+              (year === currentYear + 1 && currentMonth === 12 && monthNum === 1));
+          return (
+            <button
+              key={m}
+              disabled={isFuture || toggleMutation.isPending}
+              onClick={() => handleMonthClick(monthNum, done)}
+              className={cn(
+                "flex flex-col items-center justify-center rounded-md border py-1.5 text-xs font-medium transition-colors gap-0.5",
+                isFuture
+                  ? "opacity-20 cursor-not-allowed border-dashed"
+                  : done
+                    ? "bg-emerald-50 border-emerald-400 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-400"
+                    : isNextMonth
+                      ? "border-blue-400 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/40 cursor-pointer"
+                      : "hover:bg-accent cursor-pointer",
+              )}
+            >
+              <span>{m}</span>
+              {done ? (
+                <CheckCircle2 className="w-3 h-3 text-emerald-500" />
+              ) : isNextMonth ? (
+                <Circle className="w-3 h-3 text-blue-400" />
+              ) : (
+                <Circle className="w-3 h-3 text-muted-foreground/40" />
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      <Dialog open={pendingMonth !== null} onOpenChange={(o) => !o && setPendingMonth(null)}>
+        <DialogContent className="sm:max-w-[360px]">
+          <DialogHeader>
+            <DialogTitle>Mark {pendingMonth ? MONTHS[pendingMonth - 1] : ""} as done</DialogTitle>
+            <DialogDescription>
+              Confirm the amounts for this month — prices can differ from the default.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-1">
+            <div className="space-y-2">
+              <Label>Amount charged to customer (₹)</Label>
+              <Input
+                type="number"
+                inputMode="decimal"
+                value={amountCharged}
+                onChange={(e) => setAmountCharged(e.target.value)}
+                placeholder={String(monthlyCharge)}
+              />
+              <p className="text-xs text-muted-foreground">Default rate: ₹{monthlyCharge.toLocaleString()}</p>
+            </div>
+            <div className="space-y-2">
+              <Label>Your cost this month (₹)</Label>
+              <Input
+                type="number"
+                inputMode="decimal"
+                value={costPrice}
+                onChange={(e) => setCostPrice(e.target.value)}
+                placeholder={String(monthlyCost)}
+              />
+              <p className="text-xs text-muted-foreground">
+                Profit: ₹{(
+                  (Number(amountCharged) || monthlyCharge) - (Number(costPrice) || monthlyCost)
+                ).toLocaleString()}
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setPendingMonth(null)}>Cancel</Button>
+            <Button onClick={confirmCompletion} disabled={toggleMutation.isPending}>
+              {toggleMutation.isPending ? "Saving..." : "Confirm"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
@@ -672,6 +753,7 @@ function WebsiteServiceCard({
             serviceId={service.id}
             endpoint="monthly-website"
             monthlyCharge={service.monthlyCharge}
+            monthlyCost={service.monthlyCost}
           />
         </div>
       )}
@@ -756,6 +838,7 @@ function DigitalServiceCard({
             serviceId={service.id}
             endpoint="monthly-digital"
             monthlyCharge={service.monthlyCharge}
+            monthlyCost={service.monthlyCost}
           />
         </div>
       )}
