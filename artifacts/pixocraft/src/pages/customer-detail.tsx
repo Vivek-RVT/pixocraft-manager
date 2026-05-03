@@ -203,6 +203,8 @@ type ParsedReport = {
   keywordsRanked: string;
   trafficGrowth: string;
   impressionGrowth: string;
+  clicks: string;
+  impressions: string;
   notes: string;
 };
 
@@ -241,25 +243,85 @@ function MiniMonthGrid({ completions }: { completions: MonthlyCompletion[] }) {
 
 function extractPerformanceReport(raw: string): ParsedReport {
   const text = raw.replace(/\r/g, "\n");
-  const yearMatch = text.match(/\b(20\d{2})\b/);
-  const monthNames = ["january","february","march","april","may","june","july","august","september","october","november","december"];
   const lower = text.toLowerCase();
-  const monthIndex = monthNames.findIndex((m) => lower.includes(m));
+  const yearMatch = text.match(/\b(20\d{2})\b/);
+  const dateMatch = text.match(/\b(\d{1,2})\/(\d{1,2})\/(20\d{2})\b/);
+  const monthNames = ["january","february","march","april","may","june","july","august","september","october","november","december"];
+  const monthIndex = dateMatch ? Number(dateMatch[2]) - 1 : monthNames.findIndex((m) => lower.includes(m));
   const blogsMatch = text.match(/blogs?\s*posted[^0-9]*(\d+)/i) ?? text.match(/blogs?\s*[:\-]?\s*(\d+)/i);
-  const clicksMatch = text.match(/clicks?\s*[:\-]?\s*(\d+)/i);
-  const impressionsMatch = text.match(/impressions?\s*[:\-]?\s*(\d+)/i);
-  const trafficGrowthMatch = text.match(/traffic\s*growth[^+\-0-9]*([+\-]?\d+(?:\.\d+)?%?)/i);
+  const clicksMatch = text.match(/^\s*clicks\s*$/im) ? text.match(/\n\s*clicks\s*\n\s*(\d+)/im) : null;
+  const impressionsMatch = text.match(/^\s*impressions\s*$/im) ? text.match(/\n\s*impressions\s*\n\s*(\d+)/im) : null;
+  const totalClicksMatch = text.match(/total clicks[^0-9]*(\d+)/i) ?? clicksMatch;
+  const totalImpressionsMatch = text.match(/total impressions[^0-9]*(\d+)/i) ?? impressionsMatch;
+  const trafficGrowthMatch = text.match(/traffic\s*growth[^+\-0-9]*([+\-]?\d+(?:\.\d+)?%?)/i) ?? text.match(/traffic[^+\-0-9]*([+\-]?\d+(?:\.\d+)?%?)/i);
   const impressionGrowthMatch = text.match(/impression\s*growth[^+\-0-9]*([+\-]?\d+(?:\.\d+)?%?)/i);
+  const queryRows = [...text.matchAll(/^([^\n]+?)\s+(\d+)\s+(\d+)$/gim)];
+  const topQueryRows = queryRows.filter(([, label]) => label.trim().length > 0 && !["Clicks", "Impressions", "Rows per page:"].includes(label.trim()));
+  const queryClicks = topQueryRows.reduce((sum, match) => sum + Number(match[2] ?? 0), 0);
+  const queryImpressions = topQueryRows.reduce((sum, match) => sum + Number(match[3] ?? 0), 0);
+  const clicksCount = totalClicksMatch?.[1] ?? String(queryClicks);
+  const impressionsCount = totalImpressionsMatch?.[1] ?? String(queryImpressions);
+  const ctrMatch = text.match(/average ctr[^0-9]*([0-9.]+%)/i);
+  const positionMatch = text.match(/average position[^0-9]*([0-9.]+)/i);
+  const growthLine = [clicksCount !== "0" ? `Clicks ${clicksCount}` : "", impressionsCount !== "0" ? `Impressions ${impressionsCount}` : "", ctrMatch?.[1] ? `CTR ${ctrMatch[1]}` : "", positionMatch?.[1] ? `Pos ${positionMatch[1]}` : ""].filter(Boolean).join(" • ");
 
   return {
     year: yearMatch?.[1] ?? String(currentYear),
     month: monthIndex >= 0 ? String(monthIndex + 1) : String(currentMonth),
     blogsPosted: blogsMatch?.[1] ?? "0",
-    keywordsRanked: "0",
-    trafficGrowth: trafficGrowthMatch?.[1] ?? (clicksMatch?.[1] ? `Clicks ${clicksMatch[1]}` : ""),
-    impressionGrowth: impressionGrowthMatch?.[1] ?? (impressionsMatch?.[1] ? `Impressions ${impressionsMatch[1]}` : ""),
+    keywordsRanked: String(topQueryRows.length || 0),
+    trafficGrowth: trafficGrowthMatch?.[1] ?? growthLine,
+    impressionGrowth: impressionGrowthMatch?.[1] ?? growthLine,
+    clicks: String(clicksCount),
+    impressions: String(impressionsCount),
     notes: raw.trim(),
   };
+}
+
+function ServiceDetailCard({ project }: { project: ServiceProject }) {
+  const stageOrder = STAGES.indexOf(project.stage as typeof STAGES[number]);
+  const progress = project.progress > 0 ? project.progress : (stageOrder >= 0 ? Math.round(((stageOrder + 1) / STAGES.length) * 100) : 0);
+  return (
+    <div className="rounded-2xl border bg-white p-4 shadow-sm space-y-3">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <div className="font-semibold text-gray-900">{project.projectName}</div>
+          <div className="text-xs text-gray-500 capitalize">{project.projectType === "webapp" ? "Web App" : "Website"}</div>
+        </div>
+        <Badge variant="outline" className={cn("text-xs text-white border-transparent", STAGE_COLORS[project.stage])}>
+          {STAGE_LABELS[project.stage] ?? project.stage}
+        </Badge>
+      </div>
+      <div className="grid grid-cols-2 gap-2 text-xs">
+        <div className="rounded-xl bg-gray-50 p-3">
+          <div className="text-gray-500">Progress</div>
+          <div className="font-semibold text-gray-900">{progress}%</div>
+        </div>
+        <div className="rounded-xl bg-gray-50 p-3">
+          <div className="text-gray-500">Expected delivery</div>
+          <div className="font-semibold text-gray-900">{project.expectedDelivery ? formatDate(project.expectedDelivery) : "—"}</div>
+        </div>
+        <div className="rounded-xl bg-gray-50 p-3">
+          <div className="text-gray-500">Live URL</div>
+          <div className="font-semibold text-blue-600 truncate">{project.liveUrl || "—"}</div>
+        </div>
+        <div className="rounded-xl bg-gray-50 p-3">
+          <div className="text-gray-500">Stage</div>
+          <div className="font-semibold text-gray-900 capitalize">{project.stage.replace("-", " ")}</div>
+        </div>
+      </div>
+      <div className="grid gap-2 text-xs">
+        <div className="rounded-xl border bg-muted/20 p-3">
+          <div className="text-gray-500 mb-1">Completed</div>
+          <div className="text-gray-900 whitespace-pre-wrap">{project.completedNotes || "—"}</div>
+        </div>
+        <div className="rounded-xl border bg-muted/20 p-3">
+          <div className="text-gray-500 mb-1">Pending</div>
+          <div className="text-gray-900 whitespace-pre-wrap">{project.pendingNotes || "—"}</div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 const paymentBadge = (status: string) => {
@@ -755,11 +817,9 @@ export default function CustomerDetail() {
             <div className="flex items-center gap-2 text-muted-foreground">
               <CalendarDays className="w-4 h-4" />
               <span>
-                First contact:{" "}
+                Created:{" "}
                 <span className="text-foreground font-medium">
-                  {customer.contactedAt
-                    ? formatDate(customer.contactedAt)
-                    : formatDate(customer.createdAt)}
+                  {formatDate(customer.createdAt)}
                 </span>
               </span>
             </div>
