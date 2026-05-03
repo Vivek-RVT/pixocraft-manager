@@ -80,21 +80,21 @@ const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov
 const currentYear = getYear(new Date());
 const currentMonth = getMonth(new Date()) + 1;
 
-const STAGES = ["planning", "ui-design", "development", "testing", "seo", "completed"] as const;
+const STAGES = ["pending", "started", "mid-start", "mid-complete", "final-review", "completed"] as const;
 const STAGE_LABELS: Record<string, string> = {
-  planning: "Planning",
-  "ui-design": "UI Design",
-  development: "Development",
-  testing: "Testing",
-  seo: "SEO",
+  pending: "Pending",
+  started: "Started",
+  "mid-start": "Mid Start",
+  "mid-complete": "Mid Complete",
+  "final-review": "Final Review",
   completed: "Completed",
 };
 const STAGE_COLORS: Record<string, string> = {
-  planning: "bg-slate-500",
-  "ui-design": "bg-purple-500",
-  development: "bg-blue-500",
-  testing: "bg-amber-500",
-  seo: "bg-green-500",
+  pending: "bg-slate-500",
+  started: "bg-amber-500",
+  "mid-start": "bg-orange-500",
+  "mid-complete": "bg-blue-500",
+  "final-review": "bg-violet-500",
   completed: "bg-emerald-600",
 };
 
@@ -635,18 +635,27 @@ export default function CustomerDetail() {
   }, [digitalServices, services]);
   const digitalStages = [
     { value: "paused", label: "Pending" },
-    { value: "active", label: "In progress" },
+    { value: "active", label: "Started" },
+    { value: "mid-start", label: "Mid Start" },
+    { value: "mid-complete", label: "Mid Complete" },
+    { value: "final-review", label: "Final Review" },
     { value: "delivered", label: "Delivered" },
   ] as const;
 
   function getDigitalStageIndex(status: string) {
-    if (status === "delivered") return 2;
+    if (status === "delivered") return 5;
+    if (status === "final-review") return 4;
+    if (status === "mid-complete") return 3;
+    if (status === "mid-start") return 2;
     if (status === "active") return 1;
     return 0;
   }
 
   function getDigitalStageStatus(status: string) {
     if (status === "delivered") return "delivered";
+    if (status === "final-review") return "final-review";
+    if (status === "mid-complete") return "mid-complete";
+    if (status === "mid-start") return "mid-start";
     if (status === "active") return "active";
     return "paused";
   }
@@ -1153,8 +1162,8 @@ export default function CustomerDetail() {
                             {ds.billingType === "one_time" ? (ds.status === "paused" ? "pending" : ds.status) : ds.status}
                           </Badge>
                           {!isEditing && (
-                            <Button size="icon" variant="ghost" className="h-7 w-7 shrink-0" onClick={() => openDsEdit(ds)}>
-                              <Pencil className="w-3.5 h-3.5" />
+                            <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => openDsEdit(ds)}>
+                              Update
                             </Button>
                           )}
                         </div>
@@ -1210,16 +1219,19 @@ export default function CustomerDetail() {
                               <span>{formatDate(ds.startDate)}</span>
                             </div>
                             <div className="mt-2 flex items-center gap-2">
-                              <div className={cn("h-2.5 w-2.5 rounded-full", ds.status === "active" ? "bg-emerald-500" : ds.status === "paused" ? "bg-amber-500" : ds.status === "delivered" ? "bg-blue-500" : "bg-red-500")} />
-                              <div className="text-sm font-medium capitalize">{ds.billingType === "monthly" ? (ds.status === "active" ? "Started / in progress" : ds.status === "paused" ? "Paused" : ds.status === "cancelled" ? "Cancelled" : "Delivered") : (ds.status === "delivered" ? "Project delivered" : ds.status === "active" ? "In progress" : "Pending")}</div>
+                              <div className={cn("h-2.5 w-2.5 rounded-full", STAGE_COLORS[getDigitalStageStatus(ds.status)] ?? "bg-slate-500")} />
+                              <div className="text-sm font-medium capitalize">{STAGE_LABELS[getDigitalStageStatus(ds.status)] ?? "Pending"}</div>
                             </div>
                             <div className="mt-2 h-2 rounded-full bg-muted overflow-hidden">
                               <div
                                 className={cn(
                                   "h-full rounded-full transition-all",
-                                  getDigitalStageIndex(ds.status) === 0 && "w-1/3 bg-amber-500",
-                                  getDigitalStageIndex(ds.status) === 1 && "w-2/3 bg-emerald-500",
-                                  getDigitalStageIndex(ds.status) === 2 && "w-full bg-blue-500",
+                                  getDigitalStageIndex(ds.status) === 0 && "w-[16.66%] bg-slate-500",
+                                  getDigitalStageIndex(ds.status) === 1 && "w-[33.33%] bg-amber-500",
+                                  getDigitalStageIndex(ds.status) === 2 && "w-[50%] bg-orange-500",
+                                  getDigitalStageIndex(ds.status) === 3 && "w-[66.66%] bg-blue-500",
+                                  getDigitalStageIndex(ds.status) === 4 && "w-[83.33%] bg-violet-500",
+                                  getDigitalStageIndex(ds.status) === 5 && "w-full bg-emerald-500",
                                 )}
                               />
                             </div>
