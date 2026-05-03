@@ -208,6 +208,8 @@ type ParsedReport = {
   notes: string;
 };
 
+type CustomerTab = "digital" | "web" | "monthly";
+
 function MiniMonthGrid({ completions }: { completions: MonthlyCompletion[] }) {
   const map = new Map<number, boolean>();
   for (const c of completions) {
@@ -321,6 +323,31 @@ function ServiceDetailCard({ project }: { project: ServiceProject }) {
         </div>
       </div>
     </div>
+  );
+}
+
+function TabButton({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "rounded-full px-4 py-2 text-sm font-medium transition",
+        active
+          ? "bg-primary text-primary-foreground shadow-sm"
+          : "bg-muted text-muted-foreground hover:text-foreground",
+      )}
+    >
+      {children}
+    </button>
   );
 }
 
