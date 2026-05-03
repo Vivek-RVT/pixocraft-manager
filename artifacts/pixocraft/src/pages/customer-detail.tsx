@@ -616,7 +616,10 @@ export default function CustomerDetail() {
       completions: ds.completions ?? [],
     }));
     const oneTime = (services ?? [])
-      .filter((s: any) => s.serviceType === "digital" || s.serviceName?.toLowerCase().includes("digital") || s.deliveryStatus)
+      .filter((s: any) => {
+        const name = String(s.serviceName ?? "").toLowerCase();
+        return s.serviceType === "digital" || name.includes("digital") || name.includes("web") || s.deliveryStatus != null;
+      })
       .map((s) => ({
         id: `one-time-${s.id}`,
         rawId: s.id as number,
