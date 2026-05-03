@@ -507,6 +507,7 @@ export function ServiceFormDialog({
           id: service.id,
           data: {
             serviceType: row.serviceType,
+            billingType: row.billingType,
             serviceName: row.serviceName.trim(),
             priceSold: Number(row.priceSold),
             costPrice: Number(row.costPrice),
@@ -525,6 +526,7 @@ export function ServiceFormDialog({
             data: {
               customerId: Number(values.customerId),
               serviceType: row.serviceType,
+              billingType: row.billingType,
               serviceName: row.serviceName.trim(),
               priceSold: Number(row.priceSold),
               costPrice: Number(row.costPrice),

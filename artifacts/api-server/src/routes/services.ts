@@ -81,6 +81,7 @@ router.post("/services", async (req, res): Promise<void> => {
     .values({
       customerId: data.customerId,
       serviceType: data.serviceType ?? "other",
+      billingType: data.billingType ?? "one_time",
       serviceName: data.serviceName,
       priceSold: String(data.priceSold),
       costPrice: String(data.costPrice),
@@ -115,6 +116,8 @@ router.patch("/services/:id", async (req, res): Promise<void> => {
   const updates: Record<string, unknown> = {};
   if (body.data.serviceType !== undefined)
     updates.serviceType = body.data.serviceType;
+  if (body.data.billingType !== undefined)
+    updates.billingType = body.data.billingType;
   if (body.data.serviceName !== undefined)
     updates.serviceName = body.data.serviceName;
   if (body.data.priceSold !== undefined)
