@@ -1003,8 +1003,16 @@ export default function CustomerDetail() {
       {customerTab === "digital" && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-base font-semibold">Digital services</CardTitle>
-            <CardDescription>Digital marketing subscriptions and monthly performance</CardDescription>
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <CardTitle className="text-base font-semibold">Digital services</CardTitle>
+                <CardDescription>Digital marketing subscriptions and monthly performance</CardDescription>
+              </div>
+              <Button size="sm" onClick={() => setServiceOpen(true)} className="shrink-0">
+                <Plus className="sm:mr-2 h-4 w-4" />
+                <span className="hidden sm:inline">Add service</span>
+              </Button>
+            </div>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
@@ -1039,6 +1047,19 @@ export default function CustomerDetail() {
                       <Badge variant="outline" className={cn("text-xs capitalize", ds.status === "active" && "border-emerald-400 text-emerald-600", ds.status === "paused" && "border-amber-400 text-amber-600", ds.status === "cancelled" && "border-red-400 text-red-500")}>
                         {ds.status}
                       </Badge>
+                    </div>
+                    <div className="rounded-lg border bg-white p-3">
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <span>Monthly plan</span>
+                        <span>{formatDate(ds.startDate)}</span>
+                      </div>
+                      <div className="mt-2 flex items-center gap-2">
+                        <div className={cn("h-2.5 w-2.5 rounded-full", ds.status === "active" ? "bg-emerald-500" : ds.status === "paused" ? "bg-amber-500" : "bg-red-500")} />
+                        <div className="text-sm font-medium capitalize">{ds.status === "active" ? "Started / in progress" : ds.status === "paused" ? "Paused" : "Delivered"}</div>
+                      </div>
+                      <div className="mt-2 h-2 rounded-full bg-muted overflow-hidden">
+                        <div className={cn("h-full rounded-full", ds.status === "active" ? "w-2/3 bg-emerald-500" : ds.status === "paused" ? "w-1/2 bg-amber-500" : "w-full bg-blue-500")} />
+                      </div>
                     </div>
                     <div className="grid grid-cols-2 gap-2 text-xs">
                       <div className="rounded-lg bg-white p-3 border">
