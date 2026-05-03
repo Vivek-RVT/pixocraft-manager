@@ -113,6 +113,12 @@ router.get("/client/dashboard", requireClientAuth, async (req: ClientRequest, re
     completions: webCompletions.filter((c) => c.serviceId === ws.id),
   }));
 
+  const webProjects = services.filter((service) => {
+    const type = (service.serviceType ?? "").toLowerCase();
+    const name = (service.serviceName ?? "").toLowerCase();
+    return type.includes("website") || type.includes("web") || name.includes("website") || name.includes("web");
+  });
+
   const digitalServicesWithCompletions = digitalServices.map((ds) => ({
     ...ds,
     completions: digitalCompletions.filter((c) => c.serviceId === ds.id),
@@ -124,6 +130,7 @@ router.get("/client/dashboard", requireClientAuth, async (req: ClientRequest, re
     projects,
     dmReports,
     seoReports,
+    webProjects,
     webServices: webServicesWithCompletions,
     digitalServices: digitalServicesWithCompletions,
   });

@@ -540,7 +540,8 @@ function DigitalDetail({
 function WebTab({ data, onView }: { data: DashboardData; onView: (v: View) => void }) {
   const hasProjects = data.projects.length > 0;
   const hasWebServices = data.webServices.length > 0;
-  const hasWebProjects = data.webProjects.length > 0;
+  const webProjects = data.webProjects ?? [];
+  const hasWebProjects = webProjects.length > 0;
 
   if (!hasProjects && !hasWebServices && !hasWebProjects) {
     return (
@@ -558,7 +559,7 @@ function WebTab({ data, onView }: { data: DashboardData; onView: (v: View) => vo
         <section>
           <div className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Website Development</div>
           <div className="space-y-3">
-            {data.webProjects.map((svc) => (
+            {webProjects.map((svc) => (
               <div key={svc.id} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
