@@ -579,12 +579,12 @@ export default function CustomerDetail() {
   });
   const customer = detail?.customer;
 
-  const { data: services } = useListServices(
+  const { data: services = [] } = useListServices(
     { customerId: id },
     {
       query: {
         queryKey: getListServicesQueryKey({ customerId: id }),
-        enabled: validId,
+        enabled: false,
       },
     },
   );
