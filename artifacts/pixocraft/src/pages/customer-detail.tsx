@@ -579,6 +579,7 @@ export default function CustomerDetail() {
   const [dmForm, setDmForm] = useState<DMFormData>(blankDm);
   const [seoForm, setSeoForm] = useState<SeoFormData>(blankSeo);
 
+  const validId = Number.isFinite(id) && id > 0;
   const { data: detail, isLoading } = useGetCustomer(id, {
     query: { queryKey: getGetCustomerQueryKey(id), enabled: Number.isFinite(id) },
   });
@@ -597,13 +598,13 @@ export default function CustomerDetail() {
   const { data: webServices = [] } = useQuery<MonthlyWebService[]>({
     queryKey: ["monthly-website", id],
     queryFn: () => apiFetch(`/monthly-website?customerId=${id}`),
-    enabled: Number.isFinite(id),
+    enabled: validId,
   });
 
   const { data: digitalServices = [] } = useQuery<MonthlyDigitalService[]>({
     queryKey: ["monthly-digital", id],
     queryFn: () => apiFetch(`/monthly-digital?customerId=${id}`),
-    enabled: Number.isFinite(id),
+    enabled: validId,
   });
   const digitalServiceCards = useMemo<Array<{
     id: string;
@@ -723,13 +724,13 @@ export default function CustomerDetail() {
   const { data: portal } = useQuery<ClientPortal | null>({
     queryKey: ["portal", id],
     queryFn: () => apiFetch(`/admin/portal/${id}`),
-    enabled: Number.isFinite(id),
+    enabled: validId,
   });
 
   const { data: projects = [] } = useQuery<ServiceProject[]>({
     queryKey: ["projects", id],
     queryFn: () => apiFetch(`/admin/projects/${id}`),
-    enabled: Number.isFinite(id),
+    enabled: validId,
   });
 
   const { data: dmReports = [] } = useQuery<DMReport[]>({
@@ -954,7 +955,7 @@ export default function CustomerDetail() {
     toast.success("Report text parsed");
   };
 
-  if (isLoading) {
+  if (!validId || isLoading) {
     return (
       <div className="space-y-4">
         <Skeleton className="h-8 w-40" />
