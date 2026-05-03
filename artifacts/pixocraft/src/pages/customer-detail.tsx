@@ -618,7 +618,13 @@ export default function CustomerDetail() {
     const oneTime = (services ?? [])
       .filter((s: any) => {
         const name = String(s.serviceName ?? "").toLowerCase();
-        return s.serviceType === "digital" || name.includes("digital") || name.includes("web") || s.deliveryStatus != null;
+        return (
+          s.serviceType === "digital" ||
+          name.includes("digital") ||
+          name.includes("web") ||
+          s.deliveryStatus != null ||
+          s.paymentStatus != null
+        );
       })
       .map((s) => ({
         id: `one-time-${s.id}`,
