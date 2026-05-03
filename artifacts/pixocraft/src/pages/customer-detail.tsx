@@ -1174,8 +1174,8 @@ export default function CustomerDetail() {
                             {ds.billingType === "one_time" ? (ds.status === "paused" ? "pending" : ds.status) : ds.status}
                           </Badge>
                           {!isEditing && (
-                            <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => openDsEdit(ds)}>
-                              Update
+                            <Button size="icon" variant="ghost" className="h-7 w-7 shrink-0" onClick={() => openDsEdit(ds)}>
+                              <Pencil className="w-3.5 h-3.5" />
                             </Button>
                           )}
                         </div>
