@@ -48,6 +48,16 @@ type WebService = {
   discount: string; startDate: string; status: string; completions: Completion[];
 };
 
+type OneTimeWebProject = {
+  id: number;
+  serviceName: string;
+  serviceType: string;
+  priceSold: string;
+  paymentStatus: string;
+  deliveryStatus: string;
+  date: string;
+};
+
 type DigitalService = {
   id: number; serviceName: string; platform: string | null; monthlyCharge: string;
   startDate: string; status: string; completions: Completion[];
@@ -74,6 +84,7 @@ type OneTimeService = {
 type DashboardData = {
   customer: { id: number; name: string; businessName: string | null; phone: string | null; email: string | null };
   services: OneTimeService[];
+  webProjects: OneTimeWebProject[];
   projects: ServiceProject[];
   dmReports: DMReport[];
   seoReports: SeoReport[];
@@ -529,8 +540,9 @@ function DigitalDetail({
 function WebTab({ data, onView }: { data: DashboardData; onView: (v: View) => void }) {
   const hasProjects = data.projects.length > 0;
   const hasWebServices = data.webServices.length > 0;
+  const hasWebProjects = data.webProjects.length > 0;
 
-  if (!hasProjects && !hasWebServices) {
+  if (!hasProjects && !hasWebServices && !hasWebProjects) {
     return (
       <div className="px-4 py-12 text-center text-gray-400">
         <Globe className="w-10 h-10 mx-auto mb-3 opacity-30" />
@@ -541,6 +553,48 @@ function WebTab({ data, onView }: { data: DashboardData; onView: (v: View) => vo
 
   return (
     <div className="px-4 pb-10 space-y-6">
+
+      {hasWebProjects && (
+        <section>
+          <div className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Website Development</div>
+          <div className="space-y-3">
+            {data.webProjects.map((svc) => (
+              <div key={svc.id} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="font-bold text-gray-900 text-sm">{svc.serviceName}</div>
+                    <div className="text-xs text-gray-500 mt-1">One-time website development</div>
+                  </div>
+                  <div className="flex flex-col items-end gap-1 shrink-0">
+                    <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                      svc.deliveryStatus === "completed"
+                        ? "bg-emerald-100 text-emerald-700"
+                        : svc.deliveryStatus === "in_progress"
+                          ? "bg-blue-100 text-blue-700"
+                          : "bg-amber-100 text-amber-700"
+                    }`}>
+                      {svc.deliveryStatus === "in_progress" ? "In Progress" : svc.deliveryStatus}
+                    </span>
+                    <span className={`text-xs px-2 py-0.5 rounded-full ${
+                      svc.paymentStatus === "paid"
+                        ? "bg-green-100 text-green-700"
+                        : svc.paymentStatus === "partial"
+                          ? "bg-yellow-100 text-yellow-700"
+                          : "bg-rose-100 text-rose-700"
+                    }`}>
+                      {svc.paymentStatus}
+                    </span>
+                  </div>
+                </div>
+                <div className="mt-3 flex items-center justify-between text-xs">
+                  <span className="text-gray-500">Sold on {new Date(svc.date + "T00:00:00").toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</span>
+                  <span className="font-bold text-gray-900">{formatCurrency(Number(svc.priceSold))}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Projects */}
       {hasProjects && (
