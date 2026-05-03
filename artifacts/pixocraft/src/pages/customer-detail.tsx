@@ -739,7 +739,18 @@ export default function CustomerDetail() {
 
   const updateOneTimeService = useMutation({
     mutationFn: ({ rawId, status, notes }: { rawId: number; status: string; notes: string }) => {
-      const deliveryStatus = status === "delivered" ? "delivered" : status === "active" ? "in_progress" : "pending";
+      const deliveryStatus =
+        status === "delivered"
+          ? "delivered"
+          : status === "final-review"
+            ? "in_progress"
+            : status === "mid-complete"
+              ? "in_progress"
+              : status === "mid-start"
+                ? "in_progress"
+                : status === "active"
+                  ? "in_progress"
+                  : "pending";
       return apiFetch(`/services/${rawId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -762,10 +773,23 @@ export default function CustomerDetail() {
 
   function saveDsEdit(ds: { id: string; rawId: number; billingType: "monthly" | "one_time" }) {
     if (ds.billingType === "monthly") {
-      const monthlyStatus = dsEditStatus === "delivered" ? "active" : dsEditStatus as "active" | "paused" | "cancelled";
+      const monthlyStatus =
+        dsEditStatus === "delivered" ? "active" : (dsEditStatus as "active" | "paused" | "cancelled");
       updateMonthlyDigital.mutate({ rawId: ds.rawId, status: monthlyStatus, notes: dsEditNote });
     } else {
-      updateOneTimeService.mutate({ rawId: ds.rawId, status: dsEditStatus, notes: dsEditNote });
+      const oneTimeStatus =
+        dsEditStatus === "delivered"
+          ? "delivered"
+          : dsEditStatus === "final-review"
+            ? "final-review"
+            : dsEditStatus === "mid-complete"
+              ? "mid-complete"
+              : dsEditStatus === "mid-start"
+                ? "mid-start"
+                : dsEditStatus === "active"
+                  ? "active"
+                  : "paused";
+      updateOneTimeService.mutate({ rawId: ds.rawId, status: oneTimeStatus, notes: dsEditNote });
     }
   }
 
