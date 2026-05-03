@@ -505,7 +505,7 @@ export function ServiceFormDialog({
         await updateMutation.mutateAsync({
           id: service.id,
           data: {
-            serviceType: row.serviceType === "digital" ? "digital" : row.serviceType,
+            serviceType: row.serviceType,
             serviceName: row.serviceName.trim(),
             priceSold: Number(row.priceSold),
             costPrice: Number(row.costPrice),
@@ -523,7 +523,7 @@ export function ServiceFormDialog({
           await createMutation.mutateAsync({
             data: {
               customerId: Number(values.customerId),
-              serviceType: row.serviceType === "digital" ? "digital" : row.serviceType,
+              serviceType: row.serviceType,
               serviceName: row.serviceName.trim(),
               priceSold: Number(row.priceSold),
               costPrice: Number(row.costPrice),

@@ -607,6 +607,7 @@ export default function CustomerDetail() {
       id: `monthly-${ds.id}`,
       rawId: ds.id,
       serviceName: ds.serviceName,
+      serviceType: "digital" as const,
       status: ds.status,
       billingType: "monthly" as const,
       startDate: ds.startDate,
@@ -632,6 +633,7 @@ export default function CustomerDetail() {
         id: `one-time-${s.id}`,
         rawId: s.id as number,
         serviceName: s.serviceName,
+        serviceType: (s.serviceType === "web" ? "web" : "digital") as "web" | "digital",
         status:
           s.deliveryStatus === "delivered"
             ? "delivered"
@@ -767,15 +769,15 @@ export default function CustomerDetail() {
     onError: () => toast.error("Failed to update service"),
   });
 
-  function openDsEdit(ds: { id: string; status: string; notes: string | null; serviceName?: string; platform?: string | null }) {
+  function openDsEdit(ds: { id: string; status: string; notes: string | null; serviceName?: string; platform?: string | null; serviceType?: "web" | "digital" }) {
     setDsEditId(ds.id);
     setDsEditStatus(ds.status);
     setDsEditNote(ds.notes ?? "");
     setDsEditName(ds.serviceName ?? "");
-    setDsEditCategory(ds.platform ?? "");
+    setDsEditCategory(ds.serviceType ?? (ds.platform?.toLowerCase().includes("web") ? "web" : "digital") ?? "digital");
   }
 
-  function saveDsEdit(ds: { id: string; rawId: number; billingType: "monthly" | "one_time" }) {
+  function saveDsEdit(ds: { id: string; rawId: number; billingType: "monthly" | "one_time"; serviceType?: "web" | "digital" }) {
     if (ds.billingType === "monthly") {
       const monthlyStatus = dsEditStatus === "delivered" ? "active" : (dsEditStatus as "active" | "paused" | "cancelled");
       updateMonthlyDigital.mutate({ rawId: ds.rawId, status: monthlyStatus, notes: dsEditNote });
@@ -984,15 +986,9 @@ export default function CustomerDetail() {
             </div>
           )}
           <div className="flex flex-wrap gap-2 border-t pt-6">
-            <TabButton active={customerTab === "digital"} onClick={() => setCustomerTab("digital")}>
-              Digital
-            </TabButton>
-            <TabButton active={customerTab === "web"} onClick={() => setCustomerTab("web")}>
-              Web
-            </TabButton>
-            <TabButton active={customerTab === "monthly"} onClick={() => setCustomerTab("monthly")}>
-              Monthly
-            </TabButton>
+            <TabButton active={customerTab === "digital"} onClick={() => setCustomerTab("digital")}>Digital</TabButton>
+            <TabButton active={customerTab === "web"} onClick={() => setCustomerTab("web")}>Web</TabButton>
+            <TabButton active={customerTab === "monthly"} onClick={() => setCustomerTab("monthly")}>Monthly</TabButton>
           </div>
 
           {customerTab === "monthly" && (
@@ -1060,11 +1056,11 @@ export default function CustomerDetail() {
                 >
                   <Copy className="h-3.5 w-3.5" />
                 </Button>
-              <Button size="icon" variant="ghost" className="h-7 w-7 shrink-0" asChild>
-                <a href={portalLink} target="_blank" rel="noopener noreferrer">
-                  <ExternalLink className="h-3.5 w-3.5" />
-                </a>
-              </Button>
+                <Button size="icon" variant="ghost" className="h-7 w-7 shrink-0" asChild>
+                  <a href={portalLink} target="_blank" rel="noopener noreferrer">
+                    <ExternalLink className="h-3.5 w-3.5" />
+                  </a>
+                </Button>
               </div>
             )}
             <div className="flex flex-wrap gap-2">
@@ -1161,7 +1157,7 @@ export default function CustomerDetail() {
               </div>
             ) : (
               <div className="space-y-3">
-                {digitalServiceCards.map((ds) => {
+                {digitalServiceCards.filter((ds) => customerTab === "web" ? ds.serviceType === "web" : ds.serviceType === "digital").map((ds) => {
                   const isEditing = dsEditId === ds.id;
                   const isSaving = updateMonthlyDigital.isPending || updateOneTimeService.isPending;
                   return (
@@ -1169,9 +1165,7 @@ export default function CustomerDetail() {
                       <div className="flex items-center justify-between gap-2">
                         <div>
                           <div className="font-medium text-sm">{ds.serviceName}</div>
-                          <div className="text-xs text-muted-foreground">
-                            {ds.platform ? `Platform: ${ds.platform}` : "Digital marketing"}
-                          </div>
+                          <div className="text-xs text-muted-foreground">{ds.serviceType === "web" ? "Web" : "Digital"} · {ds.billingType === "monthly" ? "Monthly" : "One time"}</div>
                         </div>
                         <div className="flex items-center gap-2">
                           <Badge variant="outline" className={cn("text-xs capitalize", ds.status === "active" && "border-emerald-400 text-emerald-600", ds.status === "paused" && "border-amber-400 text-amber-600", ds.status === "cancelled" && "border-red-400 text-red-500", ds.status === "delivered" && "border-blue-400 text-blue-600")}>
@@ -1241,7 +1235,7 @@ export default function CustomerDetail() {
                               Cancel
                             </Button>
                             <Button size="sm" className="h-7 text-xs" onClick={() => saveDsEdit(ds)} disabled={isSaving}>
-                              {isSaving ? "Saving…" : "Save"}
+                              {isSaving ? "Saving…" : "Update"}
                             </Button>
                           </div>
                         </div>
@@ -1249,7 +1243,7 @@ export default function CustomerDetail() {
                         <>
                           <div className="rounded-lg border bg-white p-3">
                             <div className="flex items-center justify-between text-xs text-muted-foreground">
-                              <span>{ds.billingType === "monthly" ? "Monthly plan" : "One-time project"}</span>
+                              <span>{ds.serviceType === "web" ? "Web" : "Digital"} · {ds.billingType === "monthly" ? "Monthly" : "One-time"}</span>
                               <span>{formatDate(ds.startDate)}</span>
                             </div>
                             <div className="mt-2 flex items-center gap-2">
