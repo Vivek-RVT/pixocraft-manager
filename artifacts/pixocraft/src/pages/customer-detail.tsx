@@ -728,6 +728,7 @@ export default function CustomerDetail() {
   const BASE = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
   const portalLink = `${window.location.origin}${BASE}/portal`;
   const [reportPaste, setReportPaste] = useState("");
+  const [customerTab, setCustomerTab] = useState<CustomerTab>("digital");
   const applyParsedReport = () => {
     const parsed = extractPerformanceReport(reportPaste);
     setSeoForm((f) => ({
@@ -779,7 +780,7 @@ export default function CustomerDetail() {
       </div>
 
       <Card>
-        <CardContent className="pt-6">
+        <CardContent className="pt-6 space-y-6">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="flex items-center gap-4">
               <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary to-chart-2 text-primary-foreground flex items-center justify-center text-xl font-semibold shadow-md shadow-primary/20">
@@ -856,305 +857,269 @@ export default function CustomerDetail() {
               "{customer.notes}"
             </div>
           )}
-          <div className="mt-6 rounded-lg border bg-muted/20 p-4 space-y-3">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <div className="text-sm font-semibold">Paste performance report</div>
-                <div className="text-xs text-muted-foreground">Paste Search Console / monthly performance text and we’ll extract month, year, blogs, traffic and impressions.</div>
-              </div>
-              <Button size="sm" variant="outline" onClick={applyParsedReport}>Parse</Button>
-            </div>
-            <Textarea
-              value={reportPaste}
-              onChange={(e) => setReportPaste(e.target.value)}
-              placeholder={`Paste monthly performance text here...\n\nExample:\nApril 2026\nBlogs posted: 3\nTraffic growth: +18%\nImpressions: 1,240`}
-              className="min-h-[140px] resize-none"
-            />
+          <div className="flex flex-wrap gap-2 border-t pt-6">
+            <TabButton active={customerTab === "digital"} onClick={() => setCustomerTab("digital")}>
+              Digital
+            </TabButton>
+            <TabButton active={customerTab === "web"} onClick={() => setCustomerTab("web")}>
+              Web
+            </TabButton>
+            <TabButton active={customerTab === "monthly"} onClick={() => setCustomerTab("monthly")}>
+              Monthly
+            </TabButton>
           </div>
+
+          {customerTab === "monthly" && (
+            <div className="rounded-lg border bg-muted/20 p-4 space-y-3">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <div className="text-sm font-semibold">Paste performance report</div>
+                  <div className="text-xs text-muted-foreground">Paste Search Console / monthly performance text and we’ll extract month, year, blogs, traffic and impressions.</div>
+                </div>
+                <Button size="sm" variant="outline" onClick={applyParsedReport}>Parse</Button>
+              </div>
+              <Textarea
+                value={reportPaste}
+                onChange={(e) => setReportPaste(e.target.value)}
+                placeholder={`Paste monthly performance text here...\n\nExample:\nApril 2026\nBlogs posted: 3\nTraffic growth: +18%\nImpressions: 1,240`}
+                className="min-h-[140px] resize-none"
+              />
+            </div>
+          )}
         </CardContent>
       </Card>
 
-      {/* Client Portal Card */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <LayoutDashboard className="w-4 h-4 text-blue-600" />
-              <CardTitle className="text-base font-semibold">Client Portal</CardTitle>
+      {customerTab === "digital" && (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <LayoutDashboard className="w-4 h-4 text-blue-600" />
+                <CardTitle className="text-base font-semibold">Client Portal</CardTitle>
+              </div>
+              {portal ? (
+                <Badge
+                  variant="outline"
+                  className={cn(
+                    "text-xs",
+                    portal.isActive
+                      ? "border-emerald-400 text-emerald-600"
+                      : "border-red-400 text-red-500",
+                  )}
+                >
+                  {portal.isActive ? "Active" : "Inactive"}
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="text-xs text-muted-foreground">
+                  Not set up
+                </Badge>
+              )}
             </div>
-            {portal ? (
-              <Badge
-                variant="outline"
-                className={cn(
-                  "text-xs",
-                  portal.isActive
-                    ? "border-emerald-400 text-emerald-600"
-                    : "border-red-400 text-red-500",
-                )}
-              >
-                {portal.isActive ? "Active" : "Inactive"}
-              </Badge>
-            ) : (
-              <Badge variant="outline" className="text-xs text-muted-foreground">
-                Not set up
-              </Badge>
-            )}
-          </div>
-          <CardDescription>
-            Give {customer.name.split(" ")[0]} password-only access to their project dashboard
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {portal && portal.isActive && (
-            <div className="flex items-center gap-2 bg-muted/40 rounded-lg px-3 py-2">
-              <span className="text-xs text-muted-foreground flex-1 truncate">{portalLink}</span>
-              <Button
-                size="icon"
-                variant="ghost"
-                className="h-7 w-7 shrink-0"
-                onClick={() => {
-                  navigator.clipboard.writeText(portalLink);
-                  toast.success("Portal link copied");
-                }}
-              >
-                <Copy className="h-3.5 w-3.5" />
-              </Button>
-              <a href={portalLink} target="_blank" rel="noopener noreferrer">
-                <Button size="icon" variant="ghost" className="h-7 w-7 shrink-0">
-                  <ExternalLink className="h-3.5 w-3.5" />
+            <CardDescription>
+              Give {customer.name.split(" ")[0]} password-only access to their project dashboard
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {portal && portal.isActive && (
+              <div className="flex items-center gap-2 bg-muted/40 rounded-lg px-3 py-2">
+                <span className="text-xs text-muted-foreground flex-1 truncate">{portalLink}</span>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-7 w-7 shrink-0"
+                  onClick={() => {
+                    navigator.clipboard.writeText(portalLink);
+                    toast.success("Portal link copied");
+                  }}
+                >
+                  <Copy className="h-3.5 w-3.5" />
                 </Button>
-              </a>
-            </div>
-          )}
-          <div className="flex flex-wrap gap-2">
-            <Button
-              size="sm"
-              variant="outline"
-              className="gap-2"
-              onClick={() => { setNewPassword(""); setPwDialog(true); }}
-            >
-              <Key className="h-3.5 w-3.5" />
-              {portal ? "Change Password" : "Activate Portal"}
-            </Button>
-            {portal && (
+              <Button size="icon" variant="ghost" className="h-7 w-7 shrink-0" asChild>
+                <a href={portalLink} target="_blank" rel="noopener noreferrer">
+                  <ExternalLink className="h-3.5 w-3.5" />
+                </a>
+              </Button>
+              </div>
+            )}
+            <div className="flex flex-wrap gap-2">
               <Button
                 size="sm"
                 variant="outline"
-                className={cn("gap-2", portal.isActive ? "text-destructive hover:text-destructive" : "text-emerald-600 hover:text-emerald-600")}
-                onClick={() => togglePortal.mutate(!portal.isActive)}
-                disabled={togglePortal.isPending}
+                className="gap-2"
+                onClick={() => { setNewPassword(""); setPwDialog(true); }}
               >
-                {portal.isActive ? (
-                  <><PowerOff className="h-3.5 w-3.5" /> Deactivate</>
-                ) : (
-                  <><Power className="h-3.5 w-3.5" /> Activate</>
-                )}
+                <Key className="h-3.5 w-3.5" />
+                {portal ? "Change Password" : "Activate Portal"}
               </Button>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+              {portal && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className={cn("gap-2", portal.isActive ? "text-destructive hover:text-destructive" : "text-emerald-600 hover:text-emerald-600")}
+                  onClick={() => togglePortal.mutate(!portal.isActive)}
+                  disabled={togglePortal.isPending}
+                >
+                  {portal.isActive ? (
+                    <><PowerOff className="h-3.5 w-3.5" /> Deactivate</>
+                  ) : (
+                    <><Power className="h-3.5 w-3.5" /> Activate</>
+                  )}
+                </Button>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Project Progress */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between gap-3">
-          <div>
-            <CardTitle className="text-base font-semibold flex items-center gap-2">
-              <Layers className="w-4 h-4 shrink-0" /> Project Progress
-            </CardTitle>
-            <CardDescription>Website & web app projects visible in client dashboard</CardDescription>
-          </div>
-          <Button
-            size="sm"
-            onClick={() => { setEditProject(undefined); setProjectDialog(true); }}
-            className="shrink-0"
-          >
-            <Plus className="sm:mr-2 h-4 w-4" />
-            <span className="hidden sm:inline">Add</span>
-          </Button>
-        </CardHeader>
-        <CardContent>
-          {projects.length === 0 ? (
-            <div className="text-center py-8 text-sm text-muted-foreground">
-              No projects yet. Add one to show progress in the client dashboard.
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {projects.map((proj) => {
-                const stageIdx = STAGES.indexOf(proj.stage as typeof STAGES[number]);
-                const stagePct = stageIdx >= 0 ? Math.round(((stageIdx + 1) / STAGES.length) * 100) : 0;
-                const displayPct = proj.progress > 0 ? proj.progress : stagePct;
-                return (
-                  <div key={proj.id} className="border rounded-lg p-3">
-                    <div className="flex items-center justify-between mb-2 gap-2">
-                      <div>
-                        <div className="font-medium text-sm">{proj.projectName}</div>
-                        <div className="text-xs text-muted-foreground capitalize">
-                          {proj.projectType === "webapp" ? "Web App" : "Website"}
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-1 shrink-0">
-                        <Badge
-                          variant="outline"
-                          className={cn("text-xs text-white border-transparent", STAGE_COLORS[proj.stage])}
-                        >
-                          {STAGE_LABELS[proj.stage] ?? proj.stage}
-                        </Badge>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-7 w-7"
-                          onClick={() => { setEditProject(proj); setProjectDialog(true); }}
-                        >
-                          <Pencil className="h-3 w-3" />
-                        </Button>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-7 w-7 text-destructive hover:text-destructive"
-                          onClick={() => deleteProject.mutate(proj.id)}
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="flex-1 bg-muted rounded-full h-1.5 overflow-hidden">
-                        <div
-                          className="h-full rounded-full bg-gradient-to-r from-blue-500 to-blue-600 transition-all"
-                          style={{ width: `${displayPct}%` }}
-                        />
-                      </div>
-                      <span className="text-xs font-medium text-muted-foreground tabular-nums w-9 text-right">
-                        {displayPct}%
-                      </span>
-                    </div>
-                    {proj.expectedDelivery && (
-                      <div className="text-xs text-muted-foreground mt-1.5">
-                        Est. delivery: {formatDate(proj.expectedDelivery)}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {(webServices.length > 0 || digitalServices.length > 0) && (
+      {customerTab === "web" && (
         <Card>
-          <CardHeader>
-            <CardTitle className="text-base font-semibold">
-              Monthly services
-            </CardTitle>
-            <CardDescription>
-              Recurring website and digital marketing subscriptions
-            </CardDescription>
+          <CardHeader className="flex flex-row items-center justify-between gap-3">
+            <div>
+              <CardTitle className="text-base font-semibold flex items-center gap-2">
+                <Layers className="w-4 h-4 shrink-0" /> Project Progress
+              </CardTitle>
+              <CardDescription>Website & web app projects visible in client dashboard</CardDescription>
+            </div>
+            <Button size="sm" onClick={() => { setEditProject(undefined); setProjectDialog(true); }} className="shrink-0">
+              <Plus className="sm:mr-2 h-4 w-4" />
+              <span className="hidden sm:inline">Add</span>
+            </Button>
           </CardHeader>
           <CardContent className="space-y-4">
-            {(webMRR > 0 || digitalMRR > 0) && (
-              <div className="grid grid-cols-2 gap-3 mb-4">
-                {webMRR > 0 && (
-                  <div className="rounded-lg border bg-blue-50 dark:bg-blue-950/20 p-3">
-                    <div className="flex items-center gap-1.5 text-xs text-blue-600 dark:text-blue-400 font-medium">
-                      <Globe className="w-3.5 h-3.5" /> Website MRR
+            {projects.length === 0 ? (
+              <div className="text-center py-8 text-sm text-muted-foreground">
+                No projects yet. Add one to show progress in the client dashboard.
+              </div>
+            ) : (
+              <div className="grid gap-4 lg:grid-cols-2">
+                {projects.map((proj) => <ServiceDetailCard key={proj.id} project={proj} />)}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {customerTab === "digital" && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base font-semibold">Digital services</CardTitle>
+            <CardDescription>Digital marketing subscriptions and monthly performance</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="rounded-lg border bg-purple-50 dark:bg-purple-950/20 p-3">
+                <div className="flex items-center gap-1.5 text-xs text-purple-600 dark:text-purple-400 font-medium">
+                  <Megaphone className="w-3.5 h-3.5" /> Digital MRR
+                </div>
+                <div className="text-lg font-bold text-purple-700 dark:text-purple-300 mt-0.5">
+                  {formatCurrency(digitalMRR)}
+                </div>
+              </div>
+              <div className="rounded-lg border bg-muted/30 p-3">
+                <div className="text-xs text-muted-foreground">Services</div>
+                <div className="text-lg font-bold">{digitalServices.length}</div>
+              </div>
+            </div>
+            {digitalServices.length === 0 ? (
+              <div className="text-center py-8 text-sm text-muted-foreground">
+                No digital services yet.
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {digitalServices.map((ds) => (
+                  <div key={ds.id} className="rounded-2xl border bg-muted/20 p-4 space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <div>
+                        <div className="font-medium text-sm">{ds.serviceName}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {ds.platform ? `Platform: ${ds.platform}` : "Digital marketing"}
+                        </div>
+                      </div>
+                      <Badge variant="outline" className={cn("text-xs capitalize", ds.status === "active" && "border-emerald-400 text-emerald-600", ds.status === "paused" && "border-amber-400 text-amber-600", ds.status === "cancelled" && "border-red-400 text-red-500")}>
+                        {ds.status}
+                      </Badge>
                     </div>
-                    <div className="text-lg font-bold text-blue-700 dark:text-blue-300 mt-0.5">
-                      {formatCurrency(webMRR)}
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div className="rounded-lg bg-white p-3 border">
+                        <div className="text-muted-foreground">Charge</div>
+                        <div className="font-semibold">{formatCurrency(ds.monthlyCharge)}/mo</div>
+                      </div>
+                      <div className="rounded-lg bg-white p-3 border">
+                        <div className="text-muted-foreground">Cost</div>
+                        <div className="font-semibold">{formatCurrency(ds.monthlyCost)}/mo</div>
+                      </div>
                     </div>
+                    <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
+                      {ds.discount > 0 && <span>Discount: {formatCurrency(ds.discount)}</span>}
+                      <span>Since: {formatDate(ds.startDate)}</span>
+                    </div>
+                    <MiniMonthGrid completions={ds.completions} />
                   </div>
-                )}
-                {digitalMRR > 0 && (
-                  <div className="rounded-lg border bg-purple-50 dark:bg-purple-950/20 p-3">
-                    <div className="flex items-center gap-1.5 text-xs text-purple-600 dark:text-purple-400 font-medium">
-                      <Megaphone className="w-3.5 h-3.5" /> Digital MRR
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {customerTab === "monthly" && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base font-semibold">Monthly services</CardTitle>
+            <CardDescription>Recurring website services and maintenance</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="rounded-lg border bg-blue-50 dark:bg-blue-950/20 p-3">
+                <div className="flex items-center gap-1.5 text-xs text-blue-600 dark:text-blue-400 font-medium">
+                  <Globe className="w-3.5 h-3.5" /> Website MRR
+                </div>
+                <div className="text-lg font-bold text-blue-700 dark:text-blue-300 mt-0.5">
+                  {formatCurrency(webMRR)}
+                </div>
+              </div>
+              <div className="rounded-lg border bg-muted/30 p-3">
+                <div className="text-xs text-muted-foreground">Services</div>
+                <div className="text-lg font-bold">{webServices.length}</div>
+              </div>
+            </div>
+            {webServices.length === 0 ? (
+              <div className="text-center py-8 text-sm text-muted-foreground">
+                No monthly website services yet.
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {webServices.map((ws) => (
+                  <div key={ws.id} className="rounded-2xl border bg-muted/20 p-4 space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <div>
+                        <div className="font-medium text-sm">{ws.websiteName}</div>
+                        <div className="text-xs text-muted-foreground">Website service</div>
+                      </div>
+                      <Badge variant="outline" className={cn("text-xs capitalize", ws.status === "active" && "border-emerald-400 text-emerald-600", ws.status === "paused" && "border-amber-400 text-amber-600", ws.status === "cancelled" && "border-red-400 text-red-500")}>
+                        {ws.status}
+                      </Badge>
                     </div>
-                    <div className="text-lg font-bold text-purple-700 dark:text-purple-300 mt-0.5">
-                      {formatCurrency(digitalMRR)}
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div className="rounded-lg bg-white p-3 border">
+                        <div className="text-muted-foreground">Charge</div>
+                        <div className="font-semibold">{formatCurrency(ws.monthlyCharge)}/mo</div>
+                      </div>
+                      <div className="rounded-lg bg-white p-3 border">
+                        <div className="text-muted-foreground">Cost</div>
+                        <div className="font-semibold">{formatCurrency(ws.monthlyCost)}/mo</div>
+                      </div>
                     </div>
+                    <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
+                      {ws.discount > 0 && <span>Discount: {formatCurrency(ws.discount)}</span>}
+                      <span>Since: {formatDate(ws.startDate)}</span>
+                    </div>
+                    <MiniMonthGrid completions={ws.completions} />
                   </div>
-                )}
+                ))}
               </div>
             )}
-
-            {webServices.length > 0 && (
-              <div>
-                <div className="flex items-center gap-1.5 text-sm font-semibold text-blue-600 dark:text-blue-400 mb-2">
-                  <Globe className="w-3.5 h-3.5" /> Website services
-                </div>
-                <div className="space-y-3">
-                  {webServices.map((ws) => (
-                    <div key={ws.id} className="border rounded-lg p-3 bg-muted/20">
-                      <div className="flex items-center justify-between gap-2 mb-1">
-                        <span className="font-medium text-sm">{ws.websiteName}</span>
-                        <Badge
-                          variant="outline"
-                          className={cn(
-                            "text-xs capitalize",
-                            ws.status === "active" && "border-emerald-400 text-emerald-600",
-                            ws.status === "paused" && "border-amber-400 text-amber-600",
-                            ws.status === "cancelled" && "border-red-400 text-red-500",
-                          )}
-                        >
-                          {ws.status}
-                        </Badge>
-                      </div>
-                      <div className="flex gap-4 text-xs text-muted-foreground mb-2">
-                        <span>Charge: {formatCurrency(ws.monthlyCharge)}/mo</span>
-                        <span>Cost: {formatCurrency(ws.monthlyCost)}/mo</span>
-                        {ws.discount > 0 && <span>Discount: {formatCurrency(ws.discount)}</span>}
-                        <span>Since: {formatDate(ws.startDate)}</span>
-                      </div>
-                      <div className="text-xs font-medium text-muted-foreground mb-1">
-                        {currentYear} completion
-                      </div>
-                      <MiniMonthGrid completions={ws.completions} />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {digitalServices.length > 0 && (
-              <div>
-                <div className="flex items-center gap-1.5 text-sm font-semibold text-purple-600 dark:text-purple-400 mb-2">
-                  <Megaphone className="w-3.5 h-3.5" /> Digital marketing services
-                </div>
-                <div className="space-y-3">
-                  {digitalServices.map((ds) => (
-                    <div key={ds.id} className="border rounded-lg p-3 bg-muted/20">
-                      <div className="flex items-center justify-between gap-2 mb-1">
-                        <span className="font-medium text-sm">{ds.serviceName}</span>
-                        <Badge
-                          variant="outline"
-                          className={cn(
-                            "text-xs capitalize",
-                            ds.status === "active" && "border-emerald-400 text-emerald-600",
-                            ds.status === "paused" && "border-amber-400 text-amber-600",
-                            ds.status === "cancelled" && "border-red-400 text-red-500",
-                          )}
-                        >
-                          {ds.status}
-                        </Badge>
-                      </div>
-                      <div className="flex flex-wrap gap-4 text-xs text-muted-foreground mb-2">
-                        {ds.platform && <span>Platform: {ds.platform}</span>}
-                        <span>Charge: {formatCurrency(ds.monthlyCharge)}/mo</span>
-                        <span>Cost: {formatCurrency(ds.monthlyCost)}/mo</span>
-                        {ds.discount > 0 && <span>Discount: {formatCurrency(ds.discount)}</span>}
-                        <span>Since: {formatDate(ds.startDate)}</span>
-                      </div>
-                      <div className="text-xs font-medium text-muted-foreground mb-1">
-                        {currentYear} completion
-                      </div>
-                      <MiniMonthGrid completions={ds.completions} />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
             <div className="pt-2 border-t">
               <Link href="/monthly-services">
                 <Button variant="ghost" size="sm" className="text-xs text-muted-foreground">
@@ -1166,7 +1131,8 @@ export default function CustomerDetail() {
         </Card>
       )}
 
-      <Card>
+      {customerTab === "monthly" && (
+        <Card>
         <CardHeader className="flex flex-row items-center justify-between gap-3">
           <div className="min-w-0">
             <CardTitle className="text-base font-semibold flex items-center gap-2">
@@ -1225,7 +1191,8 @@ export default function CustomerDetail() {
             </div>
           )}
         </CardContent>
-      </Card>
+        </Card>
+      )}
 
       {/* Monthly Reports Card */}
       <Card>
