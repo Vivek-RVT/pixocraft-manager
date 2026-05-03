@@ -421,7 +421,8 @@ export function ServiceFormDialog({
         {
           serviceType:
             (service.serviceType as "web" | "digital" | "other") ?? "other",
-          billingType: "one_time",
+          billingType:
+            (service as any).billingType === "monthly" ? "monthly" : "one_time",
           serviceName: service.serviceName,
           priceSold: String(service.priceSold),
           costPrice: String(service.costPrice),
