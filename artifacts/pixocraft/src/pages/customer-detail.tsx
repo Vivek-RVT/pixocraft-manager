@@ -572,7 +572,7 @@ export default function CustomerDetail() {
   const [dmForm, setDmForm] = useState<DMFormData>(blankDm);
   const [seoForm, setSeoForm] = useState<SeoFormData>(blankSeo);
 
-  const { data: detail, isLoading } = useQuery({
+  const { data: detail, isLoading, isError } = useQuery({
     queryKey: ["customer-detail", id],
     queryFn: () => apiFetch(`/customers/${id}`),
     enabled: validId,
@@ -959,10 +959,10 @@ export default function CustomerDetail() {
     );
   }
 
-  if (!customer) {
+  if (isError) {
     return (
       <div className="text-center py-20">
-        <p className="text-muted-foreground">Customer not found.</p>
+        <p className="text-muted-foreground">Customer detail unavailable.</p>
         <Link href="/customers">
           <Button variant="ghost" className="mt-4">
             <ArrowLeft className="mr-2 h-4 w-4" /> Back to customers
