@@ -6,6 +6,7 @@ import {
   getGetCustomerQueryKey,
   useListServices,
   getListServicesQueryKey,
+  useUpdateService,
 } from "@workspace/api-client-react";
 import {
   ArrowLeft,
@@ -779,6 +780,8 @@ export default function CustomerDetail() {
     },
   });
 
+  const updateService = useUpdateService();
+
   const updateMonthlyDigital = useMutation({
     mutationFn: ({ rawId, status, notes }: { rawId: number; status: string; notes: string }) =>
       apiFetch(`/monthly-digital/${rawId}`, {
@@ -788,6 +791,7 @@ export default function CustomerDetail() {
       }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["monthly-digital", id] });
+      qc.invalidateQueries({ queryKey: getListServicesQueryKey({ customerId: id }) });
       setDsEditId(null);
       toast.success("Service updated");
     },
@@ -805,13 +809,14 @@ export default function CustomerDetail() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: getListServicesQueryKey({ customerId: id }) });
+      qc.invalidateQueries({ queryKey: ["monthly-digital", id] });
       setDsEditId(null);
       toast.success("Service updated");
     },
     onError: () => toast.error("Failed to update service"),
   });
 
-  function openDsEdit(ds: { id: string; status: string; notes: string | null; serviceName?: string; platform?: string | null; serviceType?: "web" | "digital" }) {
+  function openDsEdit(ds: { id: string; status: string; notes: string | null; serviceName?: string; serviceType?: "web" | "digital"; platform?: string | null }) {
     setDsEditId(ds.id);
     setDsEditStatus(ds.status);
     setDsEditNote(ds.notes ?? "");
@@ -822,10 +827,18 @@ export default function CustomerDetail() {
   function saveDsEdit(ds: { id: string; rawId: number; billingType: "monthly" | "one_time"; serviceType?: "web" | "digital" }) {
     if (ds.billingType === "monthly") {
       const monthlyStatus = dsEditStatus === "delivered" ? "active" : (dsEditStatus as "active" | "paused" | "cancelled");
-      updateMonthlyDigital.mutate({ rawId: ds.rawId, status: monthlyStatus, notes: dsEditNote });
+      updateMonthlyDigital.mutate({
+        rawId: ds.rawId,
+        status: monthlyStatus,
+        notes: dsEditNote,
+      });
     } else {
       const oneTimeStatus = dsEditStatus === "delivered" ? "delivered" : "active";
-      updateOneTimeService.mutate({ rawId: ds.rawId, status: oneTimeStatus, notes: dsEditNote });
+      updateOneTimeService.mutate({
+        rawId: ds.rawId,
+        status: oneTimeStatus,
+        notes: dsEditNote,
+      });
     }
   }
 
@@ -1217,7 +1230,12 @@ export default function CustomerDetail() {
                             {ds.billingType === "one_time" ? (ds.status === "paused" ? "pending" : ds.status) : ds.status}
                           </Badge>
                           {!isEditing && (
-                            <Button size="icon" variant="ghost" className="h-7 w-7 shrink-0" onClick={() => openDsEdit(ds)}>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-7 w-7 shrink-0"
+                              onClick={() => openDsEdit(ds)}
+                            >
                               <Pencil className="w-3.5 h-3.5" />
                             </Button>
                           )}
@@ -1275,14 +1293,19 @@ export default function CustomerDetail() {
                               onChange={(e) => setDsEditNote(e.target.value)}
                             />
                           </div>
-                          <div className="flex gap-2 justify-end">
-                            <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setDsEditId(null)} disabled={isSaving}>
+                        <div className="flex gap-2 justify-end">
+                          <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setDsEditId(null)} disabled={isSaving}>
                               Cancel
                             </Button>
-                            <Button size="sm" className="h-7 text-xs" onClick={() => saveDsEdit(ds)} disabled={isSaving}>
+                          <Button
+                            size="sm"
+                            className="h-7 text-xs"
+                            onClick={() => saveDsEdit(ds)}
+                            disabled={isSaving}
+                          >
                               {isSaving ? "Saving…" : "Update"}
-                            </Button>
-                          </div>
+                          </Button>
+                        </div>
                         </div>
                       ) : (
                         <>
@@ -1424,7 +1447,7 @@ export default function CustomerDetail() {
 
       {customerTab === "monthly" && (
         <Card>
-        <CardHeader className="flex flex-row items-center justify-between gap-3">
+          <CardHeader className="flex flex-row items-center justify-between gap-3">
           <div className="min-w-0">
             <CardTitle className="text-base font-semibold flex items-center gap-2">
               <Briefcase className="w-4 h-4 shrink-0" /> Service history
