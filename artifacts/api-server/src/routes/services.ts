@@ -21,6 +21,7 @@ function rowToService(
 ) {
   const priceSold = Number(s.priceSold);
   const costPrice = Number(s.costPrice);
+  const billingType = "billingType" in s ? (s.billingType as "monthly" | "one_time") : "one_time";
   return {
     id: s.id,
     customerId: s.customerId,
@@ -36,6 +37,7 @@ function rowToService(
     satisfactionRating: s.satisfactionRating,
     date: s.date,
     notes: s.notes,
+    billingType,
   };
 }
 
