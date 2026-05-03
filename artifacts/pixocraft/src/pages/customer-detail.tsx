@@ -774,7 +774,7 @@ export default function CustomerDetail() {
     setDsEditStatus(ds.status);
     setDsEditNote(ds.notes ?? "");
     setDsEditName(ds.serviceName ?? "");
-    setDsEditCategory(ds.serviceType ?? (ds.platform?.toLowerCase().includes("web") ? "web" : "digital") ?? "digital");
+    setDsEditCategory(ds.serviceType ?? (ds.platform?.toLowerCase().includes("web") ? "web" : "digital"));
   }
 
   function saveDsEdit(ds: { id: string; rawId: number; billingType: "monthly" | "one_time"; serviceType?: "web" | "digital" }) {
@@ -1161,11 +1161,11 @@ export default function CustomerDetail() {
                   const isEditing = dsEditId === ds.id;
                   const isSaving = updateMonthlyDigital.isPending || updateOneTimeService.isPending;
                   return (
-                    <div key={ds.id} className="rounded-2xl border bg-muted/20 p-4 space-y-2">
+                    <div key={ds.id} className="rounded-2xl border bg-muted/20 p-3.5 space-y-2">
                       <div className="flex items-center justify-between gap-2">
                         <div>
-                          <div className="font-medium text-sm">{ds.serviceName}</div>
-                          <div className="text-xs text-muted-foreground">{ds.serviceType === "web" ? "Web" : "Digital"} · {ds.billingType === "monthly" ? "Monthly" : "One time"}</div>
+                          <div className="font-medium text-sm leading-tight">{ds.serviceName}</div>
+                          <div className="text-[11px] text-muted-foreground mt-0.5">{ds.serviceType === "web" ? "Web" : "Digital"} · {ds.billingType === "monthly" ? "Monthly" : "One time"}</div>
                         </div>
                         <div className="flex items-center gap-2">
                           <Badge variant="outline" className={cn("text-xs capitalize", ds.status === "active" && "border-emerald-400 text-emerald-600", ds.status === "paused" && "border-amber-400 text-amber-600", ds.status === "cancelled" && "border-red-400 text-red-500", ds.status === "delivered" && "border-blue-400 text-blue-600")}>
@@ -1180,27 +1180,27 @@ export default function CustomerDetail() {
                       </div>
 
                       {isEditing ? (
-                        <div className="rounded-lg border bg-white p-3 space-y-3">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div className="rounded-lg border bg-white p-2.5 space-y-2.5">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
                             <div className="space-y-1">
-                              <Label className="text-xs">Name</Label>
+                              <Label className="text-xs text-muted-foreground">Name</Label>
                               <Input
-                                className="h-8 text-xs"
+                                className="h-8 text-xs rounded-md"
                                 value={dsEditName}
                                 onChange={(e) => setDsEditName(e.target.value)}
                               />
                             </div>
                             <div className="space-y-1">
-                              <Label className="text-xs">Category</Label>
+                              <Label className="text-xs text-muted-foreground">Category</Label>
                               <Input
-                                className="h-8 text-xs"
+                                className="h-8 text-xs rounded-md"
                                 value={dsEditCategory}
                                 onChange={(e) => setDsEditCategory(e.target.value)}
                               />
                             </div>
                           </div>
                           <div className="space-y-1">
-                            <Label className="text-xs">Stage</Label>
+                            <Label className="text-xs text-muted-foreground">Stage</Label>
                             <div className="flex flex-wrap gap-2">
                               {digitalStages.map((stage, index) => {
                                 const activeStage = getDigitalStageIndex(dsEditStatus) >= index;
