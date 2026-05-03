@@ -505,9 +505,7 @@ export function ServiceFormDialog({
         await updateMutation.mutateAsync({
           id: service.id,
           data: {
-            customerId: Number(values.customerId),
             serviceType: row.serviceType,
-              billingType: row.billingType,
             serviceName: row.serviceName.trim(),
             priceSold: Number(row.priceSold),
             costPrice: Number(row.costPrice),
@@ -515,7 +513,7 @@ export function ServiceFormDialog({
             paymentStatus: row.paymentStatus,
             deliveryStatus: row.deliveryStatus,
             satisfactionRating: row.satisfactionRating,
-            date: (row.date + "T00:00:00.000Z" as unknown as Date),
+            date: row.date,
             notes: row.notes.trim() || undefined,
           },
         });
@@ -526,7 +524,6 @@ export function ServiceFormDialog({
             data: {
               customerId: Number(values.customerId),
               serviceType: row.serviceType,
-              billingType: row.billingType,
               serviceName: row.serviceName.trim(),
               priceSold: Number(row.priceSold),
               costPrice: Number(row.costPrice),
@@ -534,7 +531,7 @@ export function ServiceFormDialog({
               paymentStatus: row.paymentStatus,
               deliveryStatus: row.deliveryStatus,
               satisfactionRating: row.satisfactionRating,
-              date: (row.date + "T00:00:00.000Z" as unknown as Date),
+              date: row.date,
               notes: row.notes.trim() || undefined,
             },
           });

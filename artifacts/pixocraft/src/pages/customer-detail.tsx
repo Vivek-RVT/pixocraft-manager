@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link, useRoute } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
@@ -596,6 +596,35 @@ export default function CustomerDetail() {
     queryFn: () => apiFetch(`/monthly-digital?customerId=${id}`),
     enabled: Number.isFinite(id),
   });
+  const digitalServiceCards = useMemo(() => {
+    const monthly = digitalServices.map((ds) => ({
+      id: `monthly-${ds.id}`,
+      serviceName: ds.serviceName,
+      status: ds.status,
+      billingType: "monthly" as const,
+      startDate: ds.startDate,
+      charge: ds.monthlyCharge,
+      cost: ds.monthlyCost,
+      discount: ds.discount ?? 0,
+      platform: ds.platform,
+      completions: ds.completions ?? [],
+    }));
+    const oneTime = (services ?? [])
+      .filter((s: any) => s.serviceType === "digital")
+      .map((s) => ({
+        id: `one-time-${s.id}`,
+        serviceName: s.serviceName,
+        status: s.deliveryStatus === "delivered" ? "delivered" : s.deliveryStatus === "in_progress" ? "active" : "paused",
+        billingType: "one_time" as const,
+        startDate: s.date,
+        charge: Number(s.priceSold),
+        cost: Number(s.costPrice),
+        discount: 0,
+        platform: "Digital service",
+        completions: [],
+      }));
+    return [...monthly, ...oneTime].sort((a, b) => +new Date(b.startDate) - +new Date(a.startDate));
+  }, [digitalServices, services]);
 
   const { data: portal } = useQuery<ClientPortal | null>({
     queryKey: ["portal", id],
@@ -1026,16 +1055,16 @@ export default function CustomerDetail() {
               </div>
               <div className="rounded-lg border bg-muted/30 p-3">
                 <div className="text-xs text-muted-foreground">Services</div>
-                <div className="text-lg font-bold">{digitalServices.length}</div>
+                <div className="text-lg font-bold">{digitalServiceCards.length}</div>
               </div>
             </div>
-            {digitalServices.length === 0 ? (
+            {digitalServiceCards.length === 0 ? (
               <div className="text-center py-8 text-sm text-muted-foreground">
                 No digital services yet.
               </div>
             ) : (
               <div className="space-y-3">
-                {digitalServices.map((ds) => (
+                {digitalServiceCards.map((ds) => (
                   <div key={ds.id} className="rounded-2xl border bg-muted/20 p-4 space-y-2">
                     <div className="flex items-center justify-between gap-2">
                       <div>
@@ -1044,38 +1073,38 @@ export default function CustomerDetail() {
                           {ds.platform ? `Platform: ${ds.platform}` : "Digital marketing"}
                         </div>
                       </div>
-                      <Badge variant="outline" className={cn("text-xs capitalize", ds.status === "active" && "border-emerald-400 text-emerald-600", ds.status === "paused" && "border-amber-400 text-amber-600", ds.status === "cancelled" && "border-red-400 text-red-500")}>
+                      <Badge variant="outline" className={cn("text-xs capitalize", ds.status === "active" && "border-emerald-400 text-emerald-600", ds.status === "paused" && "border-amber-400 text-amber-600", ds.status === "cancelled" && "border-red-400 text-red-500", ds.status === "delivered" && "border-blue-400 text-blue-600")}>
                         {ds.status}
                       </Badge>
                     </div>
                     <div className="rounded-lg border bg-white p-3">
                       <div className="flex items-center justify-between text-xs text-muted-foreground">
-                        <span>Monthly plan</span>
+                        <span>{ds.billingType === "monthly" ? "Monthly plan" : "One-time project"}</span>
                         <span>{formatDate(ds.startDate)}</span>
                       </div>
                       <div className="mt-2 flex items-center gap-2">
                         <div className={cn("h-2.5 w-2.5 rounded-full", ds.status === "active" ? "bg-emerald-500" : ds.status === "paused" ? "bg-amber-500" : "bg-red-500")} />
-                        <div className="text-sm font-medium capitalize">{ds.status === "active" ? "Started / in progress" : ds.status === "paused" ? "Paused" : "Delivered"}</div>
+                        <div className="text-sm font-medium capitalize">{ds.billingType === "monthly" ? (ds.status === "active" ? "Started / in progress" : ds.status === "paused" ? "Paused" : "Delivered") : (ds.status === "delivered" ? "Project delivered" : "Project in progress")}</div>
                       </div>
                       <div className="mt-2 h-2 rounded-full bg-muted overflow-hidden">
-                        <div className={cn("h-full rounded-full", ds.status === "active" ? "w-2/3 bg-emerald-500" : ds.status === "paused" ? "w-1/2 bg-amber-500" : "w-full bg-blue-500")} />
+                        <div className={cn("h-full rounded-full", ds.billingType === "monthly" ? (ds.status === "active" ? "w-2/3 bg-emerald-500" : ds.status === "paused" ? "w-1/2 bg-amber-500" : "w-full bg-blue-500") : (ds.status === "delivered" ? "w-full bg-blue-500" : "w-1/2 bg-sky-500"))} />
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-2 text-xs">
                       <div className="rounded-lg bg-white p-3 border">
                         <div className="text-muted-foreground">Charge</div>
-                        <div className="font-semibold">{formatCurrency(ds.monthlyCharge)}/mo</div>
+                        <div className="font-semibold">{formatCurrency(ds.charge)}{ds.billingType === "monthly" ? "/mo" : ""}</div>
                       </div>
                       <div className="rounded-lg bg-white p-3 border">
                         <div className="text-muted-foreground">Cost</div>
-                        <div className="font-semibold">{formatCurrency(ds.monthlyCost)}/mo</div>
+                        <div className="font-semibold">{formatCurrency(ds.cost)}{ds.billingType === "monthly" ? "/mo" : ""}</div>
                       </div>
                     </div>
                     <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
                       {ds.discount > 0 && <span>Discount: {formatCurrency(ds.discount)}</span>}
                       <span>Since: {formatDate(ds.startDate)}</span>
                     </div>
-                    <MiniMonthGrid completions={ds.completions} />
+                    {ds.billingType === "monthly" ? <MiniMonthGrid completions={ds.completions} /> : null}
                   </div>
                 ))}
               </div>
