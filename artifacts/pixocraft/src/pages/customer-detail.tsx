@@ -7,6 +7,7 @@ import {
   useListServices,
   getListServicesQueryKey,
   useUpdateService,
+  type Service,
 } from "@workspace/api-client-react";
 import {
   ArrowLeft,
@@ -546,6 +547,7 @@ export default function CustomerDetail() {
 
   const [editOpen, setEditOpen] = useState(false);
   const [serviceOpen, setServiceOpen] = useState(false);
+  const [editService, setEditService] = useState<any>(undefined);
   const [pwDialog, setPwDialog] = useState(false);
   const [newPassword, setNewPassword] = useState("");
   const [projectDialog, setProjectDialog] = useState(false);
@@ -816,15 +818,41 @@ export default function CustomerDetail() {
     onError: () => toast.error("Failed to update service"),
   });
 
-  function openDsEdit(ds: { id: string; status: string; notes: string | null; serviceName?: string; serviceType?: "web" | "digital"; platform?: string | null }) {
-    setDsEditId(ds.id);
-    setDsEditStatus(ds.status);
-    setDsEditNote(ds.notes ?? "");
-    setDsEditName(ds.serviceName ?? "");
-    setDsEditCategory(ds.serviceType ?? (ds.platform?.toLowerCase().includes("web") ? "web" : "digital"));
+  function openDsEdit(ds: {
+    id: string;
+    rawId: number;
+    status: string;
+    notes: string | null;
+    serviceName?: string;
+    serviceType?: "web" | "digital" | "other";
+    platform?: string | null;
+    billingType?: "monthly" | "one_time";
+    priceSold?: number;
+    cost?: number;
+    charge?: number;
+    amountPaid?: number;
+    date?: string;
+  }) {
+    setEditService({
+      id: ds.rawId,
+      customerId: id,
+      serviceType: ds.serviceType ?? (ds.platform?.toLowerCase().includes("web") ? "web" : "digital"),
+      serviceName: ds.serviceName ?? "",
+      priceSold: ds.priceSold ?? ds.charge ?? 0,
+      costPrice: ds.cost ?? 0,
+      amountPaid: ds.amountPaid ?? 0,
+      paymentStatus: "pending",
+      deliveryStatus: ds.status === "delivered" ? "delivered" : "in_progress",
+      satisfactionRating: null,
+      date: ds.date ?? new Date().toISOString().slice(0, 10),
+      notes: ds.notes ?? "",
+      customerName: customer?.name ?? "",
+      profit: 0,
+    });
+    setServiceOpen(true);
   }
 
-  function saveDsEdit(ds: { id: string; rawId: number; billingType: "monthly" | "one_time"; serviceType?: "web" | "digital" }) {
+  function saveDsEdit(ds: { rawId: number; billingType: "monthly" | "one_time" }) {
     if (ds.billingType === "monthly") {
       const monthlyStatus = dsEditStatus === "delivered" ? "active" : (dsEditStatus as "active" | "paused" | "cancelled");
       updateMonthlyDigital.mutate({
@@ -1212,10 +1240,7 @@ export default function CustomerDetail() {
               </div>
             ) : (
               <div className="space-y-3">
-                {(customerTab === "web"
-                  ? digitalServiceCards.filter((ds) => ds.serviceType === "web")
-                  : digitalServiceCards.filter((ds) => ds.serviceType === "digital")
-                ).map((ds) => {
+                {digitalServiceCards.map((ds) => {
                   const isEditing = dsEditId === ds.id;
                   const isSaving = updateMonthlyDigital.isPending || updateOneTimeService.isPending;
                   return (
@@ -1717,8 +1742,12 @@ export default function CustomerDetail() {
       />
       <ServiceFormDialog
         open={serviceOpen}
-        onOpenChange={setServiceOpen}
+        onOpenChange={(open) => {
+          setServiceOpen(open);
+          if (!open) setEditService(undefined);
+        }}
         presetCustomerId={customer.id}
+        service={editService}
       />
 
       {/* DM Report Dialog */}
