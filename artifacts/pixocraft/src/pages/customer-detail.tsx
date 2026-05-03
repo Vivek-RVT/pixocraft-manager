@@ -616,12 +616,17 @@ export default function CustomerDetail() {
       completions: ds.completions ?? [],
     }));
     const oneTime = (services ?? [])
-      .filter((s: any) => s.serviceType === "digital")
+      .filter((s: any) => s.serviceType === "digital" || s.serviceName?.toLowerCase().includes("digital") || s.deliveryStatus)
       .map((s) => ({
         id: `one-time-${s.id}`,
         rawId: s.id as number,
         serviceName: s.serviceName,
-        status: s.deliveryStatus === "delivered" ? "delivered" : s.deliveryStatus === "in_progress" ? "active" : "paused",
+        status:
+          s.deliveryStatus === "delivered"
+            ? "delivered"
+            : s.deliveryStatus === "in_progress"
+              ? "active"
+              : "paused",
         billingType: "one_time" as const,
         startDate: s.date,
         charge: Number(s.priceSold),
@@ -653,9 +658,6 @@ export default function CustomerDetail() {
 
   function getDigitalStageStatus(status: string) {
     if (status === "delivered") return "delivered";
-    if (status === "final-review") return "final-review";
-    if (status === "mid-complete") return "mid-complete";
-    if (status === "mid-start") return "mid-start";
     if (status === "active") return "active";
     return "paused";
   }
@@ -739,18 +741,7 @@ export default function CustomerDetail() {
 
   const updateOneTimeService = useMutation({
     mutationFn: ({ rawId, status, notes }: { rawId: number; status: string; notes: string }) => {
-      const deliveryStatus =
-        status === "delivered"
-          ? "delivered"
-          : status === "final-review"
-            ? "in_progress"
-            : status === "mid-complete"
-              ? "in_progress"
-              : status === "mid-start"
-                ? "in_progress"
-                : status === "active"
-                  ? "in_progress"
-                  : "pending";
+      const deliveryStatus = status === "delivered" ? "delivered" : "in_progress";
       return apiFetch(`/services/${rawId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -773,22 +764,10 @@ export default function CustomerDetail() {
 
   function saveDsEdit(ds: { id: string; rawId: number; billingType: "monthly" | "one_time" }) {
     if (ds.billingType === "monthly") {
-      const monthlyStatus =
-        dsEditStatus === "delivered" ? "active" : (dsEditStatus as "active" | "paused" | "cancelled");
+      const monthlyStatus = dsEditStatus === "delivered" ? "active" : (dsEditStatus as "active" | "paused" | "cancelled");
       updateMonthlyDigital.mutate({ rawId: ds.rawId, status: monthlyStatus, notes: dsEditNote });
     } else {
-      const oneTimeStatus =
-        dsEditStatus === "delivered"
-          ? "delivered"
-          : dsEditStatus === "final-review"
-            ? "final-review"
-            : dsEditStatus === "mid-complete"
-              ? "mid-complete"
-              : dsEditStatus === "mid-start"
-                ? "mid-start"
-                : dsEditStatus === "active"
-                  ? "active"
-                  : "paused";
+      const oneTimeStatus = dsEditStatus === "delivered" ? "delivered" : "active";
       updateOneTimeService.mutate({ rawId: ds.rawId, status: oneTimeStatus, notes: dsEditNote });
     }
   }
