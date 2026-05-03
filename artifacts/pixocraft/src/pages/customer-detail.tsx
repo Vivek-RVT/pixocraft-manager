@@ -196,6 +196,16 @@ type SeoFormData = {
   trafficGrowth: string; backlinksAdded: string; seoScore: string; notes: string;
 };
 
+type ParsedReport = {
+  year: string;
+  month: string;
+  blogsPosted: string;
+  keywordsRanked: string;
+  trafficGrowth: string;
+  impressionGrowth: string;
+  notes: string;
+};
+
 function MiniMonthGrid({ completions }: { completions: MonthlyCompletion[] }) {
   const map = new Map<number, boolean>();
   for (const c of completions) {
@@ -227,6 +237,29 @@ function MiniMonthGrid({ completions }: { completions: MonthlyCompletion[] }) {
       })}
     </div>
   );
+}
+
+function extractPerformanceReport(raw: string): ParsedReport {
+  const text = raw.replace(/\r/g, "\n");
+  const yearMatch = text.match(/\b(20\d{2})\b/);
+  const monthNames = ["january","february","march","april","may","june","july","august","september","october","november","december"];
+  const lower = text.toLowerCase();
+  const monthIndex = monthNames.findIndex((m) => lower.includes(m));
+  const blogsMatch = text.match(/blogs?\s*posted[^0-9]*(\d+)/i) ?? text.match(/blogs?\s*[:\-]?\s*(\d+)/i);
+  const clicksMatch = text.match(/clicks?\s*[:\-]?\s*(\d+)/i);
+  const impressionsMatch = text.match(/impressions?\s*[:\-]?\s*(\d+)/i);
+  const trafficGrowthMatch = text.match(/traffic\s*growth[^+\-0-9]*([+\-]?\d+(?:\.\d+)?%?)/i);
+  const impressionGrowthMatch = text.match(/impression\s*growth[^+\-0-9]*([+\-]?\d+(?:\.\d+)?%?)/i);
+
+  return {
+    year: yearMatch?.[1] ?? String(currentYear),
+    month: monthIndex >= 0 ? String(monthIndex + 1) : String(currentMonth),
+    blogsPosted: blogsMatch?.[1] ?? "0",
+    keywordsRanked: "0",
+    trafficGrowth: trafficGrowthMatch?.[1] ?? (clicksMatch?.[1] ? `Clicks ${clicksMatch[1]}` : ""),
+    impressionGrowth: impressionGrowthMatch?.[1] ?? (impressionsMatch?.[1] ? `Impressions ${impressionsMatch[1]}` : ""),
+    notes: raw.trim(),
+  };
 }
 
 const paymentBadge = (status: string) => {
@@ -605,6 +638,20 @@ export default function CustomerDetail() {
 
   const BASE = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
   const portalLink = `${window.location.origin}${BASE}/portal`;
+  const [reportPaste, setReportPaste] = useState("");
+  const applyParsedReport = () => {
+    const parsed = extractPerformanceReport(reportPaste);
+    setSeoForm((f) => ({
+      ...f,
+      year: parsed.year,
+      month: parsed.month,
+      blogsPosted: parsed.blogsPosted,
+      trafficGrowth: parsed.trafficGrowth || parsed.impressionGrowth,
+      notes: parsed.notes,
+    }));
+    setSeoDialog(true);
+    toast.success("Report text parsed");
+  };
 
   if (isLoading) {
     return (
@@ -722,6 +769,21 @@ export default function CustomerDetail() {
               "{customer.notes}"
             </div>
           )}
+          <div className="mt-6 rounded-lg border bg-muted/20 p-4 space-y-3">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <div className="text-sm font-semibold">Paste performance report</div>
+                <div className="text-xs text-muted-foreground">Paste Search Console / monthly performance text and we’ll extract month, year, blogs, traffic and impressions.</div>
+              </div>
+              <Button size="sm" variant="outline" onClick={applyParsedReport}>Parse</Button>
+            </div>
+            <Textarea
+              value={reportPaste}
+              onChange={(e) => setReportPaste(e.target.value)}
+              placeholder={`Paste monthly performance text here...\n\nExample:\nApril 2026\nBlogs posted: 3\nTraffic growth: +18%\nImpressions: 1,240`}
+              className="min-h-[140px] resize-none"
+            />
+          </div>
         </CardContent>
       </Card>
 
@@ -1402,6 +1464,20 @@ export default function CustomerDetail() {
             <DialogTitle>SEO Report</DialogTitle>
           </DialogHeader>
           <div className="space-y-3 py-2">
+            <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
+              <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Paste monthly report
+              </div>
+              <Textarea
+                value={reportPaste}
+                onChange={(e) => setReportPaste(e.target.value)}
+                placeholder="Paste raw console-like monthly SEO performance text here..."
+                className="min-h-[120px] resize-none"
+              />
+              <Button size="sm" variant="outline" className="w-full" onClick={applyParsedReport}>
+                Parse into SEO fields
+              </Button>
+            </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label className="text-xs">Year</Label>

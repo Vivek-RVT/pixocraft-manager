@@ -818,6 +818,15 @@ function DigitalTab({ data, onView }: { data: DashboardData; onView: (v: View) =
 // ─── Services Tab ─────────────────────────────────────────────────────────────
 
 function ServicesTab({ data }: { data: DashboardData }) {
+  const sortedServices = [...data.services].sort((a, b) => {
+    const activeA = a.paymentStatus === "paid" ? 1 : 0;
+    const activeB = b.paymentStatus === "paid" ? 1 : 0;
+    if (activeA !== activeB) return activeB - activeA;
+    const progressA = a.deliveryStatus === "completed" ? 2 : a.deliveryStatus === "in_progress" ? 1 : 0;
+    const progressB = b.deliveryStatus === "completed" ? 2 : b.deliveryStatus === "in_progress" ? 1 : 0;
+    return progressB - progressA;
+  });
+
   return (
     <div className="px-4 pb-10 space-y-6">
 
@@ -826,7 +835,7 @@ function ServicesTab({ data }: { data: DashboardData }) {
         <section>
           <div className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Your Services</div>
           <div className="space-y-2">
-            {data.services.map((svc) => (
+            {sortedServices.map((svc) => (
               <div key={svc.id} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
                 <div className="flex items-center justify-between gap-3">
                   <div>
