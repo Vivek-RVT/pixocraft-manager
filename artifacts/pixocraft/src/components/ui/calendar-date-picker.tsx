@@ -46,7 +46,7 @@ export function CalendarDatePicker({
         >
           <CalendarIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
           <span className="flex-1 text-left">
-            {value ? format(selected!, "dd MMM yyyy") : placeholder}
+            {selected ? format(selected, "dd MMM yyyy") : placeholder}
           </span>
         </button>
       </PopoverTrigger>

@@ -602,8 +602,36 @@ export default function CustomerDetail() {
     queryFn: () => apiFetch(`/monthly-digital?customerId=${id}`),
     enabled: Number.isFinite(id),
   });
-  const digitalServiceCards = useMemo(() => {
-    const monthly = digitalServices.map((ds) => ({
+  const digitalServiceCards = useMemo<Array<{
+    id: string;
+    rawId: number;
+    serviceName: string;
+    serviceType: "web" | "digital";
+    status: string;
+    billingType: "monthly" | "one_time";
+    startDate: string;
+    charge: number;
+    cost: number;
+    discount: number;
+    platform: string | null;
+    notes: string | null;
+    completions: MonthlyCompletion[];
+  }>>(() => {
+    const monthly = digitalServices.map((ds): {
+      id: string;
+      rawId: number;
+      serviceName: string;
+      serviceType: "digital";
+      status: string;
+      billingType: "monthly";
+      startDate: string;
+      charge: number;
+      cost: number;
+      discount: number;
+      platform: string | null;
+      notes: string | null;
+      completions: MonthlyCompletion[];
+    } => ({
       id: `monthly-${ds.id}`,
       rawId: ds.id,
       serviceName: ds.serviceName,
@@ -629,7 +657,21 @@ export default function CustomerDetail() {
           s.paymentStatus != null
         );
       })
-      .map((s) => ({
+      .map((s): {
+        id: string;
+        rawId: number;
+        serviceName: string;
+        serviceType: "web" | "digital";
+        status: string;
+        billingType: "one_time";
+        startDate: string;
+        charge: number;
+        cost: number;
+        discount: number;
+        platform: string | null;
+        notes: string | null;
+        completions: MonthlyCompletion[];
+      } => ({
         id: `one-time-${s.id}`,
         rawId: s.id as number,
         serviceName: s.serviceName,
@@ -1157,7 +1199,10 @@ export default function CustomerDetail() {
               </div>
             ) : (
               <div className="space-y-3">
-                {digitalServiceCards.filter((ds) => customerTab === "web" ? ds.serviceType === "web" : ds.serviceType === "digital").map((ds) => {
+                {(customerTab === "web"
+                  ? digitalServiceCards.filter((ds) => ds.serviceType === "web")
+                  : digitalServiceCards.filter((ds) => ds.serviceType === "digital")
+                ).map((ds) => {
                   const isEditing = dsEditId === ds.id;
                   const isSaving = updateMonthlyDigital.isPending || updateOneTimeService.isPending;
                   return (
