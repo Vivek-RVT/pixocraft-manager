@@ -15,6 +15,7 @@ export const servicesTable = pgTable("services", {
     .notNull()
     .references(() => customersTable.id, { onDelete: "cascade" }),
   serviceType: text("service_type").notNull().default("other"),
+  billingType: text("billing_type").notNull().default("one_time"),
   serviceName: text("service_name").notNull(),
   priceSold: numeric("price_sold", { precision: 14, scale: 2 }).notNull(),
   costPrice: numeric("cost_price", { precision: 14, scale: 2 })
