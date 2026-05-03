@@ -1,14 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link, useRoute } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import {
-  useGetCustomer,
-  getGetCustomerQueryKey,
-  useListServices,
-  getListServicesQueryKey,
-  useUpdateService,
-  type Service,
-} from "@workspace/api-client-react";
+import { useListServices, getListServicesQueryKey, useUpdateService, type Service } from "@workspace/api-client-react";
 import {
   ArrowLeft,
   Mail,
@@ -544,6 +537,7 @@ export default function CustomerDetail() {
   const [, params] = useRoute("/customers/:id");
   const id = Number(params?.id);
   const qc = useQueryClient();
+  const validId = Number.isFinite(id) && id > 0;
 
   const [editOpen, setEditOpen] = useState(false);
   const [serviceOpen, setServiceOpen] = useState(false);
@@ -580,8 +574,10 @@ export default function CustomerDetail() {
   const [seoForm, setSeoForm] = useState<SeoFormData>(blankSeo);
 
   const validId = Number.isFinite(id) && id > 0;
-  const { data: detail, isLoading } = useGetCustomer(id, {
-    query: { queryKey: getGetCustomerQueryKey(id), enabled: Number.isFinite(id) },
+  const { data: detail, isLoading } = useQuery({
+    queryKey: ["customer-detail", id],
+    queryFn: () => apiFetch(`/customers/${id}`),
+    enabled: validId,
   });
   const customer = detail?.customer;
 
