@@ -1,0 +1,46 @@
+Download the React DevTools for a better development experience: https://react.dev/link/react-devtools
+react-dom_client.js?v=4b5d19e7:2160 In HTML, <a> cannot be a descendant of <a>.
+This will cause a hydration error.
+
+  ...
+    <Router data-replit-metadata="artifacts/..." data-component-name="WouterRouter">
+      <Switch data-replit-metadata="artifacts/..." data-component-name="Switch">
+        <Route data-replit-metadata="artifacts/..." data-component-name="Route" match={[...]}>
+          <AuthProvider data-replit-metadata="artifacts/..." data-component-name="AuthProvider">
+            <AdminRoutes data-replit-metadata="artifacts/..." data-component-name="AdminRoutes">
+              <Layout data-replit-metadata="artifacts/..." data-component-name="Layout">
+                <div data-replit-metadata="artifacts/..." data-component-name="div" className="flex h-[10...">
+                  <aside data-replit-metadata="artifacts/..." data-component-name="aside" className="hidden md:...">
+                    <SidebarContent data-replit-metadata="artifacts/..." data-component-name="SidebarCon...">
+                      <div data-replit-metadata="artifacts/..." data-component-name="div" className="flex flex-...">
+                        <div>
+                        <nav data-replit-metadata="artifacts/..." data-component-name="nav" className="flex-1 px-...">
+>                         <a
+>                           data-replit-metadata="artifacts/pixocraft/src/components/layout.tsx:70:12"
+>                           data-component-name="Link"
+>                           onClick={function}
+>                           href="/"
+>                           className={undefined}
+>                           ref={null}
+>                         >
+>                           <a
+>                             data-replit-metadata="artifacts/pixocraft/src/components/layout.tsx:71:14"
+>                             data-component-name="a"
+>                             className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition..."
+>                           >
+                          ...
+                        ...
+                  ...
+
+validateDOMNesting @ react-dom_client.js?v=4b5d19e7:2160
+react-dom_client.js?v=4b5d19e7:2167 <a> cannot contain a nested <a>.
+See this log for the ancestor stack trace.
+(anonymous) @ react-dom_client.js?v=4b5d19e7:2167
+/api/customers/9:1  Failed to load resource: the server responded with a status of 500 (Internal Server Error)
+/api/dashboard/notifications:1  Failed to load resource: the server responded with a status of 500 (Internal Server Error)
+/api/dashboard/notifications:1  Failed to load resource: the server responded with a status of 500 (Internal Server Error)
+/api/customers/9:1  Failed to load resource: the server responded with a status of 500 (Internal Server Error)
+/api/services:1  Failed to load resource: the server responded with a status of 500 (Internal Server Error)
+/api/services:1  Failed to load resource: the server responded with a status of 500 (Internal Server Error)
+/api/customers/10:1  Failed to load resource: the server responded with a status of 500 (Internal Server Error)
+/api/customers/10:1  Failed to load resource: the server responded with a status of 500 (Internal Server Error)

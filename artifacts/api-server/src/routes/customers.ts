@@ -86,11 +86,16 @@ router.get("/customers/:id", async (req, res): Promise<void> => {
     res.status(404).json({ error: "Customer not found" });
     return;
   }
-  const services = await db
-    .select()
-    .from(servicesTable)
-    .where(eq(servicesTable.customerId, c.id))
-    .orderBy(desc(servicesTable.date));
+  let services = [];
+  try {
+    services = await db
+      .select()
+      .from(servicesTable)
+      .where(eq(servicesTable.customerId, c.id))
+      .orderBy(desc(servicesTable.date));
+  } catch {
+    services = [];
+  }
 
   const totalRevenue = services.reduce(
     (sum, s) => sum + Number(s.priceSold),
