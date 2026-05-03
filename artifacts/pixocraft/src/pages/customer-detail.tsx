@@ -633,6 +633,23 @@ export default function CustomerDetail() {
       }));
     return [...monthly, ...oneTime].sort((a, b) => +new Date(b.startDate) - +new Date(a.startDate));
   }, [digitalServices, services]);
+  const digitalStages = [
+    { value: "paused", label: "Pending" },
+    { value: "active", label: "In progress" },
+    { value: "delivered", label: "Delivered" },
+  ] as const;
+
+  function getDigitalStageIndex(status: string) {
+    if (status === "delivered") return 2;
+    if (status === "active") return 1;
+    return 0;
+  }
+
+  function getDigitalStageStatus(status: string) {
+    if (status === "delivered") return "delivered";
+    if (status === "active") return "active";
+    return "paused";
+  }
 
   const { data: portal } = useQuery<ClientPortal | null>({
     queryKey: ["portal", id],
@@ -1133,7 +1150,7 @@ export default function CustomerDetail() {
                         </div>
                         <div className="flex items-center gap-2">
                           <Badge variant="outline" className={cn("text-xs capitalize", ds.status === "active" && "border-emerald-400 text-emerald-600", ds.status === "paused" && "border-amber-400 text-amber-600", ds.status === "cancelled" && "border-red-400 text-red-500", ds.status === "delivered" && "border-blue-400 text-blue-600")}>
-                            {ds.status}
+                            {ds.billingType === "one_time" ? (ds.status === "paused" ? "pending" : ds.status) : ds.status}
                           </Badge>
                           {!isEditing && (
                             <Button size="icon" variant="ghost" className="h-7 w-7 shrink-0" onClick={() => openDsEdit(ds)}>
@@ -1146,27 +1163,26 @@ export default function CustomerDetail() {
                       {isEditing ? (
                         <div className="rounded-lg border bg-white p-3 space-y-3">
                           <div className="space-y-1">
-                            <Label className="text-xs">Status</Label>
-                            <Select value={dsEditStatus} onValueChange={setDsEditStatus}>
-                              <SelectTrigger className="h-8 text-xs">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {ds.billingType === "monthly" ? (
-                                  <>
-                                    <SelectItem value="active">Active</SelectItem>
-                                    <SelectItem value="paused">Paused</SelectItem>
-                                    <SelectItem value="cancelled">Cancelled</SelectItem>
-                                  </>
-                                ) : (
-                                  <>
-                                    <SelectItem value="paused">Pending</SelectItem>
-                                    <SelectItem value="active">In progress</SelectItem>
-                                    <SelectItem value="delivered">Delivered</SelectItem>
-                                  </>
-                                )}
-                              </SelectContent>
-                            </Select>
+                            <Label className="text-xs">Stage</Label>
+                            <div className="flex flex-wrap gap-2">
+                              {digitalStages.map((stage, index) => {
+                                const activeStage = getDigitalStageIndex(dsEditStatus) >= index;
+                                return (
+                                  <Button
+                                    key={stage.value}
+                                    size="sm"
+                                    variant={getDigitalStageIndex(dsEditStatus) === index ? "default" : "outline"}
+                                    className={cn(
+                                      "h-7 text-xs",
+                                      activeStage && getDigitalStageIndex(dsEditStatus) !== index && "border-primary/40 text-primary",
+                                    )}
+                                    onClick={() => setDsEditStatus(stage.value)}
+                                  >
+                                    {stage.label}
+                                  </Button>
+                                );
+                              })}
+                            </div>
                           </div>
                           <div className="space-y-1">
                             <Label className="text-xs">Notes</Label>
@@ -1198,7 +1214,27 @@ export default function CustomerDetail() {
                               <div className="text-sm font-medium capitalize">{ds.billingType === "monthly" ? (ds.status === "active" ? "Started / in progress" : ds.status === "paused" ? "Paused" : ds.status === "cancelled" ? "Cancelled" : "Delivered") : (ds.status === "delivered" ? "Project delivered" : ds.status === "active" ? "In progress" : "Pending")}</div>
                             </div>
                             <div className="mt-2 h-2 rounded-full bg-muted overflow-hidden">
-                              <div className={cn("h-full rounded-full", ds.billingType === "monthly" ? (ds.status === "active" ? "w-2/3 bg-emerald-500" : ds.status === "paused" ? "w-1/2 bg-amber-500" : "w-full bg-blue-500") : (ds.status === "delivered" ? "w-full bg-blue-500" : ds.status === "active" ? "w-1/2 bg-sky-500" : "w-1/4 bg-muted-foreground"))} />
+                              <div
+                                className={cn(
+                                  "h-full rounded-full transition-all",
+                                  getDigitalStageIndex(ds.status) === 0 && "w-1/3 bg-amber-500",
+                                  getDigitalStageIndex(ds.status) === 1 && "w-2/3 bg-emerald-500",
+                                  getDigitalStageIndex(ds.status) === 2 && "w-full bg-blue-500",
+                                )}
+                              />
+                            </div>
+                            <div className="mt-2 flex gap-2 text-[11px]">
+                              {digitalStages.map((stage, index) => (
+                                <div
+                                  key={stage.value}
+                                  className={cn(
+                                    "rounded-full px-2 py-0.5",
+                                    getDigitalStageIndex(ds.status) >= index ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground",
+                                  )}
+                                >
+                                  {stage.label}
+                                </div>
+                              ))}
                             </div>
                           </div>
                           {ds.notes && (
