@@ -127,6 +127,7 @@ type MonthlyDigitalService = {
   discount: number;
   startDate: string;
   status: string;
+  notes: string | null;
   completions: MonthlyCompletion[];
 };
 
@@ -554,6 +555,9 @@ export default function CustomerDetail() {
   const [seoDialog, setSeoDialog] = useState(false);
   const [editDm, setEditDm] = useState<DMReport | undefined>();
   const [editSeo, setEditSeo] = useState<SeoReport | undefined>();
+  const [dsEditId, setDsEditId] = useState<string | null>(null);
+  const [dsEditStatus, setDsEditStatus] = useState("");
+  const [dsEditNote, setDsEditNote] = useState("");
 
   const blankDm = (): DMFormData => ({
     year: String(currentYear), month: String(currentMonth), platforms: "", plan: "",
@@ -599,6 +603,7 @@ export default function CustomerDetail() {
   const digitalServiceCards = useMemo(() => {
     const monthly = digitalServices.map((ds) => ({
       id: `monthly-${ds.id}`,
+      rawId: ds.id,
       serviceName: ds.serviceName,
       status: ds.status,
       billingType: "monthly" as const,
@@ -607,12 +612,14 @@ export default function CustomerDetail() {
       cost: ds.monthlyCost,
       discount: ds.discount ?? 0,
       platform: ds.platform,
+      notes: ds.notes ?? null,
       completions: ds.completions ?? [],
     }));
     const oneTime = (services ?? [])
       .filter((s: any) => s.serviceType === "digital")
       .map((s) => ({
         id: `one-time-${s.id}`,
+        rawId: s.id as number,
         serviceName: s.serviceName,
         status: s.deliveryStatus === "delivered" ? "delivered" : s.deliveryStatus === "in_progress" ? "active" : "paused",
         billingType: "one_time" as const,
@@ -621,6 +628,7 @@ export default function CustomerDetail() {
         cost: Number(s.costPrice),
         discount: 0,
         platform: "Digital service",
+        notes: (s as any).notes ?? null,
         completions: [],
       }));
     return [...monthly, ...oneTime].sort((a, b) => +new Date(b.startDate) - +new Date(a.startDate));
@@ -687,6 +695,53 @@ export default function CustomerDetail() {
       toast.success("Project removed");
     },
   });
+
+  const updateMonthlyDigital = useMutation({
+    mutationFn: ({ rawId, status, notes }: { rawId: number; status: string; notes: string }) =>
+      apiFetch(`/monthly-digital/${rawId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status, notes: notes || null }),
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["monthly-digital", id] });
+      setDsEditId(null);
+      toast.success("Service updated");
+    },
+    onError: () => toast.error("Failed to update service"),
+  });
+
+  const updateOneTimeService = useMutation({
+    mutationFn: ({ rawId, status, notes }: { rawId: number; status: string; notes: string }) => {
+      const deliveryStatus = status === "delivered" ? "delivered" : status === "active" ? "in_progress" : "pending";
+      return apiFetch(`/services/${rawId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ deliveryStatus, notes: notes || null }),
+      });
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: getListServicesQueryKey({ customerId: id }) });
+      setDsEditId(null);
+      toast.success("Service updated");
+    },
+    onError: () => toast.error("Failed to update service"),
+  });
+
+  function openDsEdit(ds: { id: string; status: string; notes: string | null }) {
+    setDsEditId(ds.id);
+    setDsEditStatus(ds.status);
+    setDsEditNote(ds.notes ?? "");
+  }
+
+  function saveDsEdit(ds: { id: string; rawId: number; billingType: "monthly" | "one_time" }) {
+    if (ds.billingType === "monthly") {
+      const monthlyStatus = dsEditStatus === "delivered" ? "active" : dsEditStatus as "active" | "paused" | "cancelled";
+      updateMonthlyDigital.mutate({ rawId: ds.rawId, status: monthlyStatus, notes: dsEditNote });
+    } else {
+      updateOneTimeService.mutate({ rawId: ds.rawId, status: dsEditStatus, notes: dsEditNote });
+    }
+  }
 
   const saveDmReport = useMutation({
     mutationFn: (data: DMFormData) =>
@@ -1064,49 +1119,114 @@ export default function CustomerDetail() {
               </div>
             ) : (
               <div className="space-y-3">
-                {digitalServiceCards.map((ds) => (
-                  <div key={ds.id} className="rounded-2xl border bg-muted/20 p-4 space-y-2">
-                    <div className="flex items-center justify-between gap-2">
-                      <div>
-                        <div className="font-medium text-sm">{ds.serviceName}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {ds.platform ? `Platform: ${ds.platform}` : "Digital marketing"}
+                {digitalServiceCards.map((ds) => {
+                  const isEditing = dsEditId === ds.id;
+                  const isSaving = updateMonthlyDigital.isPending || updateOneTimeService.isPending;
+                  return (
+                    <div key={ds.id} className="rounded-2xl border bg-muted/20 p-4 space-y-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <div>
+                          <div className="font-medium text-sm">{ds.serviceName}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {ds.platform ? `Platform: ${ds.platform}` : "Digital marketing"}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className={cn("text-xs capitalize", ds.status === "active" && "border-emerald-400 text-emerald-600", ds.status === "paused" && "border-amber-400 text-amber-600", ds.status === "cancelled" && "border-red-400 text-red-500", ds.status === "delivered" && "border-blue-400 text-blue-600")}>
+                            {ds.status}
+                          </Badge>
+                          {!isEditing && (
+                            <Button size="icon" variant="ghost" className="h-7 w-7 shrink-0" onClick={() => openDsEdit(ds)}>
+                              <Pencil className="w-3.5 h-3.5" />
+                            </Button>
+                          )}
                         </div>
                       </div>
-                      <Badge variant="outline" className={cn("text-xs capitalize", ds.status === "active" && "border-emerald-400 text-emerald-600", ds.status === "paused" && "border-amber-400 text-amber-600", ds.status === "cancelled" && "border-red-400 text-red-500", ds.status === "delivered" && "border-blue-400 text-blue-600")}>
-                        {ds.status}
-                      </Badge>
+
+                      {isEditing ? (
+                        <div className="rounded-lg border bg-white p-3 space-y-3">
+                          <div className="space-y-1">
+                            <Label className="text-xs">Status</Label>
+                            <Select value={dsEditStatus} onValueChange={setDsEditStatus}>
+                              <SelectTrigger className="h-8 text-xs">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {ds.billingType === "monthly" ? (
+                                  <>
+                                    <SelectItem value="active">Active</SelectItem>
+                                    <SelectItem value="paused">Paused</SelectItem>
+                                    <SelectItem value="cancelled">Cancelled</SelectItem>
+                                  </>
+                                ) : (
+                                  <>
+                                    <SelectItem value="paused">Pending</SelectItem>
+                                    <SelectItem value="active">In progress</SelectItem>
+                                    <SelectItem value="delivered">Delivered</SelectItem>
+                                  </>
+                                )}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-xs">Notes</Label>
+                            <Textarea
+                              className="min-h-[70px] resize-none text-xs"
+                              placeholder="Add a note about this project…"
+                              value={dsEditNote}
+                              onChange={(e) => setDsEditNote(e.target.value)}
+                            />
+                          </div>
+                          <div className="flex gap-2 justify-end">
+                            <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setDsEditId(null)} disabled={isSaving}>
+                              Cancel
+                            </Button>
+                            <Button size="sm" className="h-7 text-xs" onClick={() => saveDsEdit(ds)} disabled={isSaving}>
+                              {isSaving ? "Saving…" : "Save"}
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="rounded-lg border bg-white p-3">
+                            <div className="flex items-center justify-between text-xs text-muted-foreground">
+                              <span>{ds.billingType === "monthly" ? "Monthly plan" : "One-time project"}</span>
+                              <span>{formatDate(ds.startDate)}</span>
+                            </div>
+                            <div className="mt-2 flex items-center gap-2">
+                              <div className={cn("h-2.5 w-2.5 rounded-full", ds.status === "active" ? "bg-emerald-500" : ds.status === "paused" ? "bg-amber-500" : ds.status === "delivered" ? "bg-blue-500" : "bg-red-500")} />
+                              <div className="text-sm font-medium capitalize">{ds.billingType === "monthly" ? (ds.status === "active" ? "Started / in progress" : ds.status === "paused" ? "Paused" : ds.status === "cancelled" ? "Cancelled" : "Delivered") : (ds.status === "delivered" ? "Project delivered" : ds.status === "active" ? "In progress" : "Pending")}</div>
+                            </div>
+                            <div className="mt-2 h-2 rounded-full bg-muted overflow-hidden">
+                              <div className={cn("h-full rounded-full", ds.billingType === "monthly" ? (ds.status === "active" ? "w-2/3 bg-emerald-500" : ds.status === "paused" ? "w-1/2 bg-amber-500" : "w-full bg-blue-500") : (ds.status === "delivered" ? "w-full bg-blue-500" : ds.status === "active" ? "w-1/2 bg-sky-500" : "w-1/4 bg-muted-foreground"))} />
+                            </div>
+                          </div>
+                          {ds.notes && (
+                            <div className="rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 p-3 text-xs text-amber-800 dark:text-amber-300 whitespace-pre-wrap">
+                              {ds.notes}
+                            </div>
+                          )}
+                        </>
+                      )}
+
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div className="rounded-lg bg-white p-3 border">
+                          <div className="text-muted-foreground">Charge</div>
+                          <div className="font-semibold">{formatCurrency(ds.charge)}{ds.billingType === "monthly" ? "/mo" : ""}</div>
+                        </div>
+                        <div className="rounded-lg bg-white p-3 border">
+                          <div className="text-muted-foreground">Cost</div>
+                          <div className="font-semibold">{formatCurrency(ds.cost)}{ds.billingType === "monthly" ? "/mo" : ""}</div>
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
+                        {ds.discount > 0 && <span>Discount: {formatCurrency(ds.discount)}</span>}
+                        <span>Since: {formatDate(ds.startDate)}</span>
+                      </div>
+                      {ds.billingType === "monthly" ? <MiniMonthGrid completions={ds.completions} /> : null}
                     </div>
-                    <div className="rounded-lg border bg-white p-3">
-                      <div className="flex items-center justify-between text-xs text-muted-foreground">
-                        <span>{ds.billingType === "monthly" ? "Monthly plan" : "One-time project"}</span>
-                        <span>{formatDate(ds.startDate)}</span>
-                      </div>
-                      <div className="mt-2 flex items-center gap-2">
-                        <div className={cn("h-2.5 w-2.5 rounded-full", ds.status === "active" ? "bg-emerald-500" : ds.status === "paused" ? "bg-amber-500" : "bg-red-500")} />
-                        <div className="text-sm font-medium capitalize">{ds.billingType === "monthly" ? (ds.status === "active" ? "Started / in progress" : ds.status === "paused" ? "Paused" : "Delivered") : (ds.status === "delivered" ? "Project delivered" : "Project in progress")}</div>
-                      </div>
-                      <div className="mt-2 h-2 rounded-full bg-muted overflow-hidden">
-                        <div className={cn("h-full rounded-full", ds.billingType === "monthly" ? (ds.status === "active" ? "w-2/3 bg-emerald-500" : ds.status === "paused" ? "w-1/2 bg-amber-500" : "w-full bg-blue-500") : (ds.status === "delivered" ? "w-full bg-blue-500" : "w-1/2 bg-sky-500"))} />
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2 text-xs">
-                      <div className="rounded-lg bg-white p-3 border">
-                        <div className="text-muted-foreground">Charge</div>
-                        <div className="font-semibold">{formatCurrency(ds.charge)}{ds.billingType === "monthly" ? "/mo" : ""}</div>
-                      </div>
-                      <div className="rounded-lg bg-white p-3 border">
-                        <div className="text-muted-foreground">Cost</div>
-                        <div className="font-semibold">{formatCurrency(ds.cost)}{ds.billingType === "monthly" ? "/mo" : ""}</div>
-                      </div>
-                    </div>
-                    <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
-                      {ds.discount > 0 && <span>Discount: {formatCurrency(ds.discount)}</span>}
-                      <span>Since: {formatDate(ds.startDate)}</span>
-                    </div>
-                    {ds.billingType === "monthly" ? <MiniMonthGrid completions={ds.completions} /> : null}
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </CardContent>
