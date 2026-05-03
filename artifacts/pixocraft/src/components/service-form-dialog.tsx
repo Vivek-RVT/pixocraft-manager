@@ -44,6 +44,7 @@ import { formatCurrency } from "@/lib/format";
 
 type ServiceRowValues = {
   serviceType: "web" | "digital" | "other";
+  billingType: "one_time" | "monthly";
   serviceName: string;
   priceSold: string;
   costPrice: string;
@@ -70,6 +71,7 @@ const todayStr = () => new Date().toISOString().slice(0, 10);
 
 const defaultRow = (): ServiceRowValues => ({
   serviceType: "other",
+  billingType: "one_time",
   serviceName: "",
   priceSold: "",
   costPrice: "",
@@ -181,6 +183,24 @@ function ServiceRow({
         </div>
 
         <div className="space-y-1.5">
+          <Label className="text-xs">Billing type</Label>
+          <Select
+            value={row.billingType}
+            onValueChange={(v) =>
+              onChange({ billingType: v as "one_time" | "monthly" })
+            }
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="one_time">One time</SelectItem>
+              <SelectItem value="monthly">Monthly</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-1.5">
           <Label className="text-xs">Date *</Label>
           <CalendarDatePicker
             value={row.date}
@@ -253,6 +273,29 @@ function ServiceRow({
             {formatCurrency(profit)}
           </span>
         </div>
+
+        {row.billingType === "monthly" && (
+          <div className="sm:col-span-2 rounded-md border bg-blue-50 dark:bg-blue-950/20 p-3 space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="text-xs font-semibold uppercase tracking-wide text-blue-600 dark:text-blue-300">
+                Monthly tracking
+              </div>
+              <div className="text-xs text-blue-600 dark:text-blue-300">
+                tick + progress
+              </div>
+            </div>
+            <div className="grid grid-cols-4 gap-2">
+              {["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"].map((m) => (
+                <div key={m} className="rounded-lg border bg-white/80 px-2 py-2 text-center text-[10px] font-medium text-muted-foreground">
+                  <div>{m}</div>
+                  <div className="mt-1 flex justify-center">
+                    <div className="h-3 w-3 rounded-full border-2 border-blue-500" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="space-y-1.5">
           <Label className="text-xs">Amount paid (₹)</Label>
@@ -378,6 +421,7 @@ export function ServiceFormDialog({
         {
           serviceType:
             (service.serviceType as "web" | "digital" | "other") ?? "other",
+          billingType: "one_time",
           serviceName: service.serviceName,
           priceSold: String(service.priceSold),
           costPrice: String(service.costPrice),
@@ -463,6 +507,7 @@ export function ServiceFormDialog({
           data: {
             customerId: Number(values.customerId),
             serviceType: row.serviceType,
+              billingType: row.billingType,
             serviceName: row.serviceName.trim(),
             priceSold: Number(row.priceSold),
             costPrice: Number(row.costPrice),
@@ -481,6 +526,7 @@ export function ServiceFormDialog({
             data: {
               customerId: Number(values.customerId),
               serviceType: row.serviceType,
+              billingType: row.billingType,
               serviceName: row.serviceName.trim(),
               priceSold: Number(row.priceSold),
               costPrice: Number(row.costPrice),
