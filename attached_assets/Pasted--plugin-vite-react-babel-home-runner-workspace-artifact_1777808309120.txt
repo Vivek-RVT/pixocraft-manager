@@ -1,0 +1,20 @@
+[plugin:vite:react-babel] /home/runner/workspace/artifacts/pixocraft/src/pages/customer-detail.tsx: Identifier 'validId' has already been declared. (576:8)
+  579 |     queryFn: () => apiFetch(`/customers/${id}`),
+/home/runner/workspace/artifacts/pixocraft/src/pages/customer-detail.tsx:576:8
+574 |    const [seoForm, setSeoForm] = useState<SeoFormData>(blankSeo);
+575 |  
+576 |    const validId = Number.isFinite(id) && id > 0;
+    |          ^
+577 |    const { data: detail, isLoading } = useQuery({
+578 |      queryKey: ["customer-detail", id],
+    at constructor (/home/runner/workspace/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:365:19)
+    at TypeScriptParserMixin.raise (/home/runner/workspace/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:6599:19)
+    at TypeScriptScopeHandler.checkRedeclarationInScope (/home/runner/workspace/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:1619:19)
+    at TypeScriptScopeHandler.declareName (/home/runner/workspace/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:1585:12)
+    at TypeScriptScopeHandler.declareName (/home/runner/workspace/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:4880:11)
+    at TypeScriptParserMixin.declareNameFromIdentifier (/home/runner/workspace/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:7567:16)
+    at TypeScriptParserMixin.checkIdentifier (/home/runner/workspace/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:7563:12)
+    at TypeScriptParserMixin.checkLVal (/home/runner/workspace/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:7500:12)
+    at TypeScriptParserMixin.parseVarId (/home/runner/workspace/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:13412:10)
+    at TypeScriptParserMixin.parseVarId (/home/runner/workspace/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:9752:11)
+    at TypeScriptParserMixin.parseVar (/home/runne

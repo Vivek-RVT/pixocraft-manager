@@ -538,7 +538,6 @@ export default function CustomerDetail() {
   const id = Number(params?.id);
   const qc = useQueryClient();
   const validId = Number.isFinite(id) && id > 0;
-
   const [editOpen, setEditOpen] = useState(false);
   const [serviceOpen, setServiceOpen] = useState(false);
   const [editService, setEditService] = useState<any>(undefined);
@@ -573,7 +572,6 @@ export default function CustomerDetail() {
   const [dmForm, setDmForm] = useState<DMFormData>(blankDm);
   const [seoForm, setSeoForm] = useState<SeoFormData>(blankSeo);
 
-  const validId = Number.isFinite(id) && id > 0;
   const { data: detail, isLoading } = useQuery({
     queryKey: ["customer-detail", id],
     queryFn: () => apiFetch(`/customers/${id}`),
@@ -586,7 +584,7 @@ export default function CustomerDetail() {
     {
       query: {
         queryKey: getListServicesQueryKey({ customerId: id }),
-        enabled: Number.isFinite(id),
+        enabled: validId,
       },
     },
   );
