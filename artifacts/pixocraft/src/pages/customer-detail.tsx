@@ -558,6 +558,8 @@ export default function CustomerDetail() {
   const [dsEditId, setDsEditId] = useState<string | null>(null);
   const [dsEditStatus, setDsEditStatus] = useState("");
   const [dsEditNote, setDsEditNote] = useState("");
+  const [dsEditName, setDsEditName] = useState("");
+  const [dsEditCategory, setDsEditCategory] = useState("");
 
   const blankDm = (): DMFormData => ({
     year: String(currentYear), month: String(currentMonth), platforms: "", plan: "",
@@ -765,10 +767,12 @@ export default function CustomerDetail() {
     onError: () => toast.error("Failed to update service"),
   });
 
-  function openDsEdit(ds: { id: string; status: string; notes: string | null }) {
+  function openDsEdit(ds: { id: string; status: string; notes: string | null; serviceName?: string; platform?: string | null }) {
     setDsEditId(ds.id);
     setDsEditStatus(ds.status);
     setDsEditNote(ds.notes ?? "");
+    setDsEditName(ds.serviceName ?? "");
+    setDsEditCategory(ds.platform ?? "");
   }
 
   function saveDsEdit(ds: { id: string; rawId: number; billingType: "monthly" | "one_time" }) {
@@ -1183,6 +1187,24 @@ export default function CustomerDetail() {
 
                       {isEditing ? (
                         <div className="rounded-lg border bg-white p-3 space-y-3">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div className="space-y-1">
+                              <Label className="text-xs">Name</Label>
+                              <Input
+                                className="h-8 text-xs"
+                                value={dsEditName}
+                                onChange={(e) => setDsEditName(e.target.value)}
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-xs">Category</Label>
+                              <Input
+                                className="h-8 text-xs"
+                                value={dsEditCategory}
+                                onChange={(e) => setDsEditCategory(e.target.value)}
+                              />
+                            </div>
+                          </div>
                           <div className="space-y-1">
                             <Label className="text-xs">Stage</Label>
                             <div className="flex flex-wrap gap-2">
