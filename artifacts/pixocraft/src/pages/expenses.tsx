@@ -190,7 +190,7 @@ export default function Expenses() {
                   formatter={(value: number) => formatCurrency(Number(value))}
                 />
                 <Bar
-                  dataKey="amount"
+                  dataKey="total"
                   fill="hsl(var(--chart-4))"
                   radius={[6, 6, 0, 0]}
                 />

@@ -104,7 +104,7 @@ type MonthlyDigitalService = {
   monthlyCharge: number;
   discount: number;
   startDate: string;
-  status: "active" | "paused" | "cancelled";
+  status: "active" | "running" | "paused" | "cancelled";
   notes: string | null;
   completions: MonthlyCompletion[];
 };
@@ -119,11 +119,12 @@ function StatusBadge({ status }: { status: string }) {
       className={cn(
         "text-xs capitalize",
         status === "active" && "border-emerald-400 text-emerald-600",
+        status === "running" && "border-blue-400 text-blue-600 bg-blue-50 dark:bg-blue-950/30",
         status === "paused" && "border-amber-400 text-amber-600",
         status === "cancelled" && "border-red-400 text-red-500",
       )}
     >
-      {status}
+      {status === "running" ? "🔵 Running" : status}
     </Badge>
   );
 }
@@ -311,7 +312,7 @@ type DigitalFormData = {
   standardRate: string;
   monthlyCharge: string;
   startDate: string;
-  status: "active" | "paused" | "cancelled";
+  status: "active" | "running" | "paused" | "cancelled";
   notes: string;
 };
 
@@ -659,6 +660,7 @@ function DigitalServiceDialog({
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="running">🔵 Running (being delivered now)</SelectItem>
                   <SelectItem value="paused">Paused</SelectItem>
                   <SelectItem value="cancelled">Cancelled</SelectItem>
                 </SelectContent>
@@ -780,7 +782,11 @@ function DigitalServiceCard({
   onEdit: () => void;
   onDelete: () => void;
 }) {
+  const qc = useQueryClient();
   const [expanded, setExpanded] = useState(true);
+  const [markDoneOpen, setMarkDoneOpen] = useState(false);
+  const [markAmount, setMarkAmount] = useState("");
+
   const profit = service.monthlyCharge - service.monthlyCost;
   const doneThisYear = service.completions.filter(
     (c) => c.year === year && c.completed,
@@ -792,6 +798,24 @@ function DigitalServiceCard({
   const discountPct = service.discount > 0 && standardRate > 0
     ? Math.round((service.discount / standardRate) * 100)
     : 0;
+
+  const currentMonthDone = service.completions.some(
+    (c) => c.year === currentYear && c.month === currentMonth && c.completed,
+  );
+
+  const quickMarkMutation = useMutation({
+    mutationFn: (paidAmount: number) =>
+      apiFetch(`/monthly-digital/${service.id}/completion`, {
+        method: "POST",
+        body: JSON.stringify({ year: currentYear, month: currentMonth, completed: true, paidAmount }),
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["monthly-digital"] });
+      setMarkDoneOpen(false);
+      toast.success(`${MONTHS[currentMonth - 1]} marked as done!`);
+    },
+    onError: () => toast.error("Could not mark done"),
+  });
 
   return (
     <div className="border rounded-lg overflow-hidden">
@@ -846,6 +870,28 @@ function DigitalServiceCard({
           </Button>
         </div>
       </div>
+
+      {service.status === "running" && !currentMonthDone && (
+        <div className="px-4 pb-3 flex items-center gap-2">
+          <Button
+            size="sm"
+            className="h-8 text-xs gap-1.5 bg-blue-600 hover:bg-blue-700 text-white"
+            onClick={() => { setMarkAmount(String(service.monthlyCharge)); setMarkDoneOpen(true); }}
+          >
+            <CheckCircle2 className="w-3.5 h-3.5" />
+            Mark {MONTHS[currentMonth - 1]} done
+          </Button>
+          <span className="text-xs text-muted-foreground">Current month in progress</span>
+        </div>
+      )}
+      {service.status === "running" && currentMonthDone && (
+        <div className="px-4 pb-3">
+          <span className="inline-flex items-center gap-1.5 text-xs text-emerald-600 font-medium">
+            <CheckCircle2 className="w-3.5 h-3.5" /> {MONTHS[currentMonth - 1]} already marked done
+          </span>
+        </div>
+      )}
+
       {expanded && (
         <div className="px-4 pb-4 border-t bg-muted/20">
           <MonthGrid
@@ -858,6 +904,38 @@ function DigitalServiceCard({
           />
         </div>
       )}
+
+      <Dialog open={markDoneOpen} onOpenChange={(o) => !o && setMarkDoneOpen(false)}>
+        <DialogContent className="sm:max-w-[340px]">
+          <DialogHeader>
+            <DialogTitle>Mark {MONTHS[currentMonth - 1]} {currentYear} done</DialogTitle>
+            <DialogDescription>Confirm the amount collected for this month.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-1">
+            <div className="space-y-2">
+              <Label>Amount collected (₹)</Label>
+              <Input
+                type="number"
+                inputMode="decimal"
+                value={markAmount}
+                onChange={(e) => setMarkAmount(e.target.value)}
+                placeholder={String(service.monthlyCharge)}
+              />
+              <p className="text-xs text-muted-foreground">Default: ₹{service.monthlyCharge.toLocaleString()}</p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setMarkDoneOpen(false)}>Cancel</Button>
+            <Button
+              onClick={() => quickMarkMutation.mutate(Number(markAmount) || service.monthlyCharge)}
+              disabled={quickMarkMutation.isPending}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              {quickMarkMutation.isPending ? "Saving..." : "Confirm Done"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

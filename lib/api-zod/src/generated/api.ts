@@ -299,6 +299,8 @@ export const ListExpensesResponseItem = zod.object({
     "salary",
     "hosting",
     "tools",
+    "software",
+    "marketing",
     "travel",
     "office",
     "misc",
@@ -318,6 +320,8 @@ export const CreateExpenseBody = zod.object({
     "salary",
     "hosting",
     "tools",
+    "software",
+    "marketing",
     "travel",
     "office",
     "misc",
@@ -334,6 +338,8 @@ export const CreateExpenseResponse = zod.object({
     "salary",
     "hosting",
     "tools",
+    "software",
+    "marketing",
     "travel",
     "office",
     "misc",
@@ -352,7 +358,7 @@ export const UpdateExpenseParams = zod.object({
 
 export const UpdateExpenseBody = zod.object({
   category: zod
-    .enum(["ads", "salary", "hosting", "tools", "travel", "office", "misc"])
+    .enum(["ads", "salary", "hosting", "tools", "software", "marketing", "travel", "office", "misc"])
     .optional(),
   amount: zod.number().optional(),
   date: zod.coerce.date().optional(),
@@ -366,6 +372,8 @@ export const UpdateExpenseResponse = zod.object({
     "salary",
     "hosting",
     "tools",
+    "software",
+    "marketing",
     "travel",
     "office",
     "misc",
@@ -399,7 +407,7 @@ export const ListTransactionsResponseItem = zod.object({
   amount: zod.number(),
   source: zod.string(),
   accountName: zod.string(),
-  method: zod.enum(["upi", "bank", "cash"]),
+  method: zod.enum(["upi", "bank", "neft", "rtgs", "card", "cheque", "cash"]),
   date: zod.coerce.date(),
   notes: zod.string().nullish(),
 });
@@ -413,7 +421,7 @@ export const CreateTransactionBody = zod.object({
   amount: zod.number(),
   source: zod.string(),
   accountName: zod.string(),
-  method: zod.enum(["upi", "bank", "cash"]),
+  method: zod.enum(["upi", "bank", "neft", "rtgs", "card", "cheque", "cash"]),
   date: zod.coerce.date(),
   notes: zod.string().nullish(),
 });
@@ -424,7 +432,7 @@ export const CreateTransactionResponse = zod.object({
   amount: zod.number(),
   source: zod.string(),
   accountName: zod.string(),
-  method: zod.enum(["upi", "bank", "cash"]),
+  method: zod.enum(["upi", "bank", "neft", "rtgs", "card", "cheque", "cash"]),
   date: zod.coerce.date(),
   notes: zod.string().nullish(),
 });

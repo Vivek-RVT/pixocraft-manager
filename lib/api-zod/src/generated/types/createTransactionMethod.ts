@@ -12,5 +12,9 @@ export type CreateTransactionMethod =
 export const CreateTransactionMethod = {
   upi: "upi",
   bank: "bank",
+  neft: "neft",
+  rtgs: "rtgs",
+  card: "card",
+  cheque: "cheque",
   cash: "cash",
 } as const;

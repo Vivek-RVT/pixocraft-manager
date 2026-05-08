@@ -25,6 +25,7 @@ import {
   Trash2,
   ChevronDown,
   ChevronUp,
+  Info,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { getYear, getMonth } from "date-fns";
@@ -46,6 +47,7 @@ import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogFooter,
@@ -584,7 +586,7 @@ export default function CustomerDetail() {
     {
       query: {
         queryKey: getListServicesQueryKey({ customerId: id }),
-        enabled: false,
+        enabled: validId,
       },
     },
   );
@@ -913,16 +915,37 @@ export default function CustomerDetail() {
     onError: () => toast.error("Failed to save report"),
   });
 
-  const totals = (services ?? []).reduce(
-    (acc, s) => {
-      acc.revenue += Number(s.priceSold);
-      acc.profit += Number(s.profit ?? 0);
-      acc.paid += Number(s.amountPaid ?? 0);
-      acc.pending += Number(s.priceSold) - Number(s.amountPaid ?? 0);
-      return acc;
-    },
-    { revenue: 0, profit: 0, paid: 0, pending: 0 },
-  );
+  const totals = useMemo(() => {
+    const base = (services ?? []).reduce(
+      (acc, s) => {
+        acc.revenue += Number(s.priceSold);
+        acc.profit += Number(s.profit ?? 0);
+        acc.paid += Number(s.amountPaid ?? 0);
+        acc.pending += Number(s.priceSold) - Number(s.amountPaid ?? 0);
+        return acc;
+      },
+      { revenue: 0, profit: 0, paid: 0, pending: 0 },
+    );
+    for (const ws of webServices) {
+      for (const c of ws.completions) {
+        if (c.completed) {
+          base.revenue += Number(c.paidAmount);
+          base.profit += Number(c.paidAmount) - Number(ws.monthlyCost);
+          base.paid += Number(c.paidAmount);
+        }
+      }
+    }
+    for (const ds of digitalServices) {
+      for (const c of ds.completions) {
+        if (c.completed) {
+          base.revenue += Number(c.paidAmount);
+          base.profit += Number(c.paidAmount) - Number(ds.monthlyCost);
+          base.paid += Number(c.paidAmount);
+        }
+      }
+    }
+    return base;
+  }, [services, webServices, digitalServices]);
 
   const webMRR = webServices
     .filter((s) => s.status === "active")
@@ -935,6 +958,8 @@ export default function CustomerDetail() {
   const portalLink = `${window.location.origin}${BASE}/portal`;
   const [reportPaste, setReportPaste] = useState("");
   const [customerTab, setCustomerTab] = useState<CustomerTab>("digital");
+  const [infoOpen, setInfoOpen] = useState(false);
+  const [portalOpen, setPortalOpen] = useState(false);
   const applyParsedReport = () => {
     const parsed = extractPerformanceReport(reportPaste);
     setSeoForm((f) => ({
@@ -999,6 +1024,26 @@ export default function CustomerDetail() {
                     {customer.businessName}
                   </div>
                 )}
+                <div className="flex items-center gap-1 mt-1">
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-6 w-6 text-muted-foreground hover:text-foreground"
+                    onClick={() => setInfoOpen(true)}
+                    title="More info"
+                  >
+                    <Info className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-6 w-6 text-muted-foreground hover:text-blue-600"
+                    onClick={() => setPortalOpen(true)}
+                    title="Client Portal"
+                  >
+                    <LayoutDashboard className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
               </div>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 text-sm">
@@ -1029,41 +1074,7 @@ export default function CustomerDetail() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm pt-6 border-t mt-6">
-            {customer.email && (
-              <div className="flex items-center gap-2">
-                <Mail className="w-4 h-4 text-muted-foreground" />
-                <span>{customer.email}</span>
-              </div>
-            )}
-            {customer.phone && (
-              <div className="flex items-center gap-2">
-                <Phone className="w-4 h-4 text-muted-foreground" />
-                <span>{customer.phone}</span>
-              </div>
-            )}
-            {customer.address && (
-              <div className="flex items-center gap-2">
-                <MapPin className="w-4 h-4 text-muted-foreground" />
-                <span>{customer.address}</span>
-              </div>
-            )}
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <CalendarDays className="w-4 h-4" />
-              <span>
-                Created:{" "}
-                <span className="text-foreground font-medium">
-                  {formatDate(customer.createdAt)}
-                </span>
-              </span>
-            </div>
-          </div>
-          {customer.notes && (
-            <div className="mt-4 text-sm text-muted-foreground italic">
-              "{customer.notes}"
-            </div>
-          )}
-          <div className="flex flex-wrap gap-2 border-t pt-6">
+          <div className="flex flex-wrap gap-2 border-t pt-6 mt-4">
             <TabButton active={customerTab === "digital"} onClick={() => setCustomerTab("digital")}>Digital</TabButton>
             <TabButton active={customerTab === "web"} onClick={() => setCustomerTab("web")}>Web</TabButton>
             <TabButton active={customerTab === "monthly"} onClick={() => setCustomerTab("monthly")}>Monthly</TabButton>
@@ -1089,19 +1100,69 @@ export default function CustomerDetail() {
         </CardContent>
       </Card>
 
-      {customerTab === "digital" && (
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2">
-                <LayoutDashboard className="w-4 h-4 text-blue-600" />
-                <CardTitle className="text-base font-semibold">Client Portal</CardTitle>
+      {/* Info Popup */}
+      <Dialog open={infoOpen} onOpenChange={setInfoOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Info className="h-4 w-4 text-muted-foreground" />
+              {customer.name}
+            </DialogTitle>
+            {customer.businessName && (
+              <DialogDescription>{customer.businessName}</DialogDescription>
+            )}
+          </DialogHeader>
+          <div className="space-y-3 text-sm pt-1">
+            {customer.email && (
+              <div className="flex items-center gap-3">
+                <Mail className="w-4 h-4 text-muted-foreground shrink-0" />
+                <span>{customer.email}</span>
               </div>
+            )}
+            {customer.phone && (
+              <div className="flex items-center gap-3">
+                <Phone className="w-4 h-4 text-muted-foreground shrink-0" />
+                <span>{customer.phone}</span>
+              </div>
+            )}
+            {customer.address && (
+              <div className="flex items-center gap-3">
+                <MapPin className="w-4 h-4 text-muted-foreground shrink-0" />
+                <span>{customer.address}</span>
+              </div>
+            )}
+            <div className="flex items-center gap-3 text-muted-foreground">
+              <CalendarDays className="w-4 h-4 shrink-0" />
+              <span>
+                Created:{" "}
+                <span className="text-foreground font-medium">
+                  {formatDate(customer.createdAt)}
+                </span>
+              </span>
+            </div>
+            {customer.notes && (
+              <div className="border-t pt-3 text-muted-foreground italic">
+                "{customer.notes}"
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Client Portal Popup */}
+      <Dialog open={portalOpen} onOpenChange={setPortalOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <div className="flex items-center justify-between gap-3 pr-6">
+              <DialogTitle className="flex items-center gap-2">
+                <LayoutDashboard className="h-4 w-4 text-blue-600" />
+                Client Portal
+              </DialogTitle>
               {portal ? (
                 <Badge
                   variant="outline"
                   className={cn(
-                    "text-xs",
+                    "text-xs shrink-0",
                     portal.isActive
                       ? "border-emerald-400 text-emerald-600"
                       : "border-red-400 text-red-500",
@@ -1110,16 +1171,16 @@ export default function CustomerDetail() {
                   {portal.isActive ? "Active" : "Inactive"}
                 </Badge>
               ) : (
-                <Badge variant="outline" className="text-xs text-muted-foreground">
+                <Badge variant="outline" className="text-xs text-muted-foreground shrink-0">
                   Not set up
                 </Badge>
               )}
             </div>
-            <CardDescription>
+            <DialogDescription>
               Give {customer.name.split(" ")[0]} password-only access to their project dashboard
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 pt-1">
             {portal && portal.isActive && (
               <div className="flex items-center gap-2 bg-muted/40 rounded-lg px-3 py-2">
                 <span className="text-xs text-muted-foreground flex-1 truncate">{portalLink}</span>
@@ -1146,7 +1207,7 @@ export default function CustomerDetail() {
                 size="sm"
                 variant="outline"
                 className="gap-2"
-                onClick={() => { setNewPassword(""); setPwDialog(true); }}
+                onClick={() => { setPortalOpen(false); setNewPassword(""); setPwDialog(true); }}
               >
                 <Key className="h-3.5 w-3.5" />
                 {portal ? "Change Password" : "Activate Portal"}
@@ -1167,9 +1228,9 @@ export default function CustomerDetail() {
                 </Button>
               )}
             </div>
-          </CardContent>
-        </Card>
-      )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Project Progress */}
       {customerTab === "web" && (

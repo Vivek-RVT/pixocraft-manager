@@ -123,9 +123,10 @@ export default function Dashboard() {
 
   type ServiceTypeRow = {
     serviceType: string;
-    totalRevenue: number;
-    totalCost: number;
-    totalProfit: number;
+    label: string;
+    revenue: number;
+    cost: number;
+    profit: number;
     count: number;
   };
   const { data: serviceTypeBreakdown } = useQuery<ServiceTypeRow[]>({
@@ -438,7 +439,7 @@ export default function Dashboard() {
                 <PieChart>
                   <Pie
                     data={breakdown}
-                    dataKey="amount"
+                    dataKey="total"
                     nameKey="category"
                     cx="50%"
                     cy="50%"
@@ -586,9 +587,9 @@ export default function Dashboard() {
                   ]}
                 />
                 <Legend iconType="circle" wrapperStyle={{ fontSize: 11, paddingTop: 8 }} />
-                <Bar dataKey="totalRevenue" name="revenue" fill="hsl(var(--chart-1))" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="totalCost" name="cost" fill="hsl(var(--chart-4))" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="totalProfit" name="profit" fill="hsl(var(--chart-3))" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="revenue" name="Revenue" fill="hsl(var(--chart-1))" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="cost" name="Cost" fill="hsl(var(--chart-4))" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="profit" name="Profit" fill="hsl(var(--chart-3))" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>

@@ -296,3 +296,23 @@
 .glass-card {
   @apply bg-card/85 backdrop-blur-lg border border-white/10 dark:border-white/10 shadow-sm;
 }
+
+/* Custom scrollbar — thin and subtle */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--border));
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.5);
+}
+* {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--border)) transparent;
+}

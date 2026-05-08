@@ -14,6 +14,8 @@ export const CreateExpenseCategory = {
   salary: "salary",
   hosting: "hosting",
   tools: "tools",
+  software: "software",
+  marketing: "marketing",
   travel: "travel",
   office: "office",
   misc: "misc",
