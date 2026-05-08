@@ -26,6 +26,11 @@ import {
   ChevronDown,
   ChevronUp,
   Info,
+  Activity,
+  FileText,
+  TrendingUp,
+  Clock,
+  Zap,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { getYear, getMonth } from "date-fns";
@@ -194,19 +199,7 @@ type SeoFormData = {
   trafficGrowth: string; backlinksAdded: string; seoScore: string; notes: string;
 };
 
-type ParsedReport = {
-  year: string;
-  month: string;
-  blogsPosted: string;
-  keywordsRanked: string;
-  trafficGrowth: string;
-  impressionGrowth: string;
-  clicks: string;
-  impressions: string;
-  notes: string;
-};
-
-type CustomerTab = "digital" | "web" | "monthly";
+type CustomerTab = "overview" | "digital" | "web" | "monthly";
 
 function MiniMonthGrid({ completions }: { completions: MonthlyCompletion[] }) {
   const map = new Map<number, boolean>();
@@ -239,43 +232,6 @@ function MiniMonthGrid({ completions }: { completions: MonthlyCompletion[] }) {
       })}
     </div>
   );
-}
-
-function extractPerformanceReport(raw: string): ParsedReport {
-  const text = raw.replace(/\r/g, "\n");
-  const lower = text.toLowerCase();
-  const yearMatch = text.match(/\b(20\d{2})\b/);
-  const dateMatch = text.match(/\b(\d{1,2})\/(\d{1,2})\/(20\d{2})\b/);
-  const monthNames = ["january","february","march","april","may","june","july","august","september","october","november","december"];
-  const monthIndex = dateMatch ? Number(dateMatch[2]) - 1 : monthNames.findIndex((m) => lower.includes(m));
-  const blogsMatch = text.match(/blogs?\s*posted[^0-9]*(\d+)/i) ?? text.match(/blogs?\s*[:\-]?\s*(\d+)/i);
-  const clicksMatch = text.match(/^\s*clicks\s*$/im) ? text.match(/\n\s*clicks\s*\n\s*(\d+)/im) : null;
-  const impressionsMatch = text.match(/^\s*impressions\s*$/im) ? text.match(/\n\s*impressions\s*\n\s*(\d+)/im) : null;
-  const totalClicksMatch = text.match(/total clicks[^0-9]*(\d+)/i) ?? clicksMatch;
-  const totalImpressionsMatch = text.match(/total impressions[^0-9]*(\d+)/i) ?? impressionsMatch;
-  const trafficGrowthMatch = text.match(/traffic\s*growth[^+\-0-9]*([+\-]?\d+(?:\.\d+)?%?)/i) ?? text.match(/traffic[^+\-0-9]*([+\-]?\d+(?:\.\d+)?%?)/i);
-  const impressionGrowthMatch = text.match(/impression\s*growth[^+\-0-9]*([+\-]?\d+(?:\.\d+)?%?)/i);
-  const queryRows = [...text.matchAll(/^([^\n]+?)\s+(\d+)\s+(\d+)$/gim)];
-  const topQueryRows = queryRows.filter(([, label]) => label.trim().length > 0 && !["Clicks", "Impressions", "Rows per page:"].includes(label.trim()));
-  const queryClicks = topQueryRows.reduce((sum, match) => sum + Number(match[2] ?? 0), 0);
-  const queryImpressions = topQueryRows.reduce((sum, match) => sum + Number(match[3] ?? 0), 0);
-  const clicksCount = totalClicksMatch?.[1] ?? String(queryClicks);
-  const impressionsCount = totalImpressionsMatch?.[1] ?? String(queryImpressions);
-  const ctrMatch = text.match(/average ctr[^0-9]*([0-9.]+%)/i);
-  const positionMatch = text.match(/average position[^0-9]*([0-9.]+)/i);
-  const growthLine = [clicksCount !== "0" ? `Clicks ${clicksCount}` : "", impressionsCount !== "0" ? `Impressions ${impressionsCount}` : "", ctrMatch?.[1] ? `CTR ${ctrMatch[1]}` : "", positionMatch?.[1] ? `Pos ${positionMatch[1]}` : ""].filter(Boolean).join(" • ");
-
-  return {
-    year: yearMatch?.[1] ?? String(currentYear),
-    month: monthIndex >= 0 ? String(monthIndex + 1) : String(currentMonth),
-    blogsPosted: blogsMatch?.[1] ?? "0",
-    keywordsRanked: String(topQueryRows.length || 0),
-    trafficGrowth: trafficGrowthMatch?.[1] ?? growthLine,
-    impressionGrowth: impressionGrowthMatch?.[1] ?? growthLine,
-    clicks: String(clicksCount),
-    impressions: String(impressionsCount),
-    notes: raw.trim(),
-  };
 }
 
 function ServiceDetailCard({ project }: { project: ServiceProject }) {
@@ -548,7 +504,6 @@ export default function CustomerDetail() {
   const [projectDialog, setProjectDialog] = useState(false);
   const [editProject, setEditProject] = useState<ServiceProject | undefined>();
   const [showReports, setShowReports] = useState(false);
-  const [reportTab, setReportTab] = useState<"dm" | "seo">("dm");
   const [dmDialog, setDmDialog] = useState(false);
   const [seoDialog, setSeoDialog] = useState(false);
   const [editDm, setEditDm] = useState<DMReport | undefined>();
@@ -956,23 +911,10 @@ export default function CustomerDetail() {
 
   const BASE = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
   const portalLink = `${window.location.origin}${BASE}/portal`;
-  const [reportPaste, setReportPaste] = useState("");
-  const [customerTab, setCustomerTab] = useState<CustomerTab>("digital");
+  const [customerTab, setCustomerTab] = useState<CustomerTab>("overview");
   const [infoOpen, setInfoOpen] = useState(false);
   const [portalOpen, setPortalOpen] = useState(false);
-  const applyParsedReport = () => {
-    const parsed = extractPerformanceReport(reportPaste);
-    setSeoForm((f) => ({
-      ...f,
-      year: parsed.year,
-      month: parsed.month,
-      blogsPosted: parsed.blogsPosted,
-      trafficGrowth: parsed.trafficGrowth || parsed.impressionGrowth,
-      notes: parsed.notes,
-    }));
-    setSeoDialog(true);
-    toast.success("Report text parsed");
-  };
+  const [activityOpen, setActivityOpen] = useState(false);
 
   if (!validId || isLoading) {
     return (
@@ -996,6 +938,86 @@ export default function CustomerDetail() {
       </div>
     );
   }
+
+  type ActivityEvent = {
+    dateStr: string;
+    label: string;
+    sublabel?: string;
+    kind: "service" | "delivery" | "report" | "project";
+  };
+  const activityEvents: ActivityEvent[] = [];
+  for (const s of (services ?? [])) {
+    activityEvents.push({
+      dateStr: s.date ?? "",
+      label: s.serviceName,
+      sublabel: `${s.serviceType === "web" ? "Web" : s.serviceType === "digital" ? "Digital" : "Other"} · ${formatCurrency(s.priceSold)} · ${s.deliveryStatus}`,
+      kind: "service",
+    });
+  }
+  for (const ws of webServices) {
+    for (const c of ws.completions) {
+      if (c.completed) {
+        activityEvents.push({
+          dateStr: `${c.year}-${String(c.month).padStart(2, "0")}-01`,
+          label: `${ws.websiteName} — ${MONTHS[c.month - 1]} ${c.year}`,
+          sublabel: `Website maintenance delivered · ${formatCurrency(c.paidAmount)}`,
+          kind: "delivery",
+        });
+      }
+    }
+  }
+  for (const ds of digitalServices) {
+    for (const c of ds.completions) {
+      if (c.completed) {
+        activityEvents.push({
+          dateStr: `${c.year}-${String(c.month).padStart(2, "0")}-01`,
+          label: `${ds.serviceName} — ${MONTHS[c.month - 1]} ${c.year}`,
+          sublabel: `Digital service delivered · ${formatCurrency(c.paidAmount)}`,
+          kind: "delivery",
+        });
+      }
+    }
+  }
+  for (const r of dmReports) {
+    activityEvents.push({
+      dateStr: `${r.year}-${String(r.month).padStart(2, "0")}-01`,
+      label: `DM Report — ${MONTHS[r.month - 1]} ${r.year}`,
+      sublabel: r.platforms ? `${r.platforms}${r.followersGained ? ` · +${r.followersGained} followers` : ""}` : undefined,
+      kind: "report",
+    });
+  }
+  for (const r of seoReports) {
+    activityEvents.push({
+      dateStr: `${r.year}-${String(r.month).padStart(2, "0")}-01`,
+      label: `SEO Report — ${MONTHS[r.month - 1]} ${r.year}`,
+      sublabel: r.trafficGrowth ? `Traffic: ${r.trafficGrowth}${r.blogsPosted ? ` · ${r.blogsPosted} blogs` : ""}` : undefined,
+      kind: "report",
+    });
+  }
+  for (const p of projects) {
+    activityEvents.push({
+      dateStr: p.expectedDelivery ?? "2000-01-01",
+      label: p.projectName,
+      sublabel: `Project · ${p.stage}`,
+      kind: "project",
+    });
+  }
+  activityEvents.sort((a, b) => b.dateStr.localeCompare(a.dateStr));
+
+  const activityKindIcon = (kind: ActivityEvent["kind"]) => {
+    if (kind === "service") return <Briefcase className="w-3.5 h-3.5" />;
+    if (kind === "delivery") return <Zap className="w-3.5 h-3.5" />;
+    if (kind === "report") return <FileText className="w-3.5 h-3.5" />;
+    return <Layers className="w-3.5 h-3.5" />;
+  };
+  const activityKindColor = (kind: ActivityEvent["kind"]) => {
+    if (kind === "service") return "bg-blue-100 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400";
+    if (kind === "delivery") return "bg-emerald-100 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400";
+    if (kind === "report") return "bg-purple-100 text-purple-600 dark:bg-purple-950/40 dark:text-purple-400";
+    return "bg-amber-100 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400";
+  };
+
+  const oneTimeServices = (services ?? []).slice().sort((a, b) => (b.date ?? "").localeCompare(a.date ?? ""));
 
   return (
     <div className="space-y-6">
@@ -1075,6 +1097,7 @@ export default function CustomerDetail() {
           </div>
 
           <div className="flex flex-wrap gap-2 border-t pt-6 mt-4">
+            <TabButton active={customerTab === "overview"} onClick={() => setCustomerTab("overview")}>Overview</TabButton>
             <TabButton active={customerTab === "digital"} onClick={() => setCustomerTab("digital")}>Digital</TabButton>
             <TabButton active={customerTab === "web"} onClick={() => setCustomerTab("web")}>Web</TabButton>
             <TabButton active={customerTab === "monthly"} onClick={() => setCustomerTab("monthly")}>Monthly</TabButton>
@@ -1082,19 +1105,34 @@ export default function CustomerDetail() {
 
           {customerTab === "monthly" && (
             <div className="rounded-lg border bg-muted/20 p-4 space-y-3">
-              <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center justify-between gap-2">
                 <div>
-                  <div className="text-sm font-semibold">Paste performance report</div>
-                  <div className="text-xs text-muted-foreground">Paste Search Console / monthly performance text and we’ll extract month, year, blogs, traffic and impressions.</div>
+                  <div className="text-sm font-semibold">Monthly Progress Reports</div>
+                  <div className="text-xs text-muted-foreground">
+                    {dmReports.length} DM · {seoReports.length} SEO saved
+                  </div>
                 </div>
-                <Button size="sm" variant="outline" onClick={applyParsedReport}>Parse</Button>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="gap-1.5"
+                    onClick={() => { setDmForm(blankDm()); setDmDialog(true); }}
+                  >
+                    <Megaphone className="h-3.5 w-3.5" />
+                    Add DM
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="gap-1.5"
+                    onClick={() => { setSeoForm(blankSeo()); setSeoDialog(true); }}
+                  >
+                    <Globe className="h-3.5 w-3.5" />
+                    Add SEO
+                  </Button>
+                </div>
               </div>
-              <Textarea
-                value={reportPaste}
-                onChange={(e) => setReportPaste(e.target.value)}
-                placeholder={`Paste monthly performance text here...\n\nExample:\nApril 2026\nBlogs posted: 3\nTraffic growth: +18%\nImpressions: 1,240`}
-                className="min-h-[140px] resize-none"
-              />
             </div>
           )}
         </CardContent>
@@ -1229,6 +1267,180 @@ export default function CustomerDetail() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Context Stats Strip — always visible, content varies by tab */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {customerTab === "overview" && <>
+          <div className="rounded-xl border bg-muted/20 p-3">
+            <div className="text-xs text-muted-foreground flex items-center gap-1.5"><TrendingUp className="w-3 h-3" /> Total Revenue</div>
+            <div className="text-base font-bold mt-0.5">{formatCurrency(totals.revenue)}</div>
+          </div>
+          <div className="rounded-xl border bg-muted/20 p-3">
+            <div className="text-xs text-muted-foreground flex items-center gap-1.5"><Clock className="w-3 h-3" /> Outstanding</div>
+            <div className="text-base font-bold mt-0.5 text-amber-600 dark:text-amber-400">{formatCurrency(totals.pending)}</div>
+          </div>
+          <div className="rounded-xl border bg-muted/20 p-3">
+            <div className="text-xs text-muted-foreground flex items-center gap-1.5"><Zap className="w-3 h-3" /> Monthly MRR</div>
+            <div className="text-base font-bold mt-0.5 text-emerald-600 dark:text-emerald-400">{formatCurrency(webMRR + digitalMRR)}</div>
+          </div>
+          <div className="rounded-xl border bg-muted/20 p-3">
+            <div className="text-xs text-muted-foreground flex items-center gap-1.5"><Activity className="w-3 h-3" /> Reports</div>
+            <div className="text-base font-bold mt-0.5">{dmReports.length + seoReports.length}</div>
+          </div>
+        </>}
+        {customerTab === "digital" && <>
+          <div className="rounded-xl border bg-purple-50 dark:bg-purple-950/20 p-3">
+            <div className="text-xs text-purple-600 dark:text-purple-400 flex items-center gap-1.5"><Megaphone className="w-3 h-3" /> Digital MRR</div>
+            <div className="text-base font-bold mt-0.5 text-purple-700 dark:text-purple-300">{formatCurrency(digitalMRR)}</div>
+          </div>
+          <div className="rounded-xl border bg-muted/20 p-3">
+            <div className="text-xs text-muted-foreground flex items-center gap-1.5"><Zap className="w-3 h-3" /> Active Services</div>
+            <div className="text-base font-bold mt-0.5">{digitalServices.filter(s => s.status === "active").length}</div>
+          </div>
+          <div className="rounded-xl border bg-muted/20 p-3">
+            <div className="text-xs text-muted-foreground flex items-center gap-1.5"><FileText className="w-3 h-3" /> DM Reports</div>
+            <div className="text-base font-bold mt-0.5">{dmReports.length}</div>
+          </div>
+          <div className="rounded-xl border bg-muted/20 p-3">
+            <div className="text-xs text-muted-foreground flex items-center gap-1.5"><TrendingUp className="w-3 h-3" /> Total Leads</div>
+            <div className="text-base font-bold mt-0.5">{dmReports.reduce((acc, r) => acc + (r.leadsGenerated ?? 0), 0)}</div>
+          </div>
+        </>}
+        {customerTab === "web" && <>
+          <div className="rounded-xl border bg-blue-50 dark:bg-blue-950/20 p-3">
+            <div className="text-xs text-blue-600 dark:text-blue-400 flex items-center gap-1.5"><Globe className="w-3 h-3" /> Web MRR</div>
+            <div className="text-base font-bold mt-0.5 text-blue-700 dark:text-blue-300">{formatCurrency(webMRR)}</div>
+          </div>
+          <div className="rounded-xl border bg-muted/20 p-3">
+            <div className="text-xs text-muted-foreground flex items-center gap-1.5"><Zap className="w-3 h-3" /> Active Services</div>
+            <div className="text-base font-bold mt-0.5">{webServices.filter(s => s.status === "active").length}</div>
+          </div>
+          <div className="rounded-xl border bg-muted/20 p-3">
+            <div className="text-xs text-muted-foreground flex items-center gap-1.5"><Layers className="w-3 h-3" /> Projects</div>
+            <div className="text-base font-bold mt-0.5">{projects.length}</div>
+          </div>
+          <div className="rounded-xl border bg-muted/20 p-3">
+            <div className="text-xs text-muted-foreground flex items-center gap-1.5"><FileText className="w-3 h-3" /> SEO Reports</div>
+            <div className="text-base font-bold mt-0.5">{seoReports.length}</div>
+          </div>
+        </>}
+        {customerTab === "monthly" && <>
+          <div className="rounded-xl border bg-muted/20 p-3">
+            <div className="text-xs text-muted-foreground flex items-center gap-1.5"><Zap className="w-3 h-3" /> Total MRR</div>
+            <div className="text-base font-bold mt-0.5 text-emerald-600 dark:text-emerald-400">{formatCurrency(webMRR + digitalMRR)}</div>
+          </div>
+          <div className="rounded-xl border bg-muted/20 p-3">
+            <div className="text-xs text-muted-foreground flex items-center gap-1.5"><Megaphone className="w-3 h-3" /> DM Reports</div>
+            <div className="text-base font-bold mt-0.5">{dmReports.length}</div>
+          </div>
+          <div className="rounded-xl border bg-muted/20 p-3">
+            <div className="text-xs text-muted-foreground flex items-center gap-1.5"><Globe className="w-3 h-3" /> SEO Reports</div>
+            <div className="text-base font-bold mt-0.5">{seoReports.length}</div>
+          </div>
+          <div className="rounded-xl border bg-muted/20 p-3">
+            <div className="text-xs text-muted-foreground flex items-center gap-1.5"><TrendingUp className="w-3 h-3" /> Total Leads</div>
+            <div className="text-base font-bold mt-0.5">{dmReports.reduce((acc, r) => acc + (r.leadsGenerated ?? 0), 0)}</div>
+          </div>
+        </>}
+      </div>
+
+      {/* Recent Activity — always visible, compact with View More popup */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between gap-3 pb-3">
+          <div>
+            <CardTitle className="text-base font-semibold flex items-center gap-2">
+              <Activity className="w-4 h-4 shrink-0" /> Recent Activity
+            </CardTitle>
+            <CardDescription>Latest events with this client</CardDescription>
+          </div>
+          {activityEvents.length > 5 && (
+            <Button size="sm" variant="outline" onClick={() => setActivityOpen(true)} className="shrink-0 text-xs">
+              View all {activityEvents.length}
+            </Button>
+          )}
+        </CardHeader>
+        <CardContent>
+          {activityEvents.length === 0 ? (
+            <div className="text-center py-8 text-sm text-muted-foreground">
+              No activity yet. Add services or reports to get started.
+            </div>
+          ) : (
+            <div className="relative">
+              <div className="absolute left-3.5 top-0 bottom-0 w-px bg-border" />
+              <div className="space-y-0">
+                {activityEvents.slice(0, 5).map((ev, i) => (
+                  <div key={i} className="relative flex gap-4 pb-4">
+                    <div className={cn("relative z-10 flex h-7 w-7 shrink-0 items-center justify-center rounded-full mt-0.5", activityKindColor(ev.kind))}>
+                      {activityKindIcon(ev.kind)}
+                    </div>
+                    <div className="flex-1 min-w-0 pt-0.5">
+                      <div className="text-sm font-medium leading-snug">{ev.label}</div>
+                      {ev.sublabel && <div className="text-xs text-muted-foreground mt-0.5">{ev.sublabel}</div>}
+                      {ev.dateStr && ev.dateStr !== "2000-01-01" && (
+                        <div className="text-[10px] text-muted-foreground/60 mt-0.5">{formatDate(ev.dateStr)}</div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {activityEvents.length > 5 && (
+                <button
+                  onClick={() => setActivityOpen(true)}
+                  className="w-full text-center text-xs text-muted-foreground hover:text-foreground pt-1 pb-0.5 border-t transition-colors"
+                >
+                  + {activityEvents.length - 5} more activities — View all
+                </button>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Service History — Overview tab only */}
+      {customerTab === "overview" && (
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between gap-3">
+            <div>
+              <CardTitle className="text-base font-semibold flex items-center gap-2">
+                <Briefcase className="w-4 h-4 shrink-0" /> Service History
+              </CardTitle>
+              <CardDescription>All one-time services delivered to this client</CardDescription>
+            </div>
+            <Button size="sm" onClick={() => setServiceOpen(true)} className="shrink-0">
+              <Plus className="sm:mr-2 h-4 w-4" />
+              <span className="hidden sm:inline">Add</span>
+            </Button>
+          </CardHeader>
+          <CardContent>
+            {oneTimeServices.length === 0 ? (
+              <div className="text-center py-10 text-sm text-muted-foreground">No one-time services yet.</div>
+            ) : (
+              <div className="space-y-2">
+                {oneTimeServices.map((s) => (
+                  <div key={s.id} className="flex items-center gap-3 rounded-lg border bg-muted/10 px-3 py-2.5">
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium truncate">{s.serviceName}</div>
+                      <div className="text-xs text-muted-foreground mt-0.5">
+                        {s.serviceType === "web" ? "Web" : s.serviceType === "digital" ? "Digital" : "Other"}
+                        {s.date ? ` · ${formatDate(s.date)}` : ""}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <div className="text-sm font-semibold tabular-nums">{formatCurrency(s.priceSold)}</div>
+                      <Badge variant="outline" className={cn("text-[10px] capitalize", s.paymentStatus === "paid" && "border-emerald-400 text-emerald-600", s.paymentStatus === "pending" && "border-amber-400 text-amber-600", s.paymentStatus === "partial" && "border-blue-400 text-blue-600")}>
+                        {s.paymentStatus}
+                      </Badge>
+                      <Badge variant="outline" className={cn("text-[10px] capitalize", s.deliveryStatus === "delivered" && "border-emerald-400 text-emerald-600", s.deliveryStatus === "pending" && "border-amber-400 text-amber-600")}>
+                        {s.deliveryStatus}
+                      </Badge>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Project Progress */}
       {customerTab === "web" && (
@@ -1587,166 +1799,189 @@ export default function CustomerDetail() {
         </Card>
       )}
 
-      {/* Monthly Reports Card */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between gap-3">
+      {/* DM Reports Card — Monthly Tab */}
+      {customerTab === "monthly" && (
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between gap-3 pb-3">
             <div>
               <CardTitle className="text-base font-semibold flex items-center gap-2">
-                <Megaphone className="w-4 h-4 shrink-0" /> Monthly Reports
+                <Megaphone className="w-4 h-4 shrink-0" /> Digital Marketing Reports
               </CardTitle>
-              <CardDescription>DM and SEO reports visible in client portal</CardDescription>
+              <CardDescription>Social media & DM monthly reports</CardDescription>
             </div>
-            <div className="flex gap-2">
-              <Button
-                size="sm"
-                variant={reportTab === "dm" ? "default" : "outline"}
-                onClick={() => setReportTab("dm")}
-              >
-                DM
-              </Button>
-              <Button
-                size="sm"
-                variant={reportTab === "seo" ? "default" : "outline"}
-                onClick={() => setReportTab("seo")}
-              >
-                SEO
-              </Button>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {reportTab === "dm" && (
-            <div className="space-y-3">
-              <Button
-                size="sm"
-                variant="outline"
-                className="w-full"
-                onClick={() => {
-                  setDmForm(blankDm());
-                  setDmDialog(true);
-                }}
-              >
-                <Plus className="mr-2 h-3.5 w-3.5" /> Add / Update DM Report
-              </Button>
-              {dmReports.length === 0 ? (
-                <div className="text-center py-6 text-sm text-muted-foreground">No DM reports yet.</div>
-              ) : (
-                <div className="space-y-2">
-                  {dmReports
-                    .slice()
-                    .sort((a, b) => b.year !== a.year ? b.year - a.year : b.month - a.month)
-                    .map((r) => {
-                      const total = (r.uploadedVideos ?? 0) + (r.uploadedPosts ?? 0) + (r.uploadedReels ?? 0) + (r.uploadedStories ?? 0);
-                      const target = (r.targetVideos ?? 0) + (r.targetPosts ?? 0) + (r.targetReels ?? 0) + (r.targetStories ?? 0);
-                      return (
-                        <div key={r.id} className="border rounded-lg p-3 text-sm">
-                          <div className="flex items-center justify-between gap-2 mb-1">
-                            <div className="font-semibold">{MONTHS[r.month - 1]} {r.year}</div>
-                            <div className="flex gap-3 text-xs text-muted-foreground">
-                              <span>📦 {total}/{target}</span>
-                              <span>👥 +{r.followersGained ?? 0}</span>
-                              <span>🎯 {r.leadsGenerated ?? 0} leads</span>
-                            </div>
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              className="h-7 w-7 shrink-0"
-                              onClick={() => {
-                                const platforms = r.platforms ?? "";
-                                setDmForm({
-                                  year: String(r.year), month: String(r.month),
-                                  platforms, plan: r.plan ?? "",
-                                  targetVideos: String(r.targetVideos ?? 0),
-                                  targetPosts: String(r.targetPosts ?? 0),
-                                  targetReels: String(r.targetReels ?? 0),
-                                  targetStories: String(r.targetStories ?? 0),
-                                  uploadedVideos: String(r.uploadedVideos ?? 0),
-                                  uploadedPosts: String(r.uploadedPosts ?? 0),
-                                  uploadedReels: String(r.uploadedReels ?? 0),
-                                  uploadedStories: String(r.uploadedStories ?? 0),
-                                  followersGained: String(r.followersGained ?? 0),
-                                  engagementGrowth: r.engagementGrowth ?? "",
-                                  leadsGenerated: String(r.leadsGenerated ?? 0),
-                                  adSpend: r.adSpend ?? "0",
-                                  summaryNotes: r.summaryNotes ?? "",
-                                });
-                                setDmDialog(true);
-                              }}
-                            >
-                              <Pencil className="h-3.5 w-3.5" />
-                            </Button>
-                          </div>
-                          {r.summaryNotes && (
-                            <div className="text-xs text-muted-foreground italic truncate">{r.summaryNotes}</div>
-                          )}
-                        </div>
-                      );
-                    })}
-                </div>
-              )}
-            </div>
-          )}
-          {reportTab === "seo" && (
-            <div className="space-y-3">
-              <Button
-                size="sm"
-                variant="outline"
-                className="w-full"
-                onClick={() => {
-                  setSeoForm(blankSeo());
-                  setSeoDialog(true);
-                }}
-              >
-                <Plus className="mr-2 h-3.5 w-3.5" /> Add / Update SEO Report
-              </Button>
-              {seoReports.length === 0 ? (
-                <div className="text-center py-6 text-sm text-muted-foreground">No SEO reports yet.</div>
-              ) : (
-                <div className="space-y-2">
-                  {seoReports
-                    .slice()
-                    .sort((a, b) => b.year !== a.year ? b.year - a.year : b.month - a.month)
-                    .map((r) => (
+            <Button size="sm" onClick={() => { setDmForm(blankDm()); setDmDialog(true); }} className="shrink-0">
+              <Plus className="sm:mr-2 h-4 w-4" />
+              <span className="hidden sm:inline">Add</span>
+            </Button>
+          </CardHeader>
+          <CardContent>
+            {dmReports.length === 0 ? (
+              <div className="text-center py-8 text-sm text-muted-foreground">No DM reports yet.</div>
+            ) : (
+              <div className="space-y-2">
+                {dmReports
+                  .slice()
+                  .sort((a, b) => b.year !== a.year ? b.year - a.year : b.month - a.month)
+                  .map((r) => {
+                    const total = (r.uploadedVideos ?? 0) + (r.uploadedPosts ?? 0) + (r.uploadedReels ?? 0) + (r.uploadedStories ?? 0);
+                    const target = (r.targetVideos ?? 0) + (r.targetPosts ?? 0) + (r.targetReels ?? 0) + (r.targetStories ?? 0);
+                    return (
                       <div key={r.id} className="border rounded-lg p-3 text-sm">
-                        <div className="flex items-center justify-between gap-2 mb-1">
-                          <div className="font-semibold">{MONTHS[r.month - 1]} {r.year}</div>
-                          <div className="flex gap-3 text-xs text-muted-foreground">
-                            <span>📝 {r.blogsPosted} blogs</span>
-                            <span>🔑 {r.keywordsRanked} kw</span>
-                            {r.seoScore != null && <span>⭐ {r.seoScore}/100</span>}
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0 flex-1">
+                            <div className="font-semibold">{MONTHS[r.month - 1]} {r.year}</div>
+                            <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted-foreground mt-0.5">
+                              {r.platforms && <span>{r.platforms}</span>}
+                              {r.plan && <span className="capitalize">{r.plan} plan</span>}
+                              <span>Content: {total}/{target}</span>
+                              <span>+{r.followersGained ?? 0} followers</span>
+                              <span>{r.leadsGenerated ?? 0} leads</span>
+                              {r.engagementGrowth && <span>Engagement: {r.engagementGrowth}</span>}
+                            </div>
+                            {r.summaryNotes && (
+                              <div className="text-xs text-muted-foreground italic mt-1 line-clamp-2">{r.summaryNotes}</div>
+                            )}
                           </div>
                           <Button
                             size="icon"
                             variant="ghost"
                             className="h-7 w-7 shrink-0"
                             onClick={() => {
-                              setSeoForm({
+                              setDmForm({
                                 year: String(r.year), month: String(r.month),
-                                blogsPosted: String(r.blogsPosted ?? 0),
-                                keywordsRanked: String(r.keywordsRanked ?? 0),
-                                trafficGrowth: r.trafficGrowth ?? "",
-                                backlinksAdded: String(r.backlinksAdded ?? 0),
-                                seoScore: r.seoScore != null ? String(r.seoScore) : "",
-                                notes: r.notes ?? "",
+                                platforms: r.platforms ?? "", plan: r.plan ?? "",
+                                targetVideos: String(r.targetVideos ?? 0),
+                                targetPosts: String(r.targetPosts ?? 0),
+                                targetReels: String(r.targetReels ?? 0),
+                                targetStories: String(r.targetStories ?? 0),
+                                uploadedVideos: String(r.uploadedVideos ?? 0),
+                                uploadedPosts: String(r.uploadedPosts ?? 0),
+                                uploadedReels: String(r.uploadedReels ?? 0),
+                                uploadedStories: String(r.uploadedStories ?? 0),
+                                followersGained: String(r.followersGained ?? 0),
+                                engagementGrowth: r.engagementGrowth ?? "",
+                                leadsGenerated: String(r.leadsGenerated ?? 0),
+                                adSpend: r.adSpend ?? "0",
+                                summaryNotes: r.summaryNotes ?? "",
                               });
-                              setSeoDialog(true);
+                              setDmDialog(true);
                             }}
                           >
                             <Pencil className="h-3.5 w-3.5" />
                           </Button>
                         </div>
-                        {r.notes && (
-                          <div className="text-xs text-muted-foreground italic truncate">{r.notes}</div>
+                      </div>
+                    );
+                  })}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* SEO Reports Card — Monthly Tab */}
+      {customerTab === "monthly" && (
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between gap-3 pb-3">
+            <div>
+              <CardTitle className="text-base font-semibold flex items-center gap-2">
+                <Globe className="w-4 h-4 shrink-0" /> Web / SEO Reports
+              </CardTitle>
+              <CardDescription>Search performance & SEO monthly reports</CardDescription>
+            </div>
+            <Button size="sm" onClick={() => { setSeoForm(blankSeo()); setSeoDialog(true); }} className="shrink-0">
+              <Plus className="sm:mr-2 h-4 w-4" />
+              <span className="hidden sm:inline">Add</span>
+            </Button>
+          </CardHeader>
+          <CardContent>
+            {seoReports.length === 0 ? (
+              <div className="text-center py-8 text-sm text-muted-foreground">No SEO reports yet.</div>
+            ) : (
+              <div className="space-y-2">
+                {seoReports
+                  .slice()
+                  .sort((a, b) => b.year !== a.year ? b.year - a.year : b.month - a.month)
+                  .map((r) => (
+                    <div key={r.id} className="border rounded-lg p-3 text-sm">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0 flex-1">
+                          <div className="font-semibold">{MONTHS[r.month - 1]} {r.year}</div>
+                          <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted-foreground mt-0.5">
+                            <span>{r.blogsPosted} blogs posted</span>
+                            <span>{r.keywordsRanked} keywords</span>
+                            {r.trafficGrowth && <span>Traffic: {r.trafficGrowth}</span>}
+                            {r.backlinksAdded > 0 && <span>{r.backlinksAdded} backlinks</span>}
+                            {r.seoScore != null && <span>Score: {r.seoScore}/100</span>}
+                          </div>
+                          {r.notes && (
+                            <div className="text-xs text-muted-foreground italic mt-1 line-clamp-2">{r.notes}</div>
+                          )}
+                        </div>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-7 w-7 shrink-0"
+                          onClick={() => {
+                            setSeoForm({
+                              year: String(r.year), month: String(r.month),
+                              blogsPosted: String(r.blogsPosted ?? 0),
+                              keywordsRanked: String(r.keywordsRanked ?? 0),
+                              trafficGrowth: r.trafficGrowth ?? "",
+                              backlinksAdded: String(r.backlinksAdded ?? 0),
+                              seoScore: r.seoScore != null ? String(r.seoScore) : "",
+                              notes: r.notes ?? "",
+                            });
+                            setSeoDialog(true);
+                          }}
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Activity View More Dialog */}
+      <Dialog open={activityOpen} onOpenChange={setActivityOpen}>
+        <DialogContent className="max-w-lg max-h-[80vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Activity className="w-4 h-4" /> All Activity
+            </DialogTitle>
+            <DialogDescription>{activityEvents.length} events with this client, newest first</DialogDescription>
+          </DialogHeader>
+          <div className="flex-1 overflow-y-auto pr-1 min-h-0">
+            {activityEvents.length === 0 ? (
+              <div className="text-center py-10 text-sm text-muted-foreground">No activity yet.</div>
+            ) : (
+              <div className="relative">
+                <div className="absolute left-3.5 top-0 bottom-0 w-px bg-border" />
+                <div className="space-y-0">
+                  {activityEvents.map((ev, i) => (
+                    <div key={i} className="relative flex gap-4 pb-4">
+                      <div className={cn("relative z-10 flex h-7 w-7 shrink-0 items-center justify-center rounded-full mt-0.5", activityKindColor(ev.kind))}>
+                        {activityKindIcon(ev.kind)}
+                      </div>
+                      <div className="flex-1 min-w-0 pt-0.5">
+                        <div className="text-sm font-medium leading-snug">{ev.label}</div>
+                        {ev.sublabel && <div className="text-xs text-muted-foreground mt-0.5">{ev.sublabel}</div>}
+                        {ev.dateStr && ev.dateStr !== "2000-01-01" && (
+                          <div className="text-[10px] text-muted-foreground/60 mt-0.5">{formatDate(ev.dateStr)}</div>
                         )}
                       </div>
-                    ))}
+                    </div>
+                  ))}
                 </div>
-              )}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Dialogs */}
       <Dialog open={pwDialog} onOpenChange={setPwDialog}>
@@ -1915,20 +2150,6 @@ export default function CustomerDetail() {
             <DialogTitle>SEO Report</DialogTitle>
           </DialogHeader>
           <div className="space-y-3 py-2">
-            <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
-              <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Paste monthly report
-              </div>
-              <Textarea
-                value={reportPaste}
-                onChange={(e) => setReportPaste(e.target.value)}
-                placeholder="Paste raw console-like monthly SEO performance text here..."
-                className="min-h-[120px] resize-none"
-              />
-              <Button size="sm" variant="outline" className="w-full" onClick={applyParsedReport}>
-                Parse into SEO fields
-              </Button>
-            </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label className="text-xs">Year</Label>
