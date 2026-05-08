@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { eq, and, desc, sql } from "drizzle-orm";
-import { db, servicesTable, customersTable } from "@workspace/db";
+import { db, servicesTable, customersTable, serviceActivityLogTable } from "@workspace/db";
 import {
   ListServicesQueryParams,
   ListServicesResponse,
@@ -137,6 +137,12 @@ router.patch("/services/:id", async (req, res): Promise<void> => {
     updates.date = body.data.date.toISOString().slice(0, 10);
   if (body.data.notes !== undefined) updates.notes = body.data.notes;
 
+  const existing = await db
+    .select({ deliveryStatus: servicesTable.deliveryStatus })
+    .from(servicesTable)
+    .where(eq(servicesTable.id, params.data.id));
+  const fromStatus = existing[0]?.deliveryStatus ?? null;
+
   const [row] = await db
     .update(servicesTable)
     .set(updates)
@@ -146,6 +152,18 @@ router.patch("/services/:id", async (req, res): Promise<void> => {
     res.status(404).json({ error: "Service not found" });
     return;
   }
+
+  const toStatus = body.data.deliveryStatus ?? fromStatus;
+  if (fromStatus !== toStatus || body.data.notes !== undefined) {
+    await db.insert(serviceActivityLogTable).values({
+      entityType: "service",
+      entityId: params.data.id,
+      fromStatus,
+      toStatus: toStatus ?? null,
+      note: body.data.notes ?? null,
+    });
+  }
+
   const [c] = await db
     .select()
     .from(customersTable)

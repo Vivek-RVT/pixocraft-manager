@@ -197,17 +197,17 @@ export default function Services() {
 
       {services.length > 0 && (
         <div className="grid grid-cols-3 gap-4">
-          <div className="rounded-lg border bg-card p-4">
-            <p className="text-xs text-muted-foreground">Services</p>
-            <p className="text-2xl font-bold">{services.length}</p>
+          <div className="rounded-xl border border-white/[0.07] bg-card p-4">
+            <p className="text-xs text-muted-foreground uppercase tracking-wider">Services</p>
+            <p className="text-2xl font-bold mt-1">{services.length}</p>
           </div>
-          <div className="rounded-lg border bg-card p-4">
-            <p className="text-xs text-muted-foreground">Revenue</p>
-            <p className="text-2xl font-bold">{formatCurrency(totalRevenue)}</p>
+          <div className="rounded-xl border border-white/[0.07] bg-card p-4">
+            <p className="text-xs text-muted-foreground uppercase tracking-wider">Revenue</p>
+            <p className="text-2xl font-bold mt-1">{formatCurrency(totalRevenue)}</p>
           </div>
-          <div className="rounded-lg border bg-card p-4">
-            <p className="text-xs text-muted-foreground">Profit</p>
-            <p className={cn("text-2xl font-bold", totalProfit >= 0 ? "text-emerald-600" : "text-red-500")}>
+          <div className="rounded-xl border border-white/[0.07] bg-card p-4">
+            <p className="text-xs text-muted-foreground uppercase tracking-wider">Profit</p>
+            <p className={cn("text-2xl font-bold mt-1", totalProfit >= 0 ? "text-emerald-400" : "text-rose-400")}>
               {formatCurrency(totalProfit)}
             </p>
           </div>
@@ -253,7 +253,7 @@ export default function Services() {
       </div>
 
       {isEmpty ? (
-        <div className="rounded-lg border border-dashed bg-card/50 p-12 text-center">
+        <div className="rounded-xl border border-dashed border-white/[0.08] bg-card/50 p-12 text-center">
           <div className="font-medium">No services match these filters</div>
           <p className="text-sm text-muted-foreground mb-4">
             Add a service or adjust your filters.
@@ -261,7 +261,7 @@ export default function Services() {
           <Button onClick={() => setCreateOpen(true)}>Add a service</Button>
         </div>
       ) : (
-        <div className="rounded-md border bg-card overflow-hidden">
+        <div className="rounded-xl border border-white/[0.07] bg-card overflow-hidden">
           <Table>
             <TableHeader>
               <TableRow>

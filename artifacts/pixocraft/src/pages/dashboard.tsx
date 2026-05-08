@@ -22,6 +22,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { SpotlightCard } from "@/components/ui/spotlight-card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { formatCurrency, formatDate } from "@/lib/format";
@@ -180,22 +181,33 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6 sm:space-y-8 pb-8">
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: "easeOut" }}
+        className="flex flex-col sm:flex-row sm:items-end justify-between gap-4"
+      >
         <div>
-          <h2 className="text-xl sm:text-2xl font-semibold tracking-tight">
-            Good to see you back.
+          <h2 className="text-xl sm:text-2xl font-bold tracking-tight">
+            Good to see you back
+            <span className="text-gradient ml-2">·</span>
           </h2>
-          <p className="text-muted-foreground text-sm">
+          <p className="text-muted-foreground/70 text-sm mt-0.5">
             Here's how your studio is performing.
           </p>
         </div>
         {summary && (
-          <div className="rounded-lg border bg-card px-4 py-3 flex items-center gap-3 self-start sm:self-auto">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.15, duration: 0.3 }}
+            className="rounded-xl border border-white/[0.07] bg-card px-4 py-3 flex items-center gap-3 self-start sm:self-auto"
+          >
             <div
-              className={`w-9 h-9 rounded-md flex items-center justify-center ${
+              className={`w-9 h-9 rounded-lg flex items-center justify-center ${
                 growthUp
-                  ? "bg-emerald-500/10 text-emerald-500"
-                  : "bg-rose-500/10 text-rose-500"
+                  ? "bg-emerald-500/10 text-emerald-400"
+                  : "bg-rose-500/10 text-rose-400"
               }`}
             >
               {growthUp ? (
@@ -205,12 +217,12 @@ export default function Dashboard() {
               )}
             </div>
             <div>
-              <div className="text-xs text-muted-foreground">This month</div>
-              <div className="text-sm font-semibold">
+              <div className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">This month</div>
+              <div className="text-sm font-semibold tabular-nums">
                 {formatCurrency(summary.thisMonthRevenue)}{" "}
                 <span
-                  className={`ml-1 text-xs ${
-                    growthUp ? "text-emerald-500" : "text-rose-500"
+                  className={`ml-1 text-xs font-bold ${
+                    growthUp ? "text-emerald-400" : "text-rose-400"
                   }`}
                 >
                   {growthUp ? "+" : ""}
@@ -218,54 +230,47 @@ export default function Dashboard() {
                 </span>
               </div>
             </div>
-          </div>
+          </motion.div>
         )}
-      </div>
+      </motion.div>
 
       <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         {loadingSummary
           ? Array.from({ length: 6 }).map((_, i) => (
-              <Card key={i}>
-                <CardHeader className="pb-2">
-                  <Skeleton className="h-4 w-24" />
-                </CardHeader>
-                <CardContent>
-                  <Skeleton className="h-7 w-28" />
-                </CardContent>
-              </Card>
+              <div key={i} className="rounded-xl border border-white/[0.07] bg-card p-4 sm:p-5">
+                <Skeleton className="h-3 w-20 mb-3" />
+                <Skeleton className="h-6 w-24" />
+              </div>
             ))
           : stats.map((stat, index) => (
               <motion.div
                 key={stat.title}
-                initial={{ opacity: 0, y: 14 }}
+                initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.05, duration: 0.3 }}
+                transition={{ delay: index * 0.06, duration: 0.35, ease: "easeOut" }}
+                className="h-full"
               >
-                <Card className="hover-elevate transition-shadow h-full">
-                  <CardHeader className="flex flex-row items-center justify-between pb-1.5 space-y-0 gap-2">
-                    <CardTitle className="text-[10px] sm:text-xs font-medium text-muted-foreground uppercase tracking-wide truncate">
+                <SpotlightCard className="h-full p-4 sm:p-5">
+                  <div className="flex flex-row items-start justify-between gap-2 mb-2">
+                    <p className="text-[10px] sm:text-[11px] font-medium text-muted-foreground/80 uppercase tracking-widest leading-tight">
                       {stat.title}
-                    </CardTitle>
-                    <div
-                      className={`w-7 h-7 rounded-md flex items-center justify-center shrink-0 ${stat.accent}`}
-                    >
+                    </p>
+                    <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${stat.accent}`}>
                       <stat.icon className="h-3.5 w-3.5" />
                     </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-base sm:text-xl font-semibold tabular-nums truncate">
-                      {stat.value}
-                    </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                  <div className="text-lg sm:text-2xl font-bold tabular-nums truncate tracking-tight">
+                    {stat.value}
+                  </div>
+                </SpotlightCard>
               </motion.div>
             ))}
       </div>
 
       <div className="grid gap-4 lg:grid-cols-7">
-        <Card className="lg:col-span-4">
+        <SpotlightCard spotlightColor="rgba(0,231,255,0.05)" className="lg:col-span-4">
           <CardHeader>
-            <CardTitle className="text-base font-semibold">
+            <CardTitle className="text-base font-semibold flex items-center gap-2">
               Revenue vs Expenses
             </CardTitle>
             <CardDescription>Last 12 months</CardDescription>
@@ -368,12 +373,12 @@ export default function Dashboard() {
               </div>
             )}
           </CardContent>
-        </Card>
+        </SpotlightCard>
 
-        <Card className="lg:col-span-3">
+        <SpotlightCard spotlightColor="rgba(155,89,245,0.06)" className="lg:col-span-3">
           <CardHeader>
             <CardTitle className="text-base font-semibold flex items-center gap-2">
-              <Activity className="w-4 h-4" /> Recent activity
+              <Activity className="w-4 h-4 text-cyan-400" /> Recent activity
             </CardTitle>
             <CardDescription>Across customers, services, money</CardDescription>
           </CardHeader>
@@ -422,7 +427,7 @@ export default function Dashboard() {
               </motion.div>
             ))}
           </CardContent>
-        </Card>
+        </SpotlightCard>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-7">

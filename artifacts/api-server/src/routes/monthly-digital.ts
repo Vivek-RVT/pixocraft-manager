@@ -5,6 +5,7 @@ import {
   monthlyDigitalServicesTable,
   monthlyDigitalCompletionsTable,
   customersTable,
+  serviceActivityLogTable,
 } from "@workspace/db";
 import { z } from "zod";
 
@@ -148,12 +149,30 @@ router.patch("/monthly-digital/:id", async (req, res): Promise<void> => {
   if (d.status !== undefined) updates.status = d.status;
   if (d.notes !== undefined) updates.notes = d.notes;
 
+  const existing = await db
+    .select({ status: monthlyDigitalServicesTable.status })
+    .from(monthlyDigitalServicesTable)
+    .where(eq(monthlyDigitalServicesTable.id, id));
+  const fromStatus = existing[0]?.status ?? null;
+
   const [row] = await db
     .update(monthlyDigitalServicesTable)
     .set(updates)
     .where(eq(monthlyDigitalServicesTable.id, id))
     .returning();
   if (!row) { res.status(404).json({ error: "Not found" }); return; }
+
+  const toStatus = d.status ?? fromStatus;
+  if (fromStatus !== toStatus || d.notes !== undefined) {
+    await db.insert(serviceActivityLogTable).values({
+      entityType: "monthly_digital",
+      entityId: id,
+      fromStatus,
+      toStatus: toStatus ?? null,
+      note: d.notes ?? null,
+    });
+  }
+
   const [c] = await db.select().from(customersTable).where(eq(customersTable.id, row.customerId));
   const completions = await db.select().from(monthlyDigitalCompletionsTable).where(eq(monthlyDigitalCompletionsTable.serviceId, id));
   res.json(rowToService(row, c?.name ?? "Unknown", completions));

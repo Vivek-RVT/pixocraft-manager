@@ -8,3 +8,4 @@ export * from "./client-portals";
 export * from "./service-projects";
 export * from "./digital-marketing-reports";
 export * from "./seo-reports";
+export * from "./service-activity-log";

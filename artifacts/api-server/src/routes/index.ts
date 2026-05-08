@@ -11,6 +11,7 @@ import authRouter from "./auth";
 import clientAuthRouter from "./client-auth";
 import clientPortalRouter from "./client-portal";
 import portalAdminRouter from "./portal-admin";
+import serviceActivityRouter from "./service-activity";
 
 const router: IRouter = Router();
 
@@ -26,5 +27,6 @@ router.use(transactionsRouter);
 router.use(dashboardRouter);
 router.use(monthlyWebsiteRouter);
 router.use(monthlyDigitalRouter);
+router.use(serviceActivityRouter);
 
 export default router;

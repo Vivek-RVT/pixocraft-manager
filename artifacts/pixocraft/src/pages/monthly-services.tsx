@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format, getYear, getMonth } from "date-fns";
 import {
@@ -309,6 +309,13 @@ function MonthGrid({
   );
 }
 
+type DMInitialData = {
+  platforms: string | null; plan: string | null;
+  uploadedVideos: number; uploadedPosts: number; uploadedReels: number; uploadedStories: number;
+  followersGained: number; engagementGrowth: string | null; leadsGenerated: number;
+  adSpend: string; summaryNotes: string | null;
+};
+
 function DMProgressDialog({
   open,
   onOpenChange,
@@ -317,6 +324,7 @@ function DMProgressDialog({
   serviceName,
   year,
   month,
+  initialData,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
@@ -325,6 +333,7 @@ function DMProgressDialog({
   serviceName: string;
   year: number;
   month: number;
+  initialData?: DMInitialData;
 }) {
   const qc = useQueryClient();
   const [form, setForm] = useState({
@@ -333,6 +342,32 @@ function DMProgressDialog({
     followersGained: "0", engagementGrowth: "", leadsGenerated: "0",
     adSpend: "0", summaryNotes: "",
   });
+
+  useEffect(() => {
+    if (!open) return;
+    if (initialData) {
+      setForm({
+        platforms: initialData.platforms ?? "",
+        plan: initialData.plan ?? "",
+        uploadedVideos: String(initialData.uploadedVideos ?? 0),
+        uploadedPosts: String(initialData.uploadedPosts ?? 0),
+        uploadedReels: String(initialData.uploadedReels ?? 0),
+        uploadedStories: String(initialData.uploadedStories ?? 0),
+        followersGained: String(initialData.followersGained ?? 0),
+        engagementGrowth: initialData.engagementGrowth ?? "",
+        leadsGenerated: String(initialData.leadsGenerated ?? 0),
+        adSpend: initialData.adSpend ?? "0",
+        summaryNotes: initialData.summaryNotes ?? "",
+      });
+    } else {
+      setForm({
+        platforms: "", plan: "",
+        uploadedVideos: "0", uploadedPosts: "0", uploadedReels: "0", uploadedStories: "0",
+        followersGained: "0", engagementGrowth: "", leadsGenerated: "0",
+        adSpend: "0", summaryNotes: "",
+      });
+    }
+  }, [open, initialData]);
 
   const save = useMutation({
     mutationFn: () =>
@@ -368,9 +403,9 @@ function DMProgressDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Digital Progress — {MONTHS[month - 1]} {year}</DialogTitle>
+          <DialogTitle>{initialData ? "Edit" : "Log"} Digital Progress — {MONTHS[month - 1]} {year}</DialogTitle>
           <DialogDescription>
-            Add last month's progress for <span className="font-medium">{serviceName}</span> ({customerName})
+            {initialData ? "Update" : "Add"} progress for <span className="font-medium">{serviceName}</span> ({customerName})
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-3 py-1 text-sm">
@@ -424,6 +459,11 @@ function DMProgressDialog({
   );
 }
 
+type SeoInitialData = {
+  blogsPosted: number; keywordsRanked: number; trafficGrowth: string | null;
+  backlinksAdded: number; seoScore: number | null; notes: string | null;
+};
+
 function SeoProgressDialog({
   open,
   onOpenChange,
@@ -432,6 +472,7 @@ function SeoProgressDialog({
   websiteName,
   year,
   month,
+  initialData,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
@@ -440,12 +481,29 @@ function SeoProgressDialog({
   websiteName: string;
   year: number;
   month: number;
+  initialData?: SeoInitialData;
 }) {
   const qc = useQueryClient();
   const [form, setForm] = useState({
     blogsPosted: "0", keywordsRanked: "0", trafficGrowth: "",
     backlinksAdded: "0", seoScore: "", notes: "",
   });
+
+  useEffect(() => {
+    if (!open) return;
+    if (initialData) {
+      setForm({
+        blogsPosted: String(initialData.blogsPosted ?? 0),
+        keywordsRanked: String(initialData.keywordsRanked ?? 0),
+        trafficGrowth: initialData.trafficGrowth ?? "",
+        backlinksAdded: String(initialData.backlinksAdded ?? 0),
+        seoScore: initialData.seoScore != null ? String(initialData.seoScore) : "",
+        notes: initialData.notes ?? "",
+      });
+    } else {
+      setForm({ blogsPosted: "0", keywordsRanked: "0", trafficGrowth: "", backlinksAdded: "0", seoScore: "", notes: "" });
+    }
+  }, [open, initialData]);
 
   const save = useMutation({
     mutationFn: () =>
@@ -532,6 +590,8 @@ function DMReportsViewDialog({
   customerName: string;
   serviceName: string;
 }) {
+  const [editReport, setEditReport] = useState<{ year: number; month: number; data: DMInitialData } | null>(null);
+
   const { data: reports = [], isLoading } = useQuery<{
     id: number; year: number; month: number;
     platforms: string | null; plan: string | null;
@@ -550,6 +610,7 @@ function DMReportsViewDialog({
   );
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
@@ -574,9 +635,20 @@ function DMReportsViewDialog({
             <div key={r.id} className="rounded-lg border bg-card p-4 space-y-3">
               <div className="flex items-center justify-between">
                 <h3 className="font-semibold text-sm">{MONTHS[r.month - 1]} {r.year}</h3>
+                <div className="flex items-center gap-2">
                 {r.platforms && (
                   <Badge variant="secondary" className="text-xs">{r.platforms}</Badge>
                 )}
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                  title="Edit report"
+                  onClick={() => setEditReport({ year: r.year, month: r.month, data: r })}
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                </Button>
+                </div>
               </div>
               {r.plan && (
                 <p className="text-xs text-muted-foreground bg-muted/50 rounded px-2 py-1.5">{r.plan}</p>
@@ -625,6 +697,17 @@ function DMReportsViewDialog({
         </div>
       </DialogContent>
     </Dialog>
+    <DMProgressDialog
+      open={!!editReport}
+      onOpenChange={(v) => !v && setEditReport(null)}
+      customerId={customerId}
+      customerName={customerName}
+      serviceName={serviceName}
+      year={editReport?.year ?? currentYear}
+      month={editReport?.month ?? currentMonth}
+      initialData={editReport?.data}
+    />
+    </>
   );
 }
 
@@ -641,6 +724,8 @@ function SeoReportsViewDialog({
   customerName: string;
   websiteName: string;
 }) {
+  const [editReport, setEditReport] = useState<{ year: number; month: number; data: SeoInitialData } | null>(null);
+
   const { data: reports = [], isLoading } = useQuery<{
     id: number; year: number; month: number;
     blogsPosted: number; keywordsRanked: number; trafficGrowth: string | null;
@@ -657,6 +742,7 @@ function SeoReportsViewDialog({
   );
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
@@ -681,6 +767,7 @@ function SeoReportsViewDialog({
             <div key={r.id} className="rounded-lg border bg-card p-4 space-y-3">
               <div className="flex items-center justify-between">
                 <h3 className="font-semibold text-sm">{MONTHS[r.month - 1]} {r.year}</h3>
+                <div className="flex items-center gap-2">
                 {r.seoScore != null && (
                   <span className={cn(
                     "inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full border",
@@ -691,6 +778,16 @@ function SeoReportsViewDialog({
                     SEO {r.seoScore}/100
                   </span>
                 )}
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                  title="Edit report"
+                  onClick={() => setEditReport({ year: r.year, month: r.month, data: r })}
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                </Button>
+                </div>
               </div>
               <div className="grid grid-cols-4 gap-2 text-center">
                 {[
@@ -725,6 +822,17 @@ function SeoReportsViewDialog({
         </div>
       </DialogContent>
     </Dialog>
+    <SeoProgressDialog
+      open={!!editReport}
+      onOpenChange={(v) => !v && setEditReport(null)}
+      customerId={customerId}
+      customerName={customerName}
+      websiteName={websiteName}
+      year={editReport?.year ?? currentYear}
+      month={editReport?.month ?? currentMonth}
+      initialData={editReport?.data}
+    />
+    </>
   );
 }
 
@@ -1121,17 +1229,31 @@ function WebsiteServiceCard({
   year,
   onEdit,
   onDelete,
+  highlighted,
 }: {
   service: MonthlyWebsiteService;
   year: number;
   onEdit: () => void;
   onDelete: () => void;
+  highlighted?: boolean;
 }) {
+  const cardRef = useRef<HTMLDivElement>(null);
+  const [flashActive, setFlashActive] = useState(false);
   const [expanded, setExpanded] = useState(true);
   const [reportOpen, setReportOpen] = useState(false);
   const [reportYear, setReportYear] = useState(currentYear);
   const [reportMonth, setReportMonth] = useState(currentMonth);
   const [viewReportsOpen, setViewReportsOpen] = useState(false);
+
+  useEffect(() => {
+    if (highlighted && cardRef.current) {
+      cardRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+      setFlashActive(true);
+      const t = setTimeout(() => setFlashActive(false), 2500);
+      return () => clearTimeout(t);
+    }
+    return undefined;
+  }, [highlighted]);
   const profit = service.monthlyCharge - service.monthlyCost;
   const doneThisYear = service.completions.filter(
     (c) => c.year === year && c.completed,
@@ -1145,7 +1267,14 @@ function WebsiteServiceCard({
     : 0;
 
   return (
-    <div className="border rounded-lg overflow-hidden">
+    <div
+      ref={cardRef}
+      id={`service-${service.id}`}
+      className={cn(
+        "border border-white/[0.07] rounded-xl overflow-hidden transition-all duration-700 bg-card",
+        flashActive && "ring-2 ring-cyan-500/60 border-cyan-500/40 bg-cyan-500/5",
+      )}
+    >
       <div className="flex items-start justify-between p-4 gap-2">
         <div className="flex items-start gap-3 flex-1 min-w-0">
           <div className="w-9 h-9 rounded-md bg-blue-100 text-blue-700 flex items-center justify-center shrink-0">
@@ -1243,16 +1372,30 @@ function DigitalServiceCard({
   year,
   onEdit,
   onDelete,
+  highlighted,
 }: {
   service: MonthlyDigitalService;
   year: number;
   onEdit: () => void;
   onDelete: () => void;
+  highlighted?: boolean;
 }) {
+  const cardRef = useRef<HTMLDivElement>(null);
+  const [flashActive, setFlashActive] = useState(false);
   const qc = useQueryClient();
   const [expanded, setExpanded] = useState(true);
   const [markDoneOpen, setMarkDoneOpen] = useState(false);
   const [markAmount, setMarkAmount] = useState("");
+
+  useEffect(() => {
+    if (highlighted && cardRef.current) {
+      cardRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+      setFlashActive(true);
+      const t = setTimeout(() => setFlashActive(false), 2500);
+      return () => clearTimeout(t);
+    }
+    return undefined;
+  }, [highlighted]);
   const [reportOpen, setReportOpen] = useState(false);
   const [reportYear, setReportYear] = useState(currentYear);
   const [reportMonth, setReportMonth] = useState(currentMonth);
@@ -1292,7 +1435,14 @@ function DigitalServiceCard({
   });
 
   return (
-    <div className="border rounded-lg overflow-hidden">
+    <div
+      ref={cardRef}
+      id={`service-${service.id}`}
+      className={cn(
+        "border border-white/[0.07] rounded-xl overflow-hidden transition-all duration-700 bg-card",
+        flashActive && "ring-2 ring-cyan-500/60 border-cyan-500/40 bg-cyan-500/5",
+      )}
+    >
       <div className="flex items-start justify-between p-4 gap-2">
         <div className="flex items-start gap-3 flex-1 min-w-0">
           <div className="w-9 h-9 rounded-md bg-purple-100 text-purple-700 flex items-center justify-center shrink-0">
@@ -1446,12 +1596,22 @@ export default function MonthlyServices() {
   const qc = useQueryClient();
   const [year, setYear] = useState(currentYear);
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [tabValue, setTabValue] = useState("website");
+  const [highlightId, setHighlightId] = useState<number | null>(null);
 
   const [webDialogOpen, setWebDialogOpen] = useState(false);
   const [digitalDialogOpen, setDigitalDialogOpen] = useState(false);
   const [editingWeb, setEditingWeb] = useState<MonthlyWebsiteService | undefined>();
   const [editingDigital, setEditingDigital] = useState<MonthlyDigitalService | undefined>();
   const [deleteId, setDeleteId] = useState<{ id: number; type: "web" | "digital" } | null>(null);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const highlight = params.get("highlight");
+    const tab = params.get("tab") ?? params.get("type");
+    if (highlight) setHighlightId(Number(highlight));
+    if (tab === "digital") setTabValue("digital");
+  }, []);
 
   const { data: webServices = [], isLoading: webLoading } = useQuery<MonthlyWebsiteService[]>({
     queryKey: ["monthly-website"],
@@ -1548,33 +1708,33 @@ export default function MonthlyServices() {
 
       {/* Summary cards */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-        <div className="rounded-lg border bg-card p-4">
-          <p className="text-xs text-muted-foreground">Web clients (active)</p>
-          <p className="text-2xl font-bold">{webServices.filter((s) => s.status === "active").length}</p>
+        <div className="rounded-xl border border-white/[0.07] bg-card p-4">
+          <p className="text-xs text-muted-foreground uppercase tracking-wider">Web clients</p>
+          <p className="text-2xl font-bold mt-1">{webServices.filter((s) => s.status === "active").length}</p>
         </div>
-        <div className="rounded-lg border bg-card p-4">
-          <p className="text-xs text-muted-foreground">Web MRR</p>
-          <p className="text-2xl font-bold text-blue-600">{formatCurrency(webActiveRevenue)}</p>
+        <div className="rounded-xl border border-white/[0.07] bg-card p-4">
+          <p className="text-xs text-muted-foreground uppercase tracking-wider">Web MRR</p>
+          <p className="text-2xl font-bold mt-1 text-cyan-400">{formatCurrency(webActiveRevenue)}</p>
         </div>
-        <div className="rounded-lg border bg-card p-4">
-          <p className="text-xs text-muted-foreground">Web collected ({year})</p>
-          <p className="text-2xl font-bold text-emerald-600">{formatCurrency(webCollectedThisYear)}</p>
+        <div className="rounded-xl border border-white/[0.07] bg-card p-4">
+          <p className="text-xs text-muted-foreground uppercase tracking-wider">Web {year}</p>
+          <p className="text-2xl font-bold mt-1 text-emerald-400">{formatCurrency(webCollectedThisYear)}</p>
         </div>
-        <div className="rounded-lg border bg-card p-4">
-          <p className="text-xs text-muted-foreground">Digital clients (active)</p>
-          <p className="text-2xl font-bold">{digitalServices.filter((s) => s.status === "active").length}</p>
+        <div className="rounded-xl border border-white/[0.07] bg-card p-4">
+          <p className="text-xs text-muted-foreground uppercase tracking-wider">DM clients</p>
+          <p className="text-2xl font-bold mt-1">{digitalServices.filter((s) => s.status === "active").length}</p>
         </div>
-        <div className="rounded-lg border bg-card p-4">
-          <p className="text-xs text-muted-foreground">Digital MRR</p>
-          <p className="text-2xl font-bold text-purple-600">{formatCurrency(digitalActiveRevenue)}</p>
+        <div className="rounded-xl border border-white/[0.07] bg-card p-4">
+          <p className="text-xs text-muted-foreground uppercase tracking-wider">DM MRR</p>
+          <p className="text-2xl font-bold mt-1 text-violet-400">{formatCurrency(digitalActiveRevenue)}</p>
         </div>
-        <div className="rounded-lg border bg-card p-4">
-          <p className="text-xs text-muted-foreground">Digital collected ({year})</p>
-          <p className="text-2xl font-bold text-emerald-600">{formatCurrency(digitalCollectedThisYear)}</p>
+        <div className="rounded-xl border border-white/[0.07] bg-card p-4">
+          <p className="text-xs text-muted-foreground uppercase tracking-wider">DM {year}</p>
+          <p className="text-2xl font-bold mt-1 text-emerald-400">{formatCurrency(digitalCollectedThisYear)}</p>
         </div>
       </div>
 
-      <Tabs defaultValue="website">
+      <Tabs value={tabValue} onValueChange={setTabValue}>
         <TabsList>
           <TabsTrigger value="website">
             <Globe className="w-4 h-4 mr-1.5" />
@@ -1604,6 +1764,7 @@ export default function MonthlyServices() {
               key={s.id}
               service={s}
               year={year}
+              highlighted={highlightId === s.id}
               onEdit={() => { setEditingWeb(s); setWebDialogOpen(true); }}
               onDelete={() => setDeleteId({ id: s.id, type: "web" })}
             />
@@ -1628,6 +1789,7 @@ export default function MonthlyServices() {
               key={s.id}
               service={s}
               year={year}
+              highlighted={highlightId === s.id}
               onEdit={() => { setEditingDigital(s); setDigitalDialogOpen(true); }}
               onDelete={() => setDeleteId({ id: s.id, type: "digital" })}
             />

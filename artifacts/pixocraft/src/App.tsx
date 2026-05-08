@@ -70,7 +70,7 @@ const queryClient = new QueryClient({
 
 function App() {
   return (
-    <ThemeProvider defaultTheme="light" storageKey="pixocraft-theme-v2">
+    <ThemeProvider defaultTheme="dark" storageKey="pixocraft-theme-v2">
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <WouterRouter>

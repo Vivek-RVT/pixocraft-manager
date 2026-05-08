@@ -229,7 +229,7 @@ export default function Expenses() {
       </div>
 
       {isEmpty ? (
-        <div className="rounded-lg border border-dashed bg-card/50 p-12 text-center">
+        <div className="rounded-xl border border-dashed border-white/[0.08] bg-card/50 p-12 text-center">
           <div className="font-medium">No expenses logged</div>
           <p className="text-sm text-muted-foreground mb-4">
             Start tracking what your studio is spending on.
@@ -237,7 +237,7 @@ export default function Expenses() {
           <Button onClick={() => setCreateOpen(true)}>Add an expense</Button>
         </div>
       ) : (
-        <div className="rounded-md border bg-card overflow-hidden">
+        <div className="rounded-xl border border-white/[0.07] bg-card overflow-hidden">
           <Table>
             <TableHeader>
               <TableRow>

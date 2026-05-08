@@ -192,7 +192,7 @@ export default function Customers() {
           )}
         </motion.div>
       ) : (
-        <div className="rounded-md border bg-card overflow-hidden">
+        <div className="rounded-xl border border-white/[0.07] bg-card overflow-hidden">
           <Table>
             <TableHeader>
               <TableRow>
@@ -227,13 +227,25 @@ export default function Customers() {
                 : customers?.map((customer) => (
                     <TableRow
                       key={customer.id}
-                      className="cursor-pointer"
+                      className="cursor-pointer group"
                       onClick={() => setLocation(`/customers/${customer.id}`)}
                     >
-                      <TableCell className="font-medium">
-                        <div>{customer.name}</div>
-                        <div className="text-xs text-muted-foreground md:hidden">
-                          {customer.businessName ?? customer.email ?? ""}
+                      <TableCell className="font-medium py-3">
+                        <div className="flex items-center gap-3">
+                          <div
+                            className="w-8 h-8 rounded-full shrink-0 flex items-center justify-center text-xs font-bold text-white ring-1 ring-white/10"
+                            style={{
+                              background: `linear-gradient(135deg, hsl(${(customer.name.charCodeAt(0) * 37) % 360} 70% 55%), hsl(${(customer.name.charCodeAt(0) * 37 + 40) % 360} 70% 45%))`,
+                            }}
+                          >
+                            {customer.name.slice(0, 1).toUpperCase()}
+                          </div>
+                          <div>
+                            <div className="group-hover:text-cyan-400 transition-colors">{customer.name}</div>
+                            <div className="text-xs text-muted-foreground md:hidden">
+                              {customer.businessName ?? customer.email ?? ""}
+                            </div>
+                          </div>
                         </div>
                       </TableCell>
                       <TableCell className="hidden md:table-cell">

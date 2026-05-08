@@ -58,6 +58,11 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -513,6 +518,7 @@ export default function CustomerDetail() {
   const [dsEditNote, setDsEditNote] = useState("");
   const [dsEditName, setDsEditName] = useState("");
   const [dsEditCategory, setDsEditCategory] = useState("");
+  const [activityOpenId, setActivityOpenId] = useState<string | null>(null);
 
   const blankDm = (): DMFormData => ({
     year: String(currentYear), month: String(currentMonth), platforms: "", plan: "",
@@ -668,6 +674,45 @@ export default function CustomerDetail() {
     if (editStage === "ended") return "cancelled";
     return "paused";
   }
+
+  function dsProgress(status: string): number {
+    if (status === "delivered" || status === "cancelled" || status === "ended") return 100;
+    if (status === "active" || status === "running") return 70;
+    if (status === "paused") return 45;
+    if (status === "started") return 30;
+    return 10;
+  }
+
+  function dsProgressColor(status: string): string {
+    if (status === "delivered") return "bg-blue-500";
+    if (status === "cancelled" || status === "ended") return "bg-slate-400";
+    if (status === "active" || status === "running") return "bg-emerald-500";
+    if (status === "paused") return "bg-amber-500";
+    return "bg-purple-400";
+  }
+
+  function activityStatusLabel(s: string | null): string {
+    if (!s) return "—";
+    if (s === "active") return "Running";
+    if (s === "cancelled") return "Ended";
+    if (s === "in_progress") return "In Progress";
+    return s.charAt(0).toUpperCase() + s.slice(1);
+  }
+
+  const activityEntityType = activityOpenId?.startsWith("monthly-") ? "monthly_digital" : "service";
+  const activityEntityId = activityOpenId
+    ? Number(activityOpenId.replace("monthly-", "").replace("one-time-", ""))
+    : null;
+
+  const { data: activityLog = [], isFetching: activityLoading } = useQuery<{
+    id: number; entityType: string; entityId: number;
+    fromStatus: string | null; toStatus: string | null;
+    note: string | null; createdAt: string;
+  }[]>({
+    queryKey: ["service-activity", activityEntityType, activityEntityId],
+    queryFn: () => apiFetch(`/service-activity?entityType=${activityEntityType}&entityId=${activityEntityId}`),
+    enabled: activityOpenId !== null && activityEntityId !== null,
+  });
 
   function dsDBToEditStage(status: string): string {
     if (status === "active") return "running";
@@ -1122,7 +1167,7 @@ export default function CustomerDetail() {
           </div>
 
           {customerTab === "monthly" && (
-            <div className="rounded-lg border bg-muted/20 p-4 space-y-3">
+            <div className="rounded-xl border border-white/[0.07] bg-white/[0.03] p-4 space-y-3">
               <div className="flex items-center justify-between gap-2">
                 <div>
                   <div className="text-sm font-semibold">Monthly Progress Reports</div>
@@ -1546,10 +1591,19 @@ export default function CustomerDetail() {
                           <div className="font-medium text-sm leading-tight">{ds.serviceName}</div>
                           <div className="text-[11px] text-muted-foreground mt-0.5">{ds.serviceType === "web" ? "Web" : "Digital"} · {ds.billingType === "monthly" ? "Monthly" : "One time"}</div>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1.5">
                           <Badge variant="outline" className={cn("text-xs", ds.status === "active" && "border-emerald-400 text-emerald-600", ds.status === "paused" && "border-amber-400 text-amber-600", ds.status === "cancelled" && "border-slate-400 text-slate-500", ds.status === "delivered" && "border-blue-400 text-blue-600")}>
                             {dsStatusLabel(ds.status)}
                           </Badge>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-7 w-7 shrink-0 text-purple-500 hover:text-purple-700 hover:bg-purple-50"
+                            onClick={() => setActivityOpenId(activityOpenId === ds.id ? null : ds.id)}
+                            title="View activity"
+                          >
+                            <Activity className="w-3.5 h-3.5" />
+                          </Button>
                           {!isEditing && (
                             <Button
                               size="icon"
@@ -1560,6 +1614,20 @@ export default function CustomerDetail() {
                               <Pencil className="w-3.5 h-3.5" />
                             </Button>
                           )}
+                        </div>
+                      </div>
+
+                      {/* Progress bar */}
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                          <span>Progress</span>
+                          <span>{dsProgress(ds.status)}%</span>
+                        </div>
+                        <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                          <div
+                            className={cn("h-full rounded-full transition-all duration-500", dsProgressColor(ds.status))}
+                            style={{ width: `${dsProgress(ds.status)}%` }}
+                          />
                         </div>
                       </div>
 
@@ -1673,7 +1741,70 @@ export default function CustomerDetail() {
                         {ds.discount > 0 && <span>Discount: {formatCurrency(ds.discount)}</span>}
                         <span>Since: {formatDate(ds.startDate)}</span>
                       </div>
-                      {ds.billingType === "monthly" ? <MiniMonthGrid completions={ds.completions} /> : null}
+                      {ds.billingType === "monthly" ? (
+                        <>
+                          <MiniMonthGrid completions={ds.completions} />
+                          {ds.billingType === "monthly" && (
+                            <Link href={`/monthly-services?highlight=${ds.rawId}&tab=digital`}>
+                              <Button size="sm" variant="outline" className="h-7 text-xs gap-1 w-full mt-1">
+                                Manage <span aria-hidden>→</span>
+                              </Button>
+                            </Link>
+                          )}
+                        </>
+                      ) : null}
+
+                      {/* Activity panel */}
+                      {activityOpenId === ds.id && (
+                        <div className="rounded-xl border border-purple-100 bg-purple-50/60 dark:bg-purple-950/20 dark:border-purple-900 p-3 space-y-2">
+                          <div className="flex items-center gap-1.5 text-xs font-semibold text-purple-700 dark:text-purple-300">
+                            <Activity className="w-3.5 h-3.5" />
+                            Recent Activity
+                          </div>
+                          {activityLoading ? (
+                            <div className="space-y-1.5">
+                              <Skeleton className="h-8 w-full" />
+                              <Skeleton className="h-8 w-full" />
+                            </div>
+                          ) : activityLog.length === 0 ? (
+                            <p className="text-xs text-muted-foreground text-center py-2">No activity recorded yet. Update the status to start tracking.</p>
+                          ) : (
+                            <div className="space-y-2">
+                              {activityLog.map((entry, i) => (
+                                <div key={entry.id} className="flex gap-2 text-xs">
+                                  <div className="flex flex-col items-center">
+                                    <div className={cn("h-2 w-2 rounded-full mt-0.5 shrink-0",
+                                      entry.toStatus === "active" && "bg-emerald-500",
+                                      entry.toStatus === "paused" && "bg-amber-500",
+                                      entry.toStatus === "cancelled" && "bg-slate-400",
+                                      entry.toStatus === "delivered" && "bg-blue-500",
+                                      !["active","paused","cancelled","delivered"].includes(entry.toStatus ?? "") && "bg-purple-400",
+                                    )} />
+                                    {i < activityLog.length - 1 && <div className="w-px flex-1 bg-border mt-0.5" />}
+                                  </div>
+                                  <div className="pb-2 flex-1 min-w-0">
+                                    <div className="flex items-center gap-1 flex-wrap">
+                                      {entry.fromStatus && (
+                                        <>
+                                          <span className="text-muted-foreground">{activityStatusLabel(entry.fromStatus)}</span>
+                                          <span className="text-muted-foreground">→</span>
+                                        </>
+                                      )}
+                                      <span className="font-medium">{activityStatusLabel(entry.toStatus)}</span>
+                                      <span className="ml-auto text-muted-foreground text-[10px] shrink-0">
+                                        {new Date(entry.createdAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+                                      </span>
+                                    </div>
+                                    {entry.note && (
+                                      <p className="text-muted-foreground mt-0.5 truncate">{entry.note}</p>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   );
                 })}
@@ -1717,9 +1848,16 @@ export default function CustomerDetail() {
                         <div className="font-medium text-sm">{ws.websiteName}</div>
                         <div className="text-xs text-muted-foreground">Website service</div>
                       </div>
-                      <Badge variant="outline" className={cn("text-xs capitalize", ws.status === "active" && "border-emerald-400 text-emerald-600", ws.status === "paused" && "border-amber-400 text-amber-600", ws.status === "cancelled" && "border-red-400 text-red-500")}>
-                        {ws.status}
-                      </Badge>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className={cn("text-xs capitalize", ws.status === "active" && "border-emerald-400 text-emerald-600", ws.status === "paused" && "border-amber-400 text-amber-600", ws.status === "cancelled" && "border-red-400 text-red-500")}>
+                          {ws.status}
+                        </Badge>
+                        <Link href={`/monthly-services?highlight=${ws.id}&tab=website`}>
+                          <Button size="sm" variant="outline" className="h-7 text-xs gap-1">
+                            Manage <span aria-hidden>→</span>
+                          </Button>
+                        </Link>
+                      </div>
                     </div>
                     <div className="grid grid-cols-2 gap-2 text-xs">
                       <div className="rounded-lg bg-white p-3 border">
