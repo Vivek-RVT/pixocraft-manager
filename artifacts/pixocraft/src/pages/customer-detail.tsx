@@ -649,26 +649,38 @@ export default function CustomerDetail() {
     return [...monthly, ...oneTime].sort((a, b) => +new Date(b.startDate) - +new Date(a.startDate));
   }, [digitalServices, services]);
   const digitalStages = [
-    { value: "paused", label: "Pending" },
-    { value: "active", label: "Started" },
-    { value: "mid-start", label: "Mid Start" },
-    { value: "mid-complete", label: "Mid Complete" },
-    { value: "final-review", label: "Final Review" },
-    { value: "delivered", label: "Delivered" },
+    { value: "pending", label: "Pending" },
+    { value: "started", label: "Started" },
+    { value: "running", label: "Running" },
+    { value: "paused", label: "Paused" },
+    { value: "ended", label: "Ended" },
   ] as const;
 
   function getDigitalStageIndex(status: string) {
-    if (status === "delivered") return 5;
-    if (status === "final-review") return 4;
-    if (status === "mid-complete") return 3;
-    if (status === "mid-start") return 2;
-    if (status === "active") return 1;
+    if (status === "ended") return 4;
+    if (status === "paused") return 3;
+    if (status === "running") return 2;
+    if (status === "started") return 1;
     return 0;
   }
 
-  function getDigitalStageStatus(status: string) {
-    if (status === "delivered") return "delivered";
-    if (status === "active") return "active";
+  function dsStatusLabel(status: string): string {
+    if (status === "active") return "Running";
+    if (status === "paused") return "Paused";
+    if (status === "cancelled") return "Ended";
+    if (status === "delivered") return "Delivered";
+    return status.charAt(0).toUpperCase() + status.slice(1);
+  }
+
+  function dsStageToDB(editStage: string): "active" | "paused" | "cancelled" {
+    if (editStage === "started" || editStage === "running") return "active";
+    if (editStage === "ended") return "cancelled";
+    return "paused";
+  }
+
+  function dsDBToEditStage(status: string): string {
+    if (status === "active") return "running";
+    if (status === "cancelled") return "ended";
     return "paused";
   }
 
@@ -806,14 +818,13 @@ export default function CustomerDetail() {
 
   function saveDsEdit(ds: { rawId: number; billingType: "monthly" | "one_time" }) {
     if (ds.billingType === "monthly") {
-      const monthlyStatus = dsEditStatus === "delivered" ? "active" : (dsEditStatus as "active" | "paused" | "cancelled");
       updateMonthlyDigital.mutate({
         rawId: ds.rawId,
-        status: monthlyStatus,
+        status: dsStageToDB(dsEditStatus),
         notes: dsEditNote,
       });
     } else {
-      const oneTimeStatus = dsEditStatus === "delivered" ? "delivered" : "active";
+      const oneTimeStatus = dsEditStatus === "ended" ? "delivered" : "in_progress";
       updateOneTimeService.mutate({
         rawId: ds.rawId,
         status: oneTimeStatus,
@@ -944,6 +955,7 @@ export default function CustomerDetail() {
     label: string;
     sublabel?: string;
     kind: "service" | "delivery" | "report" | "project";
+    category: "digital" | "web" | "monthly-digital" | "monthly-web";
   };
   const activityEvents: ActivityEvent[] = [];
   for (const s of (services ?? [])) {
@@ -952,6 +964,7 @@ export default function CustomerDetail() {
       label: s.serviceName,
       sublabel: `${s.serviceType === "web" ? "Web" : s.serviceType === "digital" ? "Digital" : "Other"} · ${formatCurrency(s.priceSold)} · ${s.deliveryStatus}`,
       kind: "service",
+      category: s.serviceType === "web" ? "web" : "digital",
     });
   }
   for (const ws of webServices) {
@@ -962,6 +975,7 @@ export default function CustomerDetail() {
           label: `${ws.websiteName} — ${MONTHS[c.month - 1]} ${c.year}`,
           sublabel: `Website maintenance delivered · ${formatCurrency(c.paidAmount)}`,
           kind: "delivery",
+          category: "monthly-web",
         });
       }
     }
@@ -974,6 +988,7 @@ export default function CustomerDetail() {
           label: `${ds.serviceName} — ${MONTHS[c.month - 1]} ${c.year}`,
           sublabel: `Digital service delivered · ${formatCurrency(c.paidAmount)}`,
           kind: "delivery",
+          category: "monthly-digital",
         });
       }
     }
@@ -984,6 +999,7 @@ export default function CustomerDetail() {
       label: `DM Report — ${MONTHS[r.month - 1]} ${r.year}`,
       sublabel: r.platforms ? `${r.platforms}${r.followersGained ? ` · +${r.followersGained} followers` : ""}` : undefined,
       kind: "report",
+      category: "monthly-digital",
     });
   }
   for (const r of seoReports) {
@@ -992,6 +1008,7 @@ export default function CustomerDetail() {
       label: `SEO Report — ${MONTHS[r.month - 1]} ${r.year}`,
       sublabel: r.trafficGrowth ? `Traffic: ${r.trafficGrowth}${r.blogsPosted ? ` · ${r.blogsPosted} blogs` : ""}` : undefined,
       kind: "report",
+      category: "monthly-web",
     });
   }
   for (const p of projects) {
@@ -1000,9 +1017,19 @@ export default function CustomerDetail() {
       label: p.projectName,
       sublabel: `Project · ${p.stage}`,
       kind: "project",
+      category: "web",
     });
   }
   activityEvents.sort((a, b) => b.dateStr.localeCompare(a.dateStr));
+
+  const filteredActivityEvents =
+    customerTab === "digital"
+      ? activityEvents.filter(e => e.category === "digital" || e.category === "monthly-digital")
+      : customerTab === "web"
+        ? activityEvents.filter(e => e.category === "web" || e.category === "monthly-web")
+        : customerTab === "monthly"
+          ? activityEvents.filter(e => e.category === "monthly-digital" || e.category === "monthly-web")
+          : activityEvents;
 
   const activityKindIcon = (kind: ActivityEvent["kind"]) => {
     if (kind === "service") return <Briefcase className="w-3.5 h-3.5" />;
@@ -1353,22 +1380,22 @@ export default function CustomerDetail() {
             </CardTitle>
             <CardDescription>Latest events with this client</CardDescription>
           </div>
-          {activityEvents.length > 5 && (
+          {filteredActivityEvents.length > 5 && (
             <Button size="sm" variant="outline" onClick={() => setActivityOpen(true)} className="shrink-0 text-xs">
-              View all {activityEvents.length}
+              View all {filteredActivityEvents.length}
             </Button>
           )}
         </CardHeader>
         <CardContent>
-          {activityEvents.length === 0 ? (
+          {filteredActivityEvents.length === 0 ? (
             <div className="text-center py-8 text-sm text-muted-foreground">
-              No activity yet. Add services or reports to get started.
+              No activity yet for this category.
             </div>
           ) : (
             <div className="relative">
               <div className="absolute left-3.5 top-0 bottom-0 w-px bg-border" />
               <div className="space-y-0">
-                {activityEvents.slice(0, 5).map((ev, i) => (
+                {filteredActivityEvents.slice(0, 5).map((ev, i) => (
                   <div key={i} className="relative flex gap-4 pb-4">
                     <div className={cn("relative z-10 flex h-7 w-7 shrink-0 items-center justify-center rounded-full mt-0.5", activityKindColor(ev.kind))}>
                       {activityKindIcon(ev.kind)}
@@ -1383,12 +1410,12 @@ export default function CustomerDetail() {
                   </div>
                 ))}
               </div>
-              {activityEvents.length > 5 && (
+              {filteredActivityEvents.length > 5 && (
                 <button
                   onClick={() => setActivityOpen(true)}
                   className="w-full text-center text-xs text-muted-foreground hover:text-foreground pt-1 pb-0.5 border-t transition-colors"
                 >
-                  + {activityEvents.length - 5} more activities — View all
+                  + {filteredActivityEvents.length - 5} more activities — View all
                 </button>
               )}
             </div>
@@ -1464,7 +1491,19 @@ export default function CustomerDetail() {
               </div>
             ) : (
               <div className="grid gap-4 lg:grid-cols-2">
-                {projects.map((proj) => <ServiceDetailCard key={proj.id} project={proj} />)}
+                {projects.map((proj) => (
+                  <div key={proj.id} className="space-y-2">
+                    <ServiceDetailCard project={proj} />
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="w-full h-7 text-xs gap-1.5"
+                      onClick={() => { setEditProject(proj); setProjectDialog(true); }}
+                    >
+                      <Pencil className="w-3 h-3" /> Edit Project
+                    </Button>
+                  </div>
+                ))}
               </div>
             )}
           </CardContent>
@@ -1517,8 +1556,8 @@ export default function CustomerDetail() {
                           <div className="text-[11px] text-muted-foreground mt-0.5">{ds.serviceType === "web" ? "Web" : "Digital"} · {ds.billingType === "monthly" ? "Monthly" : "One time"}</div>
                         </div>
                         <div className="flex items-center gap-2">
-                          <Badge variant="outline" className={cn("text-xs capitalize", ds.status === "active" && "border-emerald-400 text-emerald-600", ds.status === "paused" && "border-amber-400 text-amber-600", ds.status === "cancelled" && "border-red-400 text-red-500", ds.status === "delivered" && "border-blue-400 text-blue-600")}>
-                            {ds.billingType === "one_time" ? (ds.status === "paused" ? "pending" : ds.status) : ds.status}
+                          <Badge variant="outline" className={cn("text-xs", ds.status === "active" && "border-emerald-400 text-emerald-600", ds.status === "paused" && "border-amber-400 text-amber-600", ds.status === "cancelled" && "border-slate-400 text-slate-500", ds.status === "delivered" && "border-blue-400 text-blue-600")}>
+                            {dsStatusLabel(ds.status)}
                           </Badge>
                           {!isEditing && (
                             <Button
@@ -1600,40 +1639,25 @@ export default function CustomerDetail() {
                         </div>
                       ) : (
                         <>
-                          <div className="rounded-lg border bg-white p-3">
-                            <div className="flex items-center justify-between text-xs text-muted-foreground">
+                          <div className="rounded-lg border bg-white dark:bg-muted/10 p-3">
+                            <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
                               <span>{ds.serviceType === "web" ? "Web" : "Digital"} · {ds.billingType === "monthly" ? "Monthly" : "One-time"}</span>
                               <span>{formatDate(ds.startDate)}</span>
                             </div>
-                            <div className="mt-2 flex items-center gap-2">
-                              <div className={cn("h-2.5 w-2.5 rounded-full", STAGE_COLORS[getDigitalStageStatus(ds.status)] ?? "bg-slate-500")} />
-                              <div className="text-sm font-medium capitalize">{STAGE_LABELS[getDigitalStageStatus(ds.status)] ?? "Pending"}</div>
-                            </div>
-                            <div className="mt-2 h-2 rounded-full bg-muted overflow-hidden">
-                              <div
-                                className={cn(
-                                  "h-full rounded-full transition-all",
-                                  getDigitalStageIndex(ds.status) === 0 && "w-[16.66%] bg-slate-500",
-                                  getDigitalStageIndex(ds.status) === 1 && "w-[33.33%] bg-amber-500",
-                                  getDigitalStageIndex(ds.status) === 2 && "w-[50%] bg-orange-500",
-                                  getDigitalStageIndex(ds.status) === 3 && "w-[66.66%] bg-blue-500",
-                                  getDigitalStageIndex(ds.status) === 4 && "w-[83.33%] bg-violet-500",
-                                  getDigitalStageIndex(ds.status) === 5 && "w-full bg-emerald-500",
-                                )}
-                              />
-                            </div>
-                            <div className="mt-2 flex gap-2 text-[11px]">
-                              {digitalStages.map((stage, index) => (
-                                <div
-                                  key={stage.value}
-                                  className={cn(
-                                    "rounded-full px-2 py-0.5",
-                                    getDigitalStageIndex(ds.status) >= index ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground",
-                                  )}
-                                >
-                                  {stage.label}
-                                </div>
-                              ))}
+                            <div className="flex items-center gap-3">
+                              <div className={cn("h-2.5 w-2.5 rounded-full shrink-0",
+                                ds.status === "active" && "bg-emerald-500",
+                                ds.status === "paused" && "bg-amber-500",
+                                ds.status === "cancelled" && "bg-slate-400",
+                                ds.status === "delivered" && "bg-blue-500",
+                              )} />
+                              <span className="text-sm font-semibold">{dsStatusLabel(ds.status)}</span>
+                              {ds.status === "active" && (
+                                <span className="ml-auto text-[11px] font-medium text-emerald-600 dark:text-emerald-400">● Live</span>
+                              )}
+                              {ds.status === "cancelled" && (
+                                <span className="ml-auto text-[11px] font-medium text-slate-500">Subscription ended</span>
+                              )}
                             </div>
                           </div>
                           {ds.notes && (
@@ -1953,16 +1977,16 @@ export default function CustomerDetail() {
             <DialogTitle className="flex items-center gap-2">
               <Activity className="w-4 h-4" /> All Activity
             </DialogTitle>
-            <DialogDescription>{activityEvents.length} events with this client, newest first</DialogDescription>
+            <DialogDescription>{filteredActivityEvents.length} events{customerTab !== "overview" ? ` in ${customerTab} category` : " with this client"}, newest first</DialogDescription>
           </DialogHeader>
           <div className="flex-1 overflow-y-auto pr-1 min-h-0">
-            {activityEvents.length === 0 ? (
+            {filteredActivityEvents.length === 0 ? (
               <div className="text-center py-10 text-sm text-muted-foreground">No activity yet.</div>
             ) : (
               <div className="relative">
                 <div className="absolute left-3.5 top-0 bottom-0 w-px bg-border" />
                 <div className="space-y-0">
-                  {activityEvents.map((ev, i) => (
+                  {filteredActivityEvents.map((ev, i) => (
                     <div key={i} className="relative flex gap-4 pb-4">
                       <div className={cn("relative z-10 flex h-7 w-7 shrink-0 items-center justify-center rounded-full mt-0.5", activityKindColor(ev.kind))}>
                         {activityKindIcon(ev.kind)}
