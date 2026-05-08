@@ -136,6 +136,7 @@ function MonthGrid({
   endpoint,
   monthlyCharge,
   monthlyCost,
+  onCompleted,
 }: {
   completions: MonthlyCompletion[];
   year: number;
@@ -143,6 +144,7 @@ function MonthGrid({
   endpoint: "monthly-website" | "monthly-digital";
   monthlyCharge: number;
   monthlyCost: number;
+  onCompleted?: (year: number, month: number) => void;
 }) {
   const qc = useQueryClient();
 
@@ -194,11 +196,20 @@ function MonthGrid({
 
   const confirmCompletion = () => {
     if (pendingMonth === null) return;
-    toggleMutation.mutate({
-      month: pendingMonth,
-      completed: true,
-      paidAmount: Number(amountCharged) || monthlyCharge,
-    });
+    const doneMonth = pendingMonth;
+    const doneYear = year;
+    toggleMutation.mutate(
+      {
+        month: doneMonth,
+        completed: true,
+        paidAmount: Number(amountCharged) || monthlyCharge,
+      },
+      {
+        onSuccess: () => {
+          onCompleted?.(doneYear, doneMonth);
+        },
+      },
+    );
     setPendingMonth(null);
   };
 
@@ -290,6 +301,216 @@ function MonthGrid({
         </DialogContent>
       </Dialog>
     </>
+  );
+}
+
+function DMProgressDialog({
+  open,
+  onOpenChange,
+  customerId,
+  customerName,
+  serviceName,
+  year,
+  month,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  customerId: number;
+  customerName: string;
+  serviceName: string;
+  year: number;
+  month: number;
+}) {
+  const qc = useQueryClient();
+  const [form, setForm] = useState({
+    platforms: "", plan: "",
+    uploadedVideos: "0", uploadedPosts: "0", uploadedReels: "0", uploadedStories: "0",
+    followersGained: "0", engagementGrowth: "", leadsGenerated: "0",
+    adSpend: "0", summaryNotes: "",
+  });
+
+  const save = useMutation({
+    mutationFn: () =>
+      apiFetch(`/admin/dm-reports/${customerId}`, {
+        method: "POST",
+        body: JSON.stringify({
+          year, month,
+          platforms: form.platforms || null,
+          plan: form.plan || null,
+          targetVideos: 0, targetPosts: 0, targetReels: 0, targetStories: 0,
+          uploadedVideos: Number(form.uploadedVideos),
+          uploadedPosts: Number(form.uploadedPosts),
+          uploadedReels: Number(form.uploadedReels),
+          uploadedStories: Number(form.uploadedStories),
+          followersGained: Number(form.followersGained),
+          engagementGrowth: form.engagementGrowth || null,
+          leadsGenerated: Number(form.leadsGenerated),
+          adSpend: form.adSpend || "0",
+          summaryNotes: form.summaryNotes || null,
+        }),
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["dm-reports"] });
+      toast.success("DM report saved!");
+      onOpenChange(false);
+    },
+    onError: () => toast.error("Failed to save report"),
+  });
+
+  function set(k: string, v: string) { setForm((f) => ({ ...f, [k]: v })); }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Digital Progress — {MONTHS[month - 1]} {year}</DialogTitle>
+          <DialogDescription>
+            Add last month's progress for <span className="font-medium">{serviceName}</span> ({customerName})
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-3 py-1 text-sm">
+          <div>
+            <Label className="text-xs">Platforms</Label>
+            <Input className="mt-1 h-9" value={form.platforms} onChange={(e) => set("platforms", e.target.value)} placeholder="e.g. Instagram, Facebook" />
+          </div>
+          <div>
+            <Label className="text-xs">Plan / Focus this month</Label>
+            <Textarea className="mt-1 min-h-[60px] resize-none" value={form.plan} onChange={(e) => set("plan", e.target.value)} placeholder="Brand awareness, product launch..." />
+          </div>
+          <div className="grid grid-cols-4 gap-2">
+            {(["uploadedVideos","uploadedPosts","uploadedReels","uploadedStories"] as const).map((k) => (
+              <div key={k}>
+                <Label className="text-xs capitalize">{k.replace("uploaded","")}</Label>
+                <Input className="mt-1 h-9" type="number" min={0} value={form[k]} onChange={(e) => set(k, e.target.value)} />
+              </div>
+            ))}
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            <div>
+              <Label className="text-xs">Followers gained</Label>
+              <Input className="mt-1 h-9" type="number" min={0} value={form.followersGained} onChange={(e) => set("followersGained", e.target.value)} />
+            </div>
+            <div>
+              <Label className="text-xs">Leads generated</Label>
+              <Input className="mt-1 h-9" type="number" min={0} value={form.leadsGenerated} onChange={(e) => set("leadsGenerated", e.target.value)} />
+            </div>
+            <div>
+              <Label className="text-xs">Ad spend (₹)</Label>
+              <Input className="mt-1 h-9" type="number" min={0} value={form.adSpend} onChange={(e) => set("adSpend", e.target.value)} />
+            </div>
+          </div>
+          <div>
+            <Label className="text-xs">Engagement growth</Label>
+            <Input className="mt-1 h-9" value={form.engagementGrowth} onChange={(e) => set("engagementGrowth", e.target.value)} placeholder="e.g. +12%" />
+          </div>
+          <div>
+            <Label className="text-xs">Summary / notes</Label>
+            <Textarea className="mt-1 min-h-[60px] resize-none" value={form.summaryNotes} onChange={(e) => set("summaryNotes", e.target.value)} placeholder="What went well, what to improve..." />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="ghost" onClick={() => onOpenChange(false)}>Skip</Button>
+          <Button onClick={() => save.mutate()} disabled={save.isPending}>
+            {save.isPending ? "Saving..." : "Save Report"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function SeoProgressDialog({
+  open,
+  onOpenChange,
+  customerId,
+  customerName,
+  websiteName,
+  year,
+  month,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  customerId: number;
+  customerName: string;
+  websiteName: string;
+  year: number;
+  month: number;
+}) {
+  const qc = useQueryClient();
+  const [form, setForm] = useState({
+    blogsPosted: "0", keywordsRanked: "0", trafficGrowth: "",
+    backlinksAdded: "0", seoScore: "", notes: "",
+  });
+
+  const save = useMutation({
+    mutationFn: () =>
+      apiFetch(`/admin/seo-reports/${customerId}`, {
+        method: "POST",
+        body: JSON.stringify({
+          year, month,
+          blogsPosted: Number(form.blogsPosted),
+          keywordsRanked: Number(form.keywordsRanked),
+          trafficGrowth: form.trafficGrowth || null,
+          backlinksAdded: Number(form.backlinksAdded),
+          seoScore: form.seoScore ? Number(form.seoScore) : null,
+          notes: form.notes || null,
+        }),
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["seo-reports"] });
+      toast.success("SEO report saved!");
+      onOpenChange(false);
+    },
+    onError: () => toast.error("Failed to save report"),
+  });
+
+  function set(k: string, v: string) { setForm((f) => ({ ...f, [k]: v })); }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-sm max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Web / SEO Progress — {MONTHS[month - 1]} {year}</DialogTitle>
+          <DialogDescription>
+            Add last month's progress for <span className="font-medium">{websiteName}</span> ({customerName})
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-3 py-1 text-sm">
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <Label className="text-xs">Blogs posted</Label>
+              <Input className="mt-1 h-9" type="number" min={0} value={form.blogsPosted} onChange={(e) => set("blogsPosted", e.target.value)} />
+            </div>
+            <div>
+              <Label className="text-xs">Keywords ranked</Label>
+              <Input className="mt-1 h-9" type="number" min={0} value={form.keywordsRanked} onChange={(e) => set("keywordsRanked", e.target.value)} />
+            </div>
+            <div>
+              <Label className="text-xs">Backlinks added</Label>
+              <Input className="mt-1 h-9" type="number" min={0} value={form.backlinksAdded} onChange={(e) => set("backlinksAdded", e.target.value)} />
+            </div>
+            <div>
+              <Label className="text-xs">SEO score (0-100)</Label>
+              <Input className="mt-1 h-9" type="number" min={0} max={100} value={form.seoScore} onChange={(e) => set("seoScore", e.target.value)} placeholder="Optional" />
+            </div>
+          </div>
+          <div>
+            <Label className="text-xs">Traffic growth</Label>
+            <Input className="mt-1 h-9" value={form.trafficGrowth} onChange={(e) => set("trafficGrowth", e.target.value)} placeholder="e.g. +18% or 1,240 clicks" />
+          </div>
+          <div>
+            <Label className="text-xs">Notes</Label>
+            <Textarea className="mt-1 min-h-[70px] resize-none" value={form.notes} onChange={(e) => set("notes", e.target.value)} placeholder="What was done this month..." />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="ghost" onClick={() => onOpenChange(false)}>Skip</Button>
+          <Button onClick={() => save.mutate()} disabled={save.isPending}>
+            {save.isPending ? "Saving..." : "Save Report"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -693,6 +914,9 @@ function WebsiteServiceCard({
   onDelete: () => void;
 }) {
   const [expanded, setExpanded] = useState(true);
+  const [reportOpen, setReportOpen] = useState(false);
+  const [reportYear, setReportYear] = useState(currentYear);
+  const [reportMonth, setReportMonth] = useState(currentMonth);
   const profit = service.monthlyCharge - service.monthlyCost;
   const doneThisYear = service.completions.filter(
     (c) => c.year === year && c.completed,
@@ -764,9 +988,20 @@ function WebsiteServiceCard({
             endpoint="monthly-website"
             monthlyCharge={service.monthlyCharge}
             monthlyCost={service.monthlyCost}
+            onCompleted={(y, m) => { setReportYear(y); setReportMonth(m); setReportOpen(true); }}
           />
         </div>
       )}
+
+      <SeoProgressDialog
+        open={reportOpen}
+        onOpenChange={setReportOpen}
+        customerId={service.customerId}
+        customerName={service.customerName}
+        websiteName={service.websiteName}
+        year={reportYear}
+        month={reportMonth}
+      />
     </div>
   );
 }
@@ -786,6 +1021,9 @@ function DigitalServiceCard({
   const [expanded, setExpanded] = useState(true);
   const [markDoneOpen, setMarkDoneOpen] = useState(false);
   const [markAmount, setMarkAmount] = useState("");
+  const [reportOpen, setReportOpen] = useState(false);
+  const [reportYear, setReportYear] = useState(currentYear);
+  const [reportMonth, setReportMonth] = useState(currentMonth);
 
   const profit = service.monthlyCharge - service.monthlyCost;
   const doneThisYear = service.completions.filter(
@@ -813,6 +1051,9 @@ function DigitalServiceCard({
       qc.invalidateQueries({ queryKey: ["monthly-digital"] });
       setMarkDoneOpen(false);
       toast.success(`${MONTHS[currentMonth - 1]} marked as done!`);
+      setReportYear(currentYear);
+      setReportMonth(currentMonth);
+      setReportOpen(true);
     },
     onError: () => toast.error("Could not mark done"),
   });
@@ -901,6 +1142,7 @@ function DigitalServiceCard({
             endpoint="monthly-digital"
             monthlyCharge={service.monthlyCharge}
             monthlyCost={service.monthlyCost}
+            onCompleted={(y, m) => { setReportYear(y); setReportMonth(m); setReportOpen(true); }}
           />
         </div>
       )}
@@ -936,6 +1178,16 @@ function DigitalServiceCard({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <DMProgressDialog
+        open={reportOpen}
+        onOpenChange={setReportOpen}
+        customerId={service.customerId}
+        customerName={service.customerName}
+        serviceName={service.serviceName}
+        year={reportYear}
+        month={reportMonth}
+      />
     </div>
   );
 }

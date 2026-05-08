@@ -1153,16 +1153,14 @@ export default function CustomerDetail() {
       <Dialog open={portalOpen} onOpenChange={setPortalOpen}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <div className="flex items-center justify-between gap-3 pr-6">
-              <DialogTitle className="flex items-center gap-2">
-                <LayoutDashboard className="h-4 w-4 text-blue-600" />
-                Client Portal
-              </DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <LayoutDashboard className="h-4 w-4 text-blue-600" />
+              Client Portal
               {portal ? (
                 <Badge
                   variant="outline"
                   className={cn(
-                    "text-xs shrink-0",
+                    "text-xs ml-1",
                     portal.isActive
                       ? "border-emerald-400 text-emerald-600"
                       : "border-red-400 text-red-500",
@@ -1171,11 +1169,11 @@ export default function CustomerDetail() {
                   {portal.isActive ? "Active" : "Inactive"}
                 </Badge>
               ) : (
-                <Badge variant="outline" className="text-xs text-muted-foreground shrink-0">
+                <Badge variant="outline" className="text-xs ml-1 text-muted-foreground">
                   Not set up
                 </Badge>
               )}
-            </div>
+            </DialogTitle>
             <DialogDescription>
               Give {customer.name.split(" ")[0]} password-only access to their project dashboard
             </DialogDescription>
