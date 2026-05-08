@@ -32,6 +32,19 @@ async function seed() {
     DELETE FROM expenses;
     DELETE FROM services;
     DELETE FROM customers;
+    -- Reset all sequences
+    ALTER SEQUENCE customers_id_seq RESTART WITH 1;
+    ALTER SEQUENCE services_id_seq RESTART WITH 1;
+    ALTER SEQUENCE expenses_id_seq RESTART WITH 1;
+    ALTER SEQUENCE transactions_id_seq RESTART WITH 1;
+    ALTER SEQUENCE monthly_website_services_id_seq RESTART WITH 1;
+    ALTER SEQUENCE monthly_website_completions_id_seq RESTART WITH 1;
+    ALTER SEQUENCE monthly_digital_services_id_seq RESTART WITH 1;
+    ALTER SEQUENCE monthly_digital_completions_id_seq RESTART WITH 1;
+    ALTER SEQUENCE client_portals_id_seq RESTART WITH 1;
+    ALTER SEQUENCE service_projects_id_seq RESTART WITH 1;
+    ALTER SEQUENCE digital_marketing_reports_id_seq RESTART WITH 1;
+    ALTER SEQUENCE seo_reports_id_seq RESTART WITH 1;
   `);
 
   // ── Customers ────────────────────────────────────────────────────────────────
@@ -52,13 +65,13 @@ async function seed() {
   await client.query(`
     INSERT INTO services (customer_id, service_type, billing_type, service_name, price_sold, cost_price, amount_paid, payment_status, delivery_status, satisfaction_rating, date, notes)
     VALUES
-      (${c1}, 'website',          'one_time', 'Corporate Website Build',    '4500.00', '800.00',  '4500.00', 'paid',    'delivered',   5,    '2025-02-10', 'Delivered on time. Client loved it.'),
-      (${c2}, 'seo',              'one_time', 'SEO Audit & Setup',          '1200.00', '200.00',  '1200.00', 'paid',    'delivered',   4,    '2025-03-05', 'Full audit + on-page fixes.'),
-      (${c3}, 'website',          'one_time', 'Landing Page Design',        '2000.00', '350.00',  '1000.00', 'partial', 'in_progress', NULL, '2025-04-01', 'Half payment received. In progress.'),
-      (${c4}, 'digital_marketing','one_time', 'Brand Identity Package',     '3000.00', '500.00',  '0.00',    'pending', 'pending',     NULL, '2025-04-20', 'Logo, colors, style guide.'),
-      (${c5}, 'website',          'one_time', 'Clinic Booking System',      '6000.00', '1200.00', '6000.00', 'paid',    'delivered',   5,    '2025-01-15', 'Integrated with existing CRM.'),
-      (${c1}, 'digital_marketing','one_time', 'Social Media Campaign Q1',   '1500.00', '300.00',  '1500.00', 'paid',    'delivered',   4,    '2025-01-20', 'Great engagement results.'),
-      (${c2}, 'website',          'one_time', 'E-commerce Store Setup',     '5500.00', '900.00',  '2750.00', 'partial', 'in_progress', NULL, '2025-05-01', '50% upfront paid.');
+      (${c1}, 'web',     'one_time', 'Corporate Website Build',    '4500.00', '800.00',  '4500.00', 'paid',    'delivered',   5,    '2025-02-10', 'Delivered on time. Client loved it.'),
+      (${c2}, 'other',   'one_time', 'SEO Audit & Setup',          '1200.00', '200.00',  '1200.00', 'paid',    'delivered',   4,    '2025-03-05', 'Full audit + on-page fixes.'),
+      (${c3}, 'web',     'one_time', 'Landing Page Design',        '2000.00', '350.00',  '1000.00', 'partial', 'in_progress', NULL, '2025-04-01', 'Half payment received. In progress.'),
+      (${c4}, 'digital', 'one_time', 'Brand Identity Package',     '3000.00', '500.00',  '0.00',    'pending', 'pending',     NULL, '2025-04-20', 'Logo, colors, style guide.'),
+      (${c5}, 'web',     'one_time', 'Clinic Booking System',      '6000.00', '1200.00', '6000.00', 'paid',    'delivered',   5,    '2025-01-15', 'Integrated with existing CRM.'),
+      (${c1}, 'digital', 'one_time', 'Social Media Campaign Q1',   '1500.00', '300.00',  '1500.00', 'paid',    'delivered',   4,    '2025-01-20', 'Great engagement results.'),
+      (${c2}, 'web',     'one_time', 'E-commerce Store Setup',     '5500.00', '900.00',  '2750.00', 'partial', 'in_progress', NULL, '2025-05-01', '50% upfront paid.');
   `);
   console.log("Services seeded.");
 

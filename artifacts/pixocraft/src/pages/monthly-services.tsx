@@ -11,6 +11,11 @@ import {
   Megaphone,
   ChevronDown,
   ChevronUp,
+  BarChart2,
+  TrendingUp,
+  Users,
+  Zap,
+  FileText,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -514,6 +519,215 @@ function SeoProgressDialog({
   );
 }
 
+function DMReportsViewDialog({
+  open,
+  onOpenChange,
+  customerId,
+  customerName,
+  serviceName,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  customerId: number;
+  customerName: string;
+  serviceName: string;
+}) {
+  const { data: reports = [], isLoading } = useQuery<{
+    id: number; year: number; month: number;
+    platforms: string | null; plan: string | null;
+    uploadedVideos: number; uploadedPosts: number; uploadedReels: number; uploadedStories: number;
+    followersGained: number; engagementGrowth: string | null; leadsGenerated: number;
+    adSpend: string; summaryNotes: string | null;
+  }[]>({
+    queryKey: ["dm-reports", customerId],
+    queryFn: () => apiFetch(`/admin/dm-reports/${customerId}`),
+    enabled: open,
+  });
+
+  const sorted = useMemo(
+    () => [...reports].sort((a, b) => b.year !== a.year ? b.year - a.year : b.month - a.month),
+    [reports],
+  );
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <BarChart2 className="w-5 h-5 text-purple-600" />
+            Reports — {serviceName}
+          </DialogTitle>
+          <DialogDescription>{customerName} · {sorted.length} report{sorted.length !== 1 ? "s" : ""} saved</DialogDescription>
+        </DialogHeader>
+
+        {isLoading && <p className="text-sm text-muted-foreground py-4">Loading reports...</p>}
+
+        {!isLoading && sorted.length === 0 && (
+          <div className="text-center py-10 text-muted-foreground">
+            <FileText className="w-8 h-8 mx-auto mb-2 opacity-30" />
+            <p className="text-sm">No reports saved yet. Mark a month as done to add a report.</p>
+          </div>
+        )}
+
+        <div className="space-y-3">
+          {sorted.map((r) => (
+            <div key={r.id} className="rounded-lg border bg-card p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="font-semibold text-sm">{MONTHS[r.month - 1]} {r.year}</h3>
+                {r.platforms && (
+                  <Badge variant="secondary" className="text-xs">{r.platforms}</Badge>
+                )}
+              </div>
+              {r.plan && (
+                <p className="text-xs text-muted-foreground bg-muted/50 rounded px-2 py-1.5">{r.plan}</p>
+              )}
+              <div className="grid grid-cols-4 gap-2 text-center">
+                {[
+                  { label: "Videos", value: r.uploadedVideos, icon: <Zap className="w-3 h-3" /> },
+                  { label: "Posts", value: r.uploadedPosts, icon: <FileText className="w-3 h-3" /> },
+                  { label: "Reels", value: r.uploadedReels, icon: <TrendingUp className="w-3 h-3" /> },
+                  { label: "Stories", value: r.uploadedStories, icon: <BarChart2 className="w-3 h-3" /> },
+                ].map(({ label, value, icon }) => (
+                  <div key={label} className="rounded-md bg-purple-50 dark:bg-purple-950/30 border border-purple-100 dark:border-purple-900 px-2 py-2">
+                    <div className="flex items-center justify-center gap-1 text-purple-600 mb-0.5">{icon}</div>
+                    <p className="text-lg font-bold text-purple-700 dark:text-purple-400">{value}</p>
+                    <p className="text-[10px] text-muted-foreground">{label}</p>
+                  </div>
+                ))}
+              </div>
+              <div className="grid grid-cols-3 gap-2 text-center">
+                <div className="rounded-md bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-900 px-2 py-2">
+                  <div className="flex items-center justify-center gap-1 text-emerald-600 mb-0.5"><Users className="w-3 h-3" /></div>
+                  <p className="text-lg font-bold text-emerald-700 dark:text-emerald-400">+{r.followersGained}</p>
+                  <p className="text-[10px] text-muted-foreground">Followers</p>
+                </div>
+                <div className="rounded-md bg-blue-50 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900 px-2 py-2">
+                  <div className="flex items-center justify-center gap-1 text-blue-600 mb-0.5"><TrendingUp className="w-3 h-3" /></div>
+                  <p className="text-lg font-bold text-blue-700 dark:text-blue-400">{r.leadsGenerated}</p>
+                  <p className="text-[10px] text-muted-foreground">Leads</p>
+                </div>
+                <div className="rounded-md bg-amber-50 dark:bg-amber-950/30 border border-amber-100 dark:border-amber-900 px-2 py-2">
+                  <div className="flex items-center justify-center gap-1 text-amber-600 mb-0.5"><Zap className="w-3 h-3" /></div>
+                  <p className="text-lg font-bold text-amber-700 dark:text-amber-400">{r.engagementGrowth || "—"}</p>
+                  <p className="text-[10px] text-muted-foreground">Engagement</p>
+                </div>
+              </div>
+              {(Number(r.adSpend) > 0 || r.summaryNotes) && (
+                <div className="space-y-1.5 text-xs text-muted-foreground border-t pt-2">
+                  {Number(r.adSpend) > 0 && (
+                    <p>Ad spend: <span className="font-semibold text-foreground">₹{Number(r.adSpend).toLocaleString()}</span></p>
+                  )}
+                  {r.summaryNotes && <p className="italic">{r.summaryNotes}</p>}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function SeoReportsViewDialog({
+  open,
+  onOpenChange,
+  customerId,
+  customerName,
+  websiteName,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  customerId: number;
+  customerName: string;
+  websiteName: string;
+}) {
+  const { data: reports = [], isLoading } = useQuery<{
+    id: number; year: number; month: number;
+    blogsPosted: number; keywordsRanked: number; trafficGrowth: string | null;
+    backlinksAdded: number; seoScore: number | null; notes: string | null;
+  }[]>({
+    queryKey: ["seo-reports", customerId],
+    queryFn: () => apiFetch(`/admin/seo-reports/${customerId}`),
+    enabled: open,
+  });
+
+  const sorted = useMemo(
+    () => [...reports].sort((a, b) => b.year !== a.year ? b.year - a.year : b.month - a.month),
+    [reports],
+  );
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Globe className="w-5 h-5 text-blue-600" />
+            Reports — {websiteName}
+          </DialogTitle>
+          <DialogDescription>{customerName} · {sorted.length} report{sorted.length !== 1 ? "s" : ""} saved</DialogDescription>
+        </DialogHeader>
+
+        {isLoading && <p className="text-sm text-muted-foreground py-4">Loading reports...</p>}
+
+        {!isLoading && sorted.length === 0 && (
+          <div className="text-center py-10 text-muted-foreground">
+            <FileText className="w-8 h-8 mx-auto mb-2 opacity-30" />
+            <p className="text-sm">No SEO reports saved yet. Mark a month as done to add a report.</p>
+          </div>
+        )}
+
+        <div className="space-y-3">
+          {sorted.map((r) => (
+            <div key={r.id} className="rounded-lg border bg-card p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="font-semibold text-sm">{MONTHS[r.month - 1]} {r.year}</h3>
+                {r.seoScore != null && (
+                  <span className={cn(
+                    "inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full border",
+                    r.seoScore >= 80 ? "bg-emerald-50 border-emerald-200 text-emerald-700" :
+                    r.seoScore >= 60 ? "bg-blue-50 border-blue-200 text-blue-700" :
+                    "bg-amber-50 border-amber-200 text-amber-700",
+                  )}>
+                    SEO {r.seoScore}/100
+                  </span>
+                )}
+              </div>
+              <div className="grid grid-cols-4 gap-2 text-center">
+                {[
+                  { label: "Blogs", value: r.blogsPosted, color: "blue" },
+                  { label: "Keywords", value: r.keywordsRanked, color: "purple" },
+                  { label: "Backlinks", value: r.backlinksAdded, color: "emerald" },
+                  { label: "Traffic", value: r.trafficGrowth ?? "—", color: "amber" },
+                ].map(({ label, value, color }) => (
+                  <div key={label} className={cn(
+                    "rounded-md border px-2 py-2",
+                    color === "blue" && "bg-blue-50 dark:bg-blue-950/30 border-blue-100 dark:border-blue-900",
+                    color === "purple" && "bg-purple-50 dark:bg-purple-950/30 border-purple-100 dark:border-purple-900",
+                    color === "emerald" && "bg-emerald-50 dark:bg-emerald-950/30 border-emerald-100 dark:border-emerald-900",
+                    color === "amber" && "bg-amber-50 dark:bg-amber-950/30 border-amber-100 dark:border-amber-900",
+                  )}>
+                    <p className={cn(
+                      "text-lg font-bold",
+                      color === "blue" && "text-blue-700 dark:text-blue-400",
+                      color === "purple" && "text-purple-700 dark:text-purple-400",
+                      color === "emerald" && "text-emerald-700 dark:text-emerald-400",
+                      color === "amber" && "text-amber-700 dark:text-amber-400",
+                    )}>{value}</p>
+                    <p className="text-[10px] text-muted-foreground">{label}</p>
+                  </div>
+                ))}
+              </div>
+              {r.notes && (
+                <p className="text-xs text-muted-foreground border-t pt-2 italic">{r.notes}</p>
+              )}
+            </div>
+          ))}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 type WebsiteFormData = {
   customerId: string;
   websiteName: string;
@@ -917,6 +1131,7 @@ function WebsiteServiceCard({
   const [reportOpen, setReportOpen] = useState(false);
   const [reportYear, setReportYear] = useState(currentYear);
   const [reportMonth, setReportMonth] = useState(currentMonth);
+  const [viewReportsOpen, setViewReportsOpen] = useState(false);
   const profit = service.monthlyCharge - service.monthlyCost;
   const doneThisYear = service.completions.filter(
     (c) => c.year === year && c.completed,
@@ -968,6 +1183,15 @@ function WebsiteServiceCard({
               <span className="text-xs font-semibold text-emerald-600">{formatCurrency(collectedThisYear)}</span>
             )}
           </div>
+          <Button
+            size="icon"
+            variant="ghost"
+            className="h-7 w-7 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+            onClick={() => setViewReportsOpen(true)}
+            title="View saved reports"
+          >
+            <BarChart2 className="h-3.5 w-3.5" />
+          </Button>
           <Button size="icon" variant="ghost" className="h-7 w-7" onClick={onEdit}>
             <Pencil className="h-3.5 w-3.5" />
           </Button>
@@ -1002,6 +1226,14 @@ function WebsiteServiceCard({
         year={reportYear}
         month={reportMonth}
       />
+
+      <SeoReportsViewDialog
+        open={viewReportsOpen}
+        onOpenChange={setViewReportsOpen}
+        customerId={service.customerId}
+        customerName={service.customerName}
+        websiteName={service.websiteName}
+      />
     </div>
   );
 }
@@ -1024,6 +1256,7 @@ function DigitalServiceCard({
   const [reportOpen, setReportOpen] = useState(false);
   const [reportYear, setReportYear] = useState(currentYear);
   const [reportMonth, setReportMonth] = useState(currentMonth);
+  const [viewReportsOpen, setViewReportsOpen] = useState(false);
 
   const profit = service.monthlyCharge - service.monthlyCost;
   const doneThisYear = service.completions.filter(
@@ -1100,6 +1333,15 @@ function DigitalServiceCard({
               <span className="text-xs font-semibold text-emerald-600">{formatCurrency(collectedThisYear)}</span>
             )}
           </div>
+          <Button
+            size="icon"
+            variant="ghost"
+            className="h-7 w-7 text-purple-600 hover:text-purple-700 hover:bg-purple-50"
+            onClick={() => setViewReportsOpen(true)}
+            title="View saved reports"
+          >
+            <BarChart2 className="h-3.5 w-3.5" />
+          </Button>
           <Button size="icon" variant="ghost" className="h-7 w-7" onClick={onEdit}>
             <Pencil className="h-3.5 w-3.5" />
           </Button>
@@ -1187,6 +1429,14 @@ function DigitalServiceCard({
         serviceName={service.serviceName}
         year={reportYear}
         month={reportMonth}
+      />
+
+      <DMReportsViewDialog
+        open={viewReportsOpen}
+        onOpenChange={setViewReportsOpen}
+        customerId={service.customerId}
+        customerName={service.customerName}
+        serviceName={service.serviceName}
       />
     </div>
   );
