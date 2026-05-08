@@ -477,6 +477,8 @@ export function ServiceFormDialog({
     queryClient.invalidateQueries({ queryKey: getGetRecentActivityQueryKey() });
     queryClient.invalidateQueries({ queryKey: ["service-names"] });
     queryClient.invalidateQueries({ queryKey: ["service-type-breakdown"] });
+    queryClient.invalidateQueries({ queryKey: ["monthly-digital"] });
+    queryClient.invalidateQueries({ queryKey: ["monthly-website"] });
   };
 
   const onSubmit = async (values: FormValues) => {
