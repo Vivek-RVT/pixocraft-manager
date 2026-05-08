@@ -624,29 +624,27 @@ export default function Dashboard() {
           )}
           <div className="divide-y">
             {topCustomers?.map((c, i) => (
-              <Link key={c.customerId} href={`/customers/${c.customerId}`}>
-                <a className="flex items-center justify-between py-3 hover:bg-muted/40 -mx-2 px-2 rounded-md transition">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-semibold">
-                      {String(i + 1).padStart(2, "0")}
-                    </div>
-                    <div>
-                      <div className="text-sm font-medium">{c.customerName}</div>
-                      <div className="text-xs text-muted-foreground">
-                        Profit {formatCurrency(Number(c.totalProfit))}
-                      </div>
-                    </div>
+              <Link key={c.customerId} href={`/customers/${c.customerId}`} className="flex items-center justify-between py-3 hover:bg-muted/40 -mx-2 px-2 rounded-md transition">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-semibold">
+                    {String(i + 1).padStart(2, "0")}
                   </div>
-                  <div className="text-right">
-                    <div className="text-sm font-semibold tabular-nums">
-                      {formatCurrency(Number(c.totalRevenue))}
-                    </div>
+                  <div>
+                    <div className="text-sm font-medium">{c.customerName}</div>
                     <div className="text-xs text-muted-foreground">
-                      {c.servicesCount} service
-                      {c.servicesCount === 1 ? "" : "s"}
+                      Profit {formatCurrency(Number(c.totalProfit))}
                     </div>
                   </div>
-                </a>
+                </div>
+                <div className="text-right">
+                  <div className="text-sm font-semibold tabular-nums">
+                    {formatCurrency(Number(c.totalRevenue))}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {c.servicesCount} service
+                    {c.servicesCount === 1 ? "" : "s"}
+                  </div>
+                </div>
               </Link>
             ))}
           </div>

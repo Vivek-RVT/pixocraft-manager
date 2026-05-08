@@ -920,6 +920,16 @@ export default function MonthlyServices() {
     .filter((s) => s.status === "active")
     .reduce((sum, s) => sum + s.monthlyCharge, 0);
 
+  const webCollectedThisYear = webServices
+    .flatMap((s) => s.completions)
+    .filter((c) => c.year === year && c.completed)
+    .reduce((sum, c) => sum + c.paidAmount, 0);
+
+  const digitalCollectedThisYear = digitalServices
+    .flatMap((s) => s.completions)
+    .filter((c) => c.year === year && c.completed)
+    .reduce((sum, c) => sum + c.paidAmount, 0);
+
   const yearOptions = Array.from({ length: 4 }, (_, i) => currentYear - 1 + i);
 
   return (
@@ -957,7 +967,7 @@ export default function MonthlyServices() {
       </div>
 
       {/* Summary cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
         <div className="rounded-lg border bg-card p-4">
           <p className="text-xs text-muted-foreground">Web clients (active)</p>
           <p className="text-2xl font-bold">{webServices.filter((s) => s.status === "active").length}</p>
@@ -967,12 +977,20 @@ export default function MonthlyServices() {
           <p className="text-2xl font-bold text-blue-600">{formatCurrency(webActiveRevenue)}</p>
         </div>
         <div className="rounded-lg border bg-card p-4">
+          <p className="text-xs text-muted-foreground">Web collected ({year})</p>
+          <p className="text-2xl font-bold text-emerald-600">{formatCurrency(webCollectedThisYear)}</p>
+        </div>
+        <div className="rounded-lg border bg-card p-4">
           <p className="text-xs text-muted-foreground">Digital clients (active)</p>
           <p className="text-2xl font-bold">{digitalServices.filter((s) => s.status === "active").length}</p>
         </div>
         <div className="rounded-lg border bg-card p-4">
           <p className="text-xs text-muted-foreground">Digital MRR</p>
           <p className="text-2xl font-bold text-purple-600">{formatCurrency(digitalActiveRevenue)}</p>
+        </div>
+        <div className="rounded-lg border bg-card p-4">
+          <p className="text-xs text-muted-foreground">Digital collected ({year})</p>
+          <p className="text-2xl font-bold text-emerald-600">{formatCurrency(digitalCollectedThisYear)}</p>
         </div>
       </div>
 
