@@ -79,20 +79,20 @@ async function seed() {
   await client.query(`
     INSERT INTO expenses (category, amount, date, notes)
     VALUES
-      ('Software Subscriptions', '299.00',  '2025-01-05', 'Adobe CC annual plan'),
-      ('Office Rent',            '2000.00', '2025-01-01', 'Monthly office rent - Jan'),
-      ('Freelancer Payments',    '800.00',  '2025-01-15', 'Designer for Al-Rashidi project'),
-      ('Advertising',            '450.00',  '2025-02-10', 'Meta Ads for client campaigns'),
-      ('Office Rent',            '2000.00', '2025-02-01', 'Monthly office rent - Feb'),
-      ('Software Subscriptions', '49.00',   '2025-02-20', 'Figma team plan'),
-      ('Equipment',              '1200.00', '2025-03-08', 'New monitor and keyboard'),
-      ('Office Rent',            '2000.00', '2025-03-01', 'Monthly office rent - Mar'),
-      ('Freelancer Payments',    '600.00',  '2025-03-22', 'Developer for booking system'),
-      ('Utilities',              '180.00',  '2025-04-05', 'Internet + electricity'),
-      ('Office Rent',            '2000.00', '2025-04-01', 'Monthly office rent - Apr'),
-      ('Marketing',              '350.00',  '2025-04-18', 'Business cards and brochures'),
-      ('Office Rent',            '2000.00', '2025-05-01', 'Monthly office rent - May'),
-      ('Software Subscriptions', '99.00',   '2025-05-03', 'Hosting renewals');
+      ('software', '299.00',  '2025-01-05', 'Adobe CC annual plan'),
+      ('office',   '2000.00', '2025-01-01', 'Monthly office rent - Jan'),
+      ('salary',   '800.00',  '2025-01-15', 'Designer for Al-Rashidi project'),
+      ('ads',      '450.00',  '2025-02-10', 'Meta Ads for client campaigns'),
+      ('office',   '2000.00', '2025-02-01', 'Monthly office rent - Feb'),
+      ('software', '49.00',   '2025-02-20', 'Figma team plan'),
+      ('tools',    '1200.00', '2025-03-08', 'New monitor and keyboard'),
+      ('office',   '2000.00', '2025-03-01', 'Monthly office rent - Mar'),
+      ('salary',   '600.00',  '2025-03-22', 'Developer for booking system'),
+      ('misc',     '180.00',  '2025-04-05', 'Internet + electricity'),
+      ('office',   '2000.00', '2025-04-01', 'Monthly office rent - Apr'),
+      ('marketing','350.00',  '2025-04-18', 'Business cards and brochures'),
+      ('office',   '2000.00', '2025-05-01', 'Monthly office rent - May'),
+      ('hosting',  '99.00',   '2025-05-03', 'Hosting renewals');
   `);
   console.log("Expenses seeded.");
 
