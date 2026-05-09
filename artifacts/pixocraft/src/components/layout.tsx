@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "wouter";
 import {
   LayoutDashboard,
@@ -54,6 +54,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const { logout, username } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [quickAddOpen, setQuickAddOpen] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ top: 0, behavior: "instant" });
+  }, [location]);
 
   const SidebarContent = ({ onNavigate }: { onNavigate?: () => void }) => (
     <div className="flex flex-col h-full relative overflow-hidden" style={{ background: "hsl(232 52% 3%)" }}>
@@ -77,7 +82,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </div>
           <div>
             <div className="text-white font-bold text-base tracking-tight leading-none">Pixocraft</div>
-            <div className="text-white/30 text-[10px] font-medium tracking-widest uppercase mt-0.5">Studio</div>
+            <div className="text-white/30 text-[10px] font-medium tracking-wide mt-0.5">India's #1 Digital Agency</div>
           </div>
         </div>
       </div>
@@ -259,7 +264,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         </header>
 
         {/* Page content */}
-        <div className="flex-1 overflow-auto">
+        <div ref={scrollRef} className="flex-1 overflow-auto">
           <div className="max-w-7xl mx-auto w-full p-3 sm:p-5 md:p-8">
             {children}
           </div>

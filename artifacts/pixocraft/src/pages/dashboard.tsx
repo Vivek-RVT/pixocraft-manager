@@ -55,6 +55,7 @@ import {
   PieChart,
   Pie,
   Cell,
+  Label,
 } from "recharts";
 
 const BASE_PATH = import.meta.env.BASE_URL ?? "/";
@@ -75,8 +76,10 @@ const TOOLTIP_STYLE = {
   color: "#fff",
   boxShadow: "0 20px 60px rgba(0,0,0,0.7)",
   backdropFilter: "blur(20px)",
-  padding: "10px 14px",
+  padding: "0",
 };
+
+const CURSOR_STYLE = { fill: "rgba(255,255,255,0.03)", rx: 6 };
 
 const monthLabel = (m: string) => {
   const [, mm] = m.split("-");
@@ -84,10 +87,78 @@ const monthLabel = (m: string) => {
 };
 
 const fmt = (n: number) => {
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
-  if (n >= 1_000) return `${(n / 1_000).toFixed(0)}K`;
-  return String(n);
+  if (n >= 10_000_000) return `₹${(n / 10_000_000).toFixed(1)}Cr`;
+  if (n >= 100_000) return `₹${(n / 100_000).toFixed(1)}L`;
+  if (n >= 1_000) return `₹${(n / 1_000).toFixed(0)}K`;
+  return `₹${n}`;
 };
+
+function ChartTooltip({ active, payload, label, currency = true }: {
+  active?: boolean; payload?: any[]; label?: string; currency?: boolean;
+}) {
+  if (!active || !payload?.length) return null;
+  return (
+    <div style={{
+      background: "rgba(6,7,28,0.97)",
+      border: "1px solid rgba(255,255,255,0.09)",
+      borderRadius: 14,
+      boxShadow: "0 24px 64px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.03)",
+      backdropFilter: "blur(24px)",
+      overflow: "hidden",
+      minWidth: 170,
+    }}>
+      {label && (
+        <div style={{
+          padding: "8px 14px 6px",
+          borderBottom: "1px solid rgba(255,255,255,0.06)",
+          fontSize: 10,
+          fontWeight: 700,
+          color: "rgba(255,255,255,0.35)",
+          textTransform: "uppercase",
+          letterSpacing: "0.12em",
+        }}>{label}</div>
+      )}
+      <div style={{ padding: "8px 14px 10px" }}>
+        {payload.map((p: any, i: number) => (
+          <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, marginTop: i > 0 ? 6 : 0 }}>
+            <span style={{ width: 8, height: 8, borderRadius: 3, background: p.color ?? p.fill, display: "inline-block", flexShrink: 0, boxShadow: `0 0 6px ${p.color ?? p.fill}80` }} />
+            <span style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", textTransform: "capitalize", fontWeight: 500, flex: 1 }}>
+              {p.name}
+            </span>
+            <span style={{ fontSize: 13, fontWeight: 700, color: p.color ?? p.fill, fontVariantNumeric: "tabular-nums", marginLeft: 8 }}>
+              {currency ? formatCurrency(Number(p.value)) : p.value}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function PieTooltip({ active, payload }: { active?: boolean; payload?: any[] }) {
+  if (!active || !payload?.length) return null;
+  const p = payload[0];
+  const total = p?.payload?.total ?? 0;
+  return (
+    <div style={{
+      background: "rgba(6,7,28,0.97)",
+      border: "1px solid rgba(255,255,255,0.09)",
+      borderRadius: 12,
+      boxShadow: "0 20px 60px rgba(0,0,0,0.8)",
+      backdropFilter: "blur(24px)",
+      padding: "10px 14px",
+      minWidth: 150,
+    }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <span style={{ width: 8, height: 8, borderRadius: 3, background: p.payload?.fill ?? p.color, display: "inline-block", flexShrink: 0 }} />
+        <span style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", fontWeight: 500, textTransform: "capitalize" }}>{p.name}</span>
+      </div>
+      <div style={{ marginTop: 4, fontSize: 15, fontWeight: 700, color: "#fff", fontVariantNumeric: "tabular-nums" }}>
+        {formatCurrency(Number(total))}
+      </div>
+    </div>
+  );
+}
 
 function useCountUp(target: number, duration = 1.2) {
   const [value, setValue] = useState(0);
@@ -408,10 +479,10 @@ export default function Dashboard() {
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
                   <XAxis dataKey="label" stroke="transparent" fontSize={11} tick={{ fill: "rgba(255,255,255,0.3)", fontWeight: 500 }} tickLine={false} axisLine={false} />
-                  <YAxis stroke="transparent" fontSize={11} tickFormatter={(v) => fmt(Number(v))} tick={{ fill: "rgba(255,255,255,0.3)", fontWeight: 500 }} tickLine={false} axisLine={false} />
-                  <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v: number, name: string) => [formatCurrency(Number(v)), name.charAt(0).toUpperCase() + name.slice(1)]} />
-                  <Area type="monotone" dataKey="revenue" stroke="#00E7FF" strokeWidth={2.5} fill="url(#revGrad)" dot={false} activeDot={{ r: 5, fill: "#00E7FF", stroke: "rgba(0,231,255,0.4)", strokeWidth: 6 }} />
-                  <Area type="monotone" dataKey="expenses" stroke="#a855f7" strokeWidth={2} fill="url(#expGrad)" dot={false} activeDot={{ r: 4, fill: "#a855f7", stroke: "rgba(168,85,247,0.4)", strokeWidth: 5 }} />
+                  <YAxis stroke="transparent" fontSize={11} tickFormatter={(v) => fmt(Number(v))} tick={{ fill: "rgba(255,255,255,0.3)", fontWeight: 500 }} tickLine={false} axisLine={false} width={52} />
+                  <Tooltip content={<ChartTooltip />} cursor={CURSOR_STYLE} />
+                  <Area type="monotone" dataKey="revenue" name="Revenue" stroke="#00E7FF" strokeWidth={2.5} fill="url(#revGrad)" dot={false} activeDot={{ r: 5, fill: "#00E7FF", stroke: "rgba(0,231,255,0.35)", strokeWidth: 8 }} />
+                  <Area type="monotone" dataKey="expenses" name="Expenses" stroke="#a855f7" strokeWidth={2} fill="url(#expGrad)" dot={false} activeDot={{ r: 4, fill: "#a855f7", stroke: "rgba(168,85,247,0.35)", strokeWidth: 7 }} />
                 </AreaChart>
               </ResponsiveContainer>
             ) : (
@@ -578,16 +649,34 @@ export default function Dashboard() {
                     nameKey="category"
                     cx="50%"
                     cy="50%"
-                    innerRadius={58}
+                    innerRadius={60}
                     outerRadius={96}
                     paddingAngle={3}
                     strokeWidth={0}
+                    isAnimationActive
+                    animationBegin={200}
+                    animationDuration={900}
+                    animationEasing="ease-out"
                   >
                     {breakdown.map((_, i) => (
                       <Cell key={i} fill={`url(#pGrad${i % PIE_COLORS.length})`} />
                     ))}
+                    <Label
+                      content={({ viewBox }: any) => {
+                        const { cx, cy } = viewBox ?? {};
+                        const total = breakdown.reduce((s, d) => s + Number(d.total), 0);
+                        return (
+                          <text x={cx} y={cy} textAnchor="middle" dominantBaseline="middle">
+                            <tspan x={cx} dy={-8} fontSize={17} fontWeight={700} fill="#fff">
+                              {total >= 10000000 ? `₹${(total/10000000).toFixed(1)}Cr` : total >= 100000 ? `₹${(total/100000).toFixed(1)}L` : `₹${(total/1000).toFixed(0)}K`}
+                            </tspan>
+                            <tspan x={cx} dy={20} fontSize={9} fill="rgba(255,255,255,0.3)" fontWeight={600} letterSpacing="2">SPENT</tspan>
+                          </text>
+                        );
+                      }}
+                    />
                   </Pie>
-                  <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v: number, name: string) => [formatCurrency(Number(v)), name]} />
+                  <Tooltip content={<PieTooltip />} />
                 </PieChart>
               </ResponsiveContainer>
             ) : (
@@ -633,8 +722,8 @@ export default function Dashboard() {
                   <CartesianGrid horizontal={false} stroke="rgba(255,255,255,0.04)" />
                   <XAxis type="number" fontSize={11} tickFormatter={(v) => fmt(Number(v))} tick={{ fill: "rgba(255,255,255,0.3)", fontWeight: 500 }} tickLine={false} axisLine={false} stroke="transparent" />
                   <YAxis type="category" dataKey="serviceName" fontSize={10.5} width={120} tick={{ fill: "rgba(255,255,255,0.45)", fontWeight: 500 }} tickLine={false} axisLine={false} stroke="transparent" />
-                  <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v: number) => [formatCurrency(Number(v)), "Revenue"]} />
-                  <Bar dataKey="totalRevenue" fill="url(#barGrad)" radius={[0, 6, 6, 0]} maxBarSize={24} />
+                  <Tooltip content={<ChartTooltip />} cursor={{ fill: "rgba(255,255,255,0.02)", rx: 6 }} />
+                  <Bar dataKey="totalRevenue" name="Revenue" fill="url(#barGrad)" radius={[0, 6, 6, 0]} maxBarSize={24} isAnimationActive animationBegin={300} animationDuration={800} animationEasing="ease-out" />
                 </BarChart>
               </ResponsiveContainer>
             ) : (
@@ -670,14 +759,28 @@ export default function Dashboard() {
           </div>
           <div className="px-2 pt-4 pb-3" style={{ height: 260 }}>
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={serviceTypeBreakdown} margin={{ top: 4, right: 16, left: -8, bottom: 0 }}>
+              <BarChart data={serviceTypeBreakdown} margin={{ top: 4, right: 16, left: -8, bottom: 0 }} barCategoryGap="30%">
+                <defs>
+                  <linearGradient id="profitGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#10B981" stopOpacity={0.95} />
+                    <stop offset="100%" stopColor="#059669" stopOpacity={0.7} />
+                  </linearGradient>
+                  <linearGradient id="revGrad2" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#00E7FF" stopOpacity={0.9} />
+                    <stop offset="100%" stopColor="#0284c7" stopOpacity={0.7} />
+                  </linearGradient>
+                  <linearGradient id="costGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#a855f7" stopOpacity={0.9} />
+                    <stop offset="100%" stopColor="#7c3aed" stopOpacity={0.7} />
+                  </linearGradient>
+                </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
                 <XAxis dataKey="label" fontSize={11} tick={{ fill: "rgba(255,255,255,0.35)", fontWeight: 500 }} tickLine={false} axisLine={false} stroke="transparent" />
-                <YAxis fontSize={11} tickFormatter={(v) => fmt(Number(v))} tick={{ fill: "rgba(255,255,255,0.35)", fontWeight: 500 }} tickLine={false} axisLine={false} stroke="transparent" />
-                <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v: number, name: string) => [formatCurrency(Number(v)), name.charAt(0).toUpperCase() + name.slice(1)]} />
-                <Bar dataKey="revenue" name="Revenue" fill="#00E7FF" radius={[5,5,0,0]} maxBarSize={32} opacity={0.85} />
-                <Bar dataKey="cost" name="Cost" fill="#a855f7" radius={[5,5,0,0]} maxBarSize={32} opacity={0.85} />
-                <Bar dataKey="profit" name="Profit" fill="#10B981" radius={[5,5,0,0]} maxBarSize={32} opacity={0.9} />
+                <YAxis fontSize={11} tickFormatter={(v) => fmt(Number(v))} tick={{ fill: "rgba(255,255,255,0.35)", fontWeight: 500 }} tickLine={false} axisLine={false} stroke="transparent" width={52} />
+                <Tooltip content={<ChartTooltip />} cursor={{ fill: "rgba(255,255,255,0.02)", rx: 4 }} />
+                <Bar dataKey="revenue" name="Revenue" fill="url(#revGrad2)" radius={[5,5,0,0]} maxBarSize={28} isAnimationActive animationDuration={800} />
+                <Bar dataKey="cost" name="Cost" fill="url(#costGrad)" radius={[5,5,0,0]} maxBarSize={28} isAnimationActive animationDuration={900} />
+                <Bar dataKey="profit" name="Profit" fill="url(#profitGrad)" radius={[5,5,0,0]} maxBarSize={28} isAnimationActive animationDuration={1000} />
               </BarChart>
             </ResponsiveContainer>
           </div>
