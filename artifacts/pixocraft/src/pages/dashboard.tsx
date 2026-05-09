@@ -15,14 +15,6 @@ import {
   getGetExpenseBreakdownQueryKey,
 } from "@workspace/api-client-react";
 
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { SpotlightCard } from "@/components/ui/spotlight-card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { formatCurrency, formatDate } from "@/lib/format";
@@ -35,11 +27,18 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   Briefcase,
-  Award,
   Activity,
-  PieChart as PieIcon,
+  ChevronRight,
+  Zap,
+  Globe,
+  Megaphone,
+  ShoppingBag,
+  CircleDollarSign,
+  Layers,
+  BarChart2,
 } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, useSpring, useTransform, animate } from "framer-motion";
+import { useEffect, useRef, useState } from "react";
 import {
   ResponsiveContainer,
   AreaChart,
@@ -53,7 +52,6 @@ import {
   PieChart,
   Pie,
   Cell,
-  Legend,
 } from "recharts";
 
 const BASE_PATH = import.meta.env.BASE_URL ?? "/";
@@ -64,179 +62,281 @@ async function apiFetch(path: string) {
   return res.json();
 }
 
-const PIE_COLORS = [
-  "#00E7FF",
-  "#7C3AED",
-  "#10B981",
-  "#F59E0B",
-  "#EC4899",
-  "#3B82F6",
-  "#8B5CF6",
-];
+const PIE_COLORS = ["#00E7FF", "#a855f7", "#10B981", "#F59E0B", "#EC4899", "#3B82F6"];
 
-const CHART_TOOLTIP_STYLE = {
-  background: "rgba(5,5,22,0.95)",
-  border: "1px solid rgba(255,255,255,0.08)",
-  borderRadius: 12,
+const TOOLTIP_STYLE = {
+  background: "rgba(6,7,28,0.96)",
+  border: "1px solid rgba(255,255,255,0.07)",
+  borderRadius: 14,
   fontSize: 12,
   color: "#fff",
-  boxShadow: "0 8px 32px rgba(0,0,0,0.6)",
-  backdropFilter: "blur(12px)",
+  boxShadow: "0 20px 60px rgba(0,0,0,0.7)",
+  backdropFilter: "blur(20px)",
+  padding: "10px 14px",
 };
 
 const monthLabel = (m: string) => {
-  // m = YYYY-MM
   const [, mm] = m.split("-");
-  const months = [
-    "Jan",
-    "Feb",
-    "Mar",
-    "Apr",
-    "May",
-    "Jun",
-    "Jul",
-    "Aug",
-    "Sep",
-    "Oct",
-    "Nov",
-    "Dec",
-  ];
-  const idx = Number(mm) - 1;
-  return months[idx] ?? m;
+  return ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][Number(mm) - 1] ?? m;
 };
 
-const compactRupee = (n: number) => {
-  if (n >= 10_000_000) return `₹${(n / 10_000_000).toFixed(1)}Cr`;
-  if (n >= 100_000) return `₹${(n / 100_000).toFixed(1)}L`;
-  if (n >= 1000) return `₹${(n / 1000).toFixed(0)}k`;
-  return `₹${n}`;
+const fmt = (n: number) => {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(0)}K`;
+  return String(n);
+};
+
+function useCountUp(target: number, duration = 1.2) {
+  const [value, setValue] = useState(0);
+  const prevTarget = useRef(0);
+  useEffect(() => {
+    const from = prevTarget.current;
+    prevTarget.current = target;
+    let start: number | null = null;
+    const step = (ts: number) => {
+      if (!start) start = ts;
+      const progress = Math.min((ts - start) / (duration * 1000), 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setValue(Math.round(from + (target - from) * eased));
+      if (progress < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }, [target, duration]);
+  return value;
+}
+
+function CountUp({ value, prefix = "", suffix = "" }: { value: number; prefix?: string; suffix?: string }) {
+  const count = useCountUp(value);
+  return <span>{prefix}{count.toLocaleString()}{suffix}</span>;
+}
+
+function CurrencyCount({ value }: { value: number }) {
+  const count = useCountUp(value);
+  if (count >= 1000) {
+    return <span>SAR {fmt(count)}</span>;
+  }
+  return <span>SAR {count.toLocaleString()}</span>;
+}
+
+const activityIcon: Record<string, { icon: React.ElementType; color: string; bg: string }> = {
+  customer: { icon: Users, color: "#00E7FF", bg: "rgba(0,231,255,0.1)" },
+  service:  { icon: Briefcase, color: "#a855f7", bg: "rgba(168,85,247,0.1)" },
+  income:   { icon: TrendingUp, color: "#10B981", bg: "rgba(16,185,129,0.1)" },
+  expense:  { icon: Receipt, color: "#f87171", bg: "rgba(248,113,113,0.1)" },
+  transaction: { icon: ArrowUpRight, color: "#F59E0B", bg: "rgba(245,158,11,0.1)" },
+};
+
+const serviceIcon: Record<string, React.ElementType> = {
+  web: Globe,
+  digital: Megaphone,
+  other: ShoppingBag,
+};
+
+function useGreeting() {
+  const h = new Date().getHours();
+  if (h < 12) return "Good morning";
+  if (h < 17) return "Good afternoon";
+  return "Good evening";
+}
+
+function StatCard({
+  title,
+  value,
+  rawValue,
+  icon: Icon,
+  color,
+  bg,
+  glow,
+  index,
+  sub,
+}: {
+  title: string;
+  value: React.ReactNode;
+  rawValue: number;
+  icon: React.ElementType;
+  color: string;
+  bg: string;
+  glow: string;
+  index: number;
+  sub?: React.ReactNode;
+}) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 24, scale: 0.97 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ delay: index * 0.07, duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+      onHoverStart={() => setHovered(true)}
+      onHoverEnd={() => setHovered(false)}
+      className="relative overflow-hidden rounded-2xl border bg-card cursor-default"
+      style={{
+        borderColor: hovered ? `${color}30` : "rgba(255,255,255,0.06)",
+        transition: "border-color 0.3s ease",
+        boxShadow: hovered ? `0 0 40px ${glow}` : "none",
+      }}
+    >
+      <motion.div
+        className="absolute inset-0 pointer-events-none"
+        animate={{ opacity: hovered ? 1 : 0 }}
+        transition={{ duration: 0.3 }}
+        style={{ background: `radial-gradient(ellipse at 0% 0%, ${bg} 0%, transparent 70%)` }}
+      />
+      <div className="relative p-5">
+        <div className="flex items-start justify-between mb-4">
+          <p className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-[0.15em] leading-none">
+            {title}
+          </p>
+          <div
+            className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
+            style={{ background: bg }}
+          >
+            <Icon className="w-3.5 h-3.5" style={{ color }} />
+          </div>
+        </div>
+        <div className="text-2xl font-bold tabular-nums tracking-tight leading-none mb-1.5" style={{ color: hovered ? color : undefined, transition: "color 0.3s" }}>
+          {value}
+        </div>
+        {sub && <div className="text-[11px] text-muted-foreground/50">{sub}</div>}
+      </div>
+    </motion.div>
+  );
+}
+
+type ServiceTypeRow = {
+  serviceType: string;
+  label: string;
+  revenue: number;
+  cost: number;
+  profit: number;
+  count: number;
 };
 
 export default function Dashboard() {
+  const greeting = useGreeting();
   const { data: summary, isLoading: loadingSummary } = useGetDashboardSummary({
     query: { queryKey: getGetDashboardSummaryQueryKey() },
   });
-  const { data: trend } = useGetRevenueTrend({
-    query: { queryKey: getGetRevenueTrendQueryKey() },
-  });
-  const { data: topServices } = useGetTopServices({
-    query: { queryKey: getGetTopServicesQueryKey() },
-  });
-  const { data: topCustomers } = useGetTopCustomers({
-    query: { queryKey: getGetTopCustomersQueryKey() },
-  });
-  const { data: activity } = useGetRecentActivity({
-    query: { queryKey: getGetRecentActivityQueryKey() },
-  });
-  const { data: breakdown } = useGetExpenseBreakdown({
-    query: { queryKey: getGetExpenseBreakdownQueryKey() },
-  });
-
-  type ServiceTypeRow = {
-    serviceType: string;
-    label: string;
-    revenue: number;
-    cost: number;
-    profit: number;
-    count: number;
-  };
+  const { data: trend } = useGetRevenueTrend({ query: { queryKey: getGetRevenueTrendQueryKey() } });
+  const { data: topServices } = useGetTopServices({ query: { queryKey: getGetTopServicesQueryKey() } });
+  const { data: topCustomers } = useGetTopCustomers({ query: { queryKey: getGetTopCustomersQueryKey() } });
+  const { data: activity } = useGetRecentActivity({ query: { queryKey: getGetRecentActivityQueryKey() } });
+  const { data: breakdown } = useGetExpenseBreakdown({ query: { queryKey: getGetExpenseBreakdownQueryKey() } });
   const { data: serviceTypeBreakdown } = useQuery<ServiceTypeRow[]>({
     queryKey: ["dashboard", "service-type-breakdown"],
     queryFn: () => apiFetch("/dashboard/service-type-breakdown"),
   });
 
+  const growth = summary?.revenueGrowthPercent ?? 0;
+  const growthUp = growth >= 0;
+
   const stats = summary
     ? [
         {
           title: "Total Revenue",
-          value: formatCurrency(summary.totalRevenue),
-          icon: CreditCard,
-          accent: "text-blue-500 bg-blue-500/10",
+          value: <CurrencyCount value={Number(summary.totalRevenue)} />,
+          rawValue: Number(summary.totalRevenue),
+          icon: CircleDollarSign,
+          color: "#00E7FF",
+          bg: "rgba(0,231,255,0.08)",
+          glow: "rgba(0,231,255,0.12)",
         },
         {
           title: "Net Profit",
-          value: formatCurrency(summary.netProfit),
+          value: <CurrencyCount value={Number(summary.netProfit)} />,
+          rawValue: Number(summary.netProfit),
           icon: TrendingUp,
-          accent: "text-emerald-500 bg-emerald-500/10",
+          color: "#10B981",
+          bg: "rgba(16,185,129,0.08)",
+          glow: "rgba(16,185,129,0.12)",
         },
         {
           title: "Total Expenses",
-          value: formatCurrency(summary.totalExpenses),
+          value: <CurrencyCount value={Number(summary.totalExpenses)} />,
+          rawValue: Number(summary.totalExpenses),
           icon: Receipt,
-          accent: "text-rose-500 bg-rose-500/10",
+          color: "#f87171",
+          bg: "rgba(248,113,113,0.08)",
+          glow: "rgba(248,113,113,0.12)",
         },
         {
-          title: "Pending Payments",
-          value: formatCurrency(summary.pendingPayments),
+          title: "Pending",
+          value: <CurrencyCount value={Number(summary.pendingPayments)} />,
+          rawValue: Number(summary.pendingPayments),
           icon: Wallet,
-          accent: "text-amber-500 bg-amber-500/10",
+          color: "#F59E0B",
+          bg: "rgba(245,158,11,0.08)",
+          glow: "rgba(245,158,11,0.12)",
         },
         {
-          title: "Total Customers",
-          value: String(summary.totalCustomers),
+          title: "Clients",
+          value: <CountUp value={Number(summary.totalCustomers)} />,
+          rawValue: Number(summary.totalCustomers),
           icon: Users,
-          accent: "text-violet-500 bg-violet-500/10",
+          color: "#a855f7",
+          bg: "rgba(168,85,247,0.08)",
+          glow: "rgba(168,85,247,0.12)",
         },
         {
-          title: "Services Sold",
-          value: String(summary.servicesCount),
-          icon: Briefcase,
-          accent: "text-cyan-500 bg-cyan-500/10",
+          title: "Services",
+          value: <CountUp value={Number(summary.servicesCount)} />,
+          rawValue: Number(summary.servicesCount),
+          icon: Layers,
+          color: "#38bdf8",
+          bg: "rgba(56,189,248,0.08)",
+          glow: "rgba(56,189,248,0.12)",
         },
       ]
     : [];
 
-  const growth = summary?.revenueGrowthPercent ?? 0;
-  const growthUp = growth >= 0;
+  const trendData = (trend ?? []).map((d) => ({ ...d, label: monthLabel(d.month) }));
+  const maxCustomerRevenue = Math.max(...(topCustomers?.map((c) => Number(c.totalRevenue)) ?? [1]));
 
   return (
-    <div className="space-y-6 sm:space-y-8 pb-8">
+    <div className="space-y-7 pb-10">
+
+      {/* ── Header ── */}
       <motion.div
-        initial={{ opacity: 0, y: -10 }}
+        initial={{ opacity: 0, y: -12 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, ease: "easeOut" }}
-        className="flex flex-col sm:flex-row sm:items-end justify-between gap-4"
+        transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+        className="flex flex-col sm:flex-row sm:items-center justify-between gap-4"
       >
         <div>
-          <h2 className="text-xl sm:text-2xl font-bold tracking-tight">
-            Good to see you back
-            <span className="text-gradient ml-2">·</span>
-          </h2>
-          <p className="text-muted-foreground/70 text-sm mt-0.5">
-            Here's how your studio is performing.
+          <div className="flex items-center gap-2 mb-1">
+            <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)] animate-pulse" />
+            <span className="text-[10px] font-semibold text-emerald-400/80 uppercase tracking-[0.18em]">Live · Studio</span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+            {greeting},{" "}
+            <span className="text-gradient">Pixocraft</span>
+          </h1>
+          <p className="text-sm text-muted-foreground/50 mt-1 font-medium">
+            Here's what's happening with your studio today.
           </p>
         </div>
+
         {summary && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
+            initial={{ opacity: 0, scale: 0.93 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.15, duration: 0.3 }}
-            className="rounded-xl border border-white/[0.07] bg-card px-4 py-3 flex items-center gap-3 self-start sm:self-auto"
+            transition={{ delay: 0.2, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+            className="flex items-center gap-3 rounded-2xl border border-white/[0.07] bg-card px-4 py-3 self-start sm:self-auto"
+            style={{ boxShadow: growthUp ? "0 0 32px rgba(16,185,129,0.08)" : "0 0 32px rgba(248,113,113,0.08)" }}
           >
             <div
-              className={`w-9 h-9 rounded-lg flex items-center justify-center ${
-                growthUp
-                  ? "bg-emerald-500/10 text-emerald-400"
-                  : "bg-rose-500/10 text-rose-400"
-              }`}
+              className="w-10 h-10 rounded-xl flex items-center justify-center"
+              style={{ background: growthUp ? "rgba(16,185,129,0.12)" : "rgba(248,113,113,0.12)" }}
             >
-              {growthUp ? (
-                <ArrowUpRight className="w-4 h-4" />
-              ) : (
-                <ArrowDownRight className="w-4 h-4" />
-              )}
+              {growthUp
+                ? <ArrowUpRight className="w-5 h-5 text-emerald-400" />
+                : <ArrowDownRight className="w-5 h-5 text-rose-400" />}
             </div>
             <div>
-              <div className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">This month</div>
-              <div className="text-sm font-semibold tabular-nums">
-                {formatCurrency(summary.thisMonthRevenue)}{" "}
-                <span
-                  className={`ml-1 text-xs font-bold ${
-                    growthUp ? "text-emerald-400" : "text-rose-400"
-                  }`}
-                >
-                  {growthUp ? "+" : ""}
-                  {growth.toFixed(1)}%
+              <div className="text-[10px] font-semibold text-muted-foreground/50 uppercase tracking-widest">This month</div>
+              <div className="text-base font-bold tabular-nums tracking-tight">
+                <CurrencyCount value={Number(summary.thisMonthRevenue)} />
+                <span className={`ml-2 text-xs font-bold ${growthUp ? "text-emerald-400" : "text-rose-400"}`}>
+                  {growthUp ? "+" : ""}{growth.toFixed(1)}%
                 </span>
               </div>
             </div>
@@ -244,392 +344,360 @@ export default function Dashboard() {
         )}
       </motion.div>
 
-      <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+      {/* ── Stat Cards ── */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         {loadingSummary
           ? Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="rounded-xl border border-white/[0.07] bg-card p-4 sm:p-5">
-                <Skeleton className="h-3 w-20 mb-3" />
-                <Skeleton className="h-6 w-24" />
+              <div key={i} className="rounded-2xl border border-white/[0.06] bg-card p-5">
+                <Skeleton className="h-2.5 w-16 mb-4 rounded-full" />
+                <Skeleton className="h-6 w-20 rounded-full" />
               </div>
             ))
-          : stats.map((stat, index) => (
-              <motion.div
-                key={stat.title}
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.06, duration: 0.35, ease: "easeOut" }}
-                className="h-full"
-              >
-                <SpotlightCard className="h-full p-4 sm:p-5">
-                  <div className="flex flex-row items-start justify-between gap-2 mb-2">
-                    <p className="text-[10px] sm:text-[11px] font-medium text-muted-foreground/80 uppercase tracking-widest leading-tight">
-                      {stat.title}
-                    </p>
-                    <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${stat.accent}`}>
-                      <stat.icon className="h-3.5 w-3.5" />
-                    </div>
-                  </div>
-                  <div className="text-lg sm:text-2xl font-bold tabular-nums truncate tracking-tight">
-                    {stat.value}
-                  </div>
-                </SpotlightCard>
-              </motion.div>
+          : stats.map((s, i) => (
+              <StatCard key={s.title} {...s} index={i} />
             ))}
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-7">
-        <SpotlightCard spotlightColor="rgba(0,231,255,0.05)" className="lg:col-span-4">
-          <CardHeader>
-            <CardTitle className="text-base font-semibold flex items-center gap-2">
-              Revenue vs Expenses
-            </CardTitle>
-            <CardDescription>Last 12 months</CardDescription>
-          </CardHeader>
-          <CardContent className="h-[320px]">
-            {trend && trend.length > 0 ? (
+      {/* ── Revenue Chart + Activity ── */}
+      <div className="grid gap-4 lg:grid-cols-5">
+        {/* Area Chart */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.35, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+          className="lg:col-span-3 rounded-2xl border border-white/[0.07] bg-card overflow-hidden"
+        >
+          <div className="px-6 pt-5 pb-4 flex items-center justify-between border-b border-white/[0.05]">
+            <div>
+              <div className="flex items-center gap-2 mb-0.5">
+                <BarChart2 className="w-4 h-4 text-cyan-400" />
+                <span className="text-sm font-semibold tracking-tight">Revenue vs Expenses</span>
+              </div>
+              <p className="text-[11px] text-muted-foreground/45 font-medium">Last 12 months performance</p>
+            </div>
+            <div className="flex items-center gap-4 text-[11px] font-medium">
+              <span className="flex items-center gap-1.5 text-muted-foreground/50">
+                <span className="w-2.5 h-2.5 rounded-sm" style={{ background: "#00E7FF" }} />
+                Revenue
+              </span>
+              <span className="flex items-center gap-1.5 text-muted-foreground/50">
+                <span className="w-2.5 h-2.5 rounded-sm" style={{ background: "#a855f7" }} />
+                Expenses
+              </span>
+            </div>
+          </div>
+          <div className="px-2 pt-4 pb-2" style={{ height: 280 }}>
+            {trendData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart
-                  data={trend.map((d) => ({ ...d, label: monthLabel(d.month) }))}
-                  margin={{ top: 5, right: 8, left: 0, bottom: 0 }}
-                >
+                <AreaChart data={trendData} margin={{ top: 4, right: 12, left: -8, bottom: 0 }}>
                   <defs>
-                    <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#00E7FF" stopOpacity={0.28} />
+                    <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#00E7FF" stopOpacity={0.22} />
                       <stop offset="100%" stopColor="#00E7FF" stopOpacity={0} />
                     </linearGradient>
-                    <linearGradient id="expenseGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#7C3AED" stopOpacity={0.25} />
-                      <stop offset="100%" stopColor="#7C3AED" stopOpacity={0} />
+                    <linearGradient id="expGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#a855f7" stopOpacity={0.2} />
+                      <stop offset="100%" stopColor="#a855f7" stopOpacity={0} />
                     </linearGradient>
+                    <filter id="glow-cyan">
+                      <feGaussianBlur stdDeviation="3" result="blur" />
+                      <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+                    </filter>
                   </defs>
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    stroke="rgba(255,255,255,0.04)"
-                    vertical={false}
-                  />
-                  <XAxis
-                    dataKey="label"
-                    stroke="rgba(255,255,255,0.25)"
-                    fontSize={11}
-                    tickLine={false}
-                    axisLine={false}
-                    tick={{ fill: "rgba(255,255,255,0.4)" }}
-                  />
-                  <YAxis
-                    stroke="rgba(255,255,255,0.25)"
-                    fontSize={11}
-                    tickLine={false}
-                    axisLine={false}
-                    tickFormatter={(v: number) => compactRupee(Number(v))}
-                    tick={{ fill: "rgba(255,255,255,0.4)" }}
-                  />
-                  <Tooltip
-                    contentStyle={CHART_TOOLTIP_STYLE}
-                    formatter={(value: number, name: string) => [
-                      formatCurrency(Number(value)),
-                      name.charAt(0).toUpperCase() + name.slice(1),
-                    ]}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="revenue"
-                    stroke="#00E7FF"
-                    strokeWidth={2}
-                    fill="url(#revenueGradient)"
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="expenses"
-                    stroke="#7C3AED"
-                    strokeWidth={2}
-                    fill="url(#expenseGradient)"
-                  />
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
+                  <XAxis dataKey="label" stroke="transparent" fontSize={11} tick={{ fill: "rgba(255,255,255,0.3)", fontWeight: 500 }} tickLine={false} axisLine={false} />
+                  <YAxis stroke="transparent" fontSize={11} tickFormatter={(v) => fmt(Number(v))} tick={{ fill: "rgba(255,255,255,0.3)", fontWeight: 500 }} tickLine={false} axisLine={false} />
+                  <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v: number, name: string) => [formatCurrency(Number(v)), name.charAt(0).toUpperCase() + name.slice(1)]} />
+                  <Area type="monotone" dataKey="revenue" stroke="#00E7FF" strokeWidth={2.5} fill="url(#revGrad)" dot={false} activeDot={{ r: 5, fill: "#00E7FF", stroke: "rgba(0,231,255,0.4)", strokeWidth: 6 }} />
+                  <Area type="monotone" dataKey="expenses" stroke="#a855f7" strokeWidth={2} fill="url(#expGrad)" dot={false} activeDot={{ r: 4, fill: "#a855f7", stroke: "rgba(168,85,247,0.4)", strokeWidth: 5 }} />
                 </AreaChart>
               </ResponsiveContainer>
             ) : (
-              <div className="h-full grid place-items-center text-sm text-muted-foreground">
-                No data yet.
-              </div>
+              <div className="h-full grid place-items-center text-sm text-muted-foreground/40">No data yet</div>
             )}
-          </CardContent>
-        </SpotlightCard>
+          </div>
+        </motion.div>
 
-        <SpotlightCard spotlightColor="rgba(155,89,245,0.06)" className="lg:col-span-3">
-          <CardHeader>
-            <CardTitle className="text-base font-semibold flex items-center gap-2">
-              <Activity className="w-4 h-4 text-cyan-400" /> Recent activity
-            </CardTitle>
-            <CardDescription>Across customers, services, money</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3 max-h-[320px] overflow-y-auto pr-1">
-            {!activity && (
-              <>
-                {Array.from({ length: 4 }).map((_, i) => (
-                  <Skeleton key={i} className="h-12 w-full" />
-                ))}
-              </>
-            )}
-            {activity?.length === 0 && (
-              <div className="text-sm text-muted-foreground text-center py-10">
-                No recent activity.
+        {/* Activity Feed */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.42, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+          className="lg:col-span-2 rounded-2xl border border-white/[0.07] bg-card overflow-hidden flex flex-col"
+        >
+          <div className="px-5 pt-5 pb-4 flex items-center justify-between border-b border-white/[0.05] shrink-0">
+            <div>
+              <div className="flex items-center gap-2 mb-0.5">
+                <Activity className="w-4 h-4 text-violet-400" />
+                <span className="text-sm font-semibold tracking-tight">Recent Activity</span>
               </div>
+              <p className="text-[11px] text-muted-foreground/45 font-medium">Latest across your studio</p>
+            </div>
+          </div>
+          <div className="flex-1 overflow-y-auto px-3 py-3 space-y-1">
+            {!activity && Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-3 px-2 py-3">
+                <Skeleton className="w-9 h-9 rounded-xl shrink-0" />
+                <div className="flex-1"><Skeleton className="h-3 w-3/4 mb-2 rounded-full" /><Skeleton className="h-2 w-1/2 rounded-full" /></div>
+              </div>
+            ))}
+            {activity?.length === 0 && (
+              <div className="text-sm text-muted-foreground/40 text-center py-10">No activity yet.</div>
             )}
-            {activity?.map((item, i) => (
-              <motion.div
-                key={item.id}
-                initial={{ opacity: 0, x: -8 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: i * 0.04 }}
-                className="flex items-start gap-3 rounded-md p-2 hover:bg-muted/50"
-              >
-                <div className="w-8 h-8 rounded-md bg-primary/10 text-primary flex items-center justify-center text-xs font-medium uppercase shrink-0">
-                  {item.kind.slice(0, 1)}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium leading-snug truncate">
-                    {item.title}
+            {activity?.map((item, i) => {
+              const meta = activityIcon[item.kind] ?? activityIcon.service;
+              const IconComp = meta.icon;
+              return (
+                <motion.div
+                  key={item.id}
+                  initial={{ opacity: 0, x: -12 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: i * 0.04 + 0.5, duration: 0.3 }}
+                  className="flex items-center gap-3 rounded-xl px-2 py-2.5 hover:bg-white/[0.03] transition-colors group cursor-default"
+                >
+                  <div className="w-9 h-9 rounded-xl shrink-0 flex items-center justify-center" style={{ background: meta.bg }}>
+                    <IconComp className="w-3.5 h-3.5" style={{ color: meta.color }} />
                   </div>
-                  {item.subtitle && (
-                    <div className="text-xs text-muted-foreground leading-snug truncate">
-                      {item.subtitle}
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[12.5px] font-medium leading-tight truncate">{item.title}</div>
+                    {item.subtitle && (
+                      <div className="text-[11px] text-muted-foreground/45 leading-tight truncate mt-0.5">{item.subtitle}</div>
+                    )}
+                    <div className="text-[10px] text-muted-foreground/30 uppercase tracking-wide font-medium mt-1">{formatDate(item.date)}</div>
+                  </div>
+                  {item.amount != null && (
+                    <div className="text-[12.5px] font-bold tabular-nums shrink-0" style={{ color: meta.color }}>
+                      {formatCurrency(Number(item.amount))}
                     </div>
                   )}
-                  <div className="text-[10px] uppercase tracking-wide text-muted-foreground/80 mt-0.5">
-                    {formatDate(item.date)}
-                  </div>
-                </div>
-                {item.amount !== undefined && item.amount !== null && (
-                  <div className="text-sm font-semibold tabular-nums shrink-0">
-                    {formatCurrency(Number(item.amount))}
-                  </div>
-                )}
-              </motion.div>
-            ))}
-          </CardContent>
-        </SpotlightCard>
+                </motion.div>
+              );
+            })}
+          </div>
+        </motion.div>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-7">
-        <SpotlightCard spotlightColor="rgba(155,89,245,0.07)" className="lg:col-span-3">
-          <CardHeader>
-            <CardTitle className="text-base font-semibold flex items-center gap-2">
-              <PieIcon className="w-4 h-4" /> Expense breakdown
-            </CardTitle>
-            <CardDescription>By category</CardDescription>
-          </CardHeader>
-          <CardContent className="h-[280px]">
+      {/* ── Expense Breakdown + Top Services ── */}
+      <div className="grid gap-4 lg:grid-cols-5">
+        {/* Donut */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.48, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+          className="lg:col-span-2 rounded-2xl border border-white/[0.07] bg-card overflow-hidden"
+        >
+          <div className="px-5 pt-5 pb-4 border-b border-white/[0.05]">
+            <div className="flex items-center gap-2 mb-0.5">
+              <Receipt className="w-4 h-4 text-rose-400" />
+              <span className="text-sm font-semibold tracking-tight">Expense Breakdown</span>
+            </div>
+            <p className="text-[11px] text-muted-foreground/45 font-medium">By category, all time</p>
+          </div>
+          <div className="px-4 pt-4 pb-2" style={{ height: 270 }}>
             {breakdown && breakdown.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
+                  <defs>
+                    {PIE_COLORS.map((c, i) => (
+                      <radialGradient key={i} id={`pGrad${i}`} cx="50%" cy="50%" r="50%">
+                        <stop offset="0%" stopColor={c} stopOpacity={0.9} />
+                        <stop offset="100%" stopColor={c} stopOpacity={0.6} />
+                      </radialGradient>
+                    ))}
+                  </defs>
                   <Pie
                     data={breakdown}
                     dataKey="total"
                     nameKey="category"
                     cx="50%"
                     cy="50%"
-                    innerRadius={50}
-                    outerRadius={90}
-                    paddingAngle={2}
+                    innerRadius={58}
+                    outerRadius={96}
+                    paddingAngle={3}
+                    strokeWidth={0}
                   >
                     {breakdown.map((_, i) => (
-                      <Cell
-                        key={i}
-                        fill={PIE_COLORS[i % PIE_COLORS.length]}
-                      />
+                      <Cell key={i} fill={`url(#pGrad${i % PIE_COLORS.length})`} />
                     ))}
                   </Pie>
-                  <Tooltip
-                    contentStyle={CHART_TOOLTIP_STYLE}
-                    formatter={(value: number, name: string) => [
-                      formatCurrency(Number(value)),
-                      name,
-                    ]}
-                  />
-                  <Legend
-                    iconType="circle"
-                    wrapperStyle={{ fontSize: 11, color: "rgba(255,255,255,0.5)" }}
-                  />
+                  <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v: number, name: string) => [formatCurrency(Number(v)), name]} />
                 </PieChart>
               </ResponsiveContainer>
             ) : (
-              <div className="h-full grid place-items-center text-sm text-muted-foreground">
-                No expense data yet.
-              </div>
+              <div className="h-full grid place-items-center text-sm text-muted-foreground/40">No expense data</div>
             )}
-          </CardContent>
-        </SpotlightCard>
+          </div>
+          {breakdown && breakdown.length > 0 && (
+            <div className="px-5 pb-5 grid grid-cols-2 gap-x-4 gap-y-1.5">
+              {breakdown.slice(0, 6).map((d, i) => (
+                <div key={d.category} className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full shrink-0" style={{ background: PIE_COLORS[i % PIE_COLORS.length] }} />
+                  <span className="text-[11px] text-muted-foreground/55 capitalize truncate font-medium">{d.category}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </motion.div>
 
-        <SpotlightCard spotlightColor="rgba(0,231,255,0.05)" className="lg:col-span-4">
-          <CardHeader>
-            <CardTitle className="text-base font-semibold flex items-center gap-2">
-              <Award className="w-4 h-4" /> Top services this period
-            </CardTitle>
-            <CardDescription>By revenue contribution</CardDescription>
-          </CardHeader>
-          <CardContent className="h-[280px]">
+        {/* Top Services Bar */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.54, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+          className="lg:col-span-3 rounded-2xl border border-white/[0.07] bg-card overflow-hidden"
+        >
+          <div className="px-6 pt-5 pb-4 border-b border-white/[0.05]">
+            <div className="flex items-center gap-2 mb-0.5">
+              <Zap className="w-4 h-4 text-amber-400" />
+              <span className="text-sm font-semibold tracking-tight">Top Services</span>
+            </div>
+            <p className="text-[11px] text-muted-foreground/45 font-medium">By revenue contribution</p>
+          </div>
+          <div className="px-2 pt-4 pb-2" style={{ height: 270 }}>
             {topServices && topServices.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={topServices.slice(0, 6)}
-                  layout="vertical"
-                  margin={{ top: 4, right: 12, left: 8, bottom: 0 }}
-                >
+                <BarChart data={topServices.slice(0, 5)} layout="vertical" margin={{ top: 2, right: 16, left: 8, bottom: 2 }}>
                   <defs>
-                    <linearGradient id="servicesBarGrad" x1="0" y1="0" x2="1" y2="0">
-                      <stop offset="0%" stopColor="#00E7FF" stopOpacity={0.7} />
-                      <stop offset="100%" stopColor="#7C3AED" stopOpacity={0.9} />
+                    <linearGradient id="barGrad" x1="0" y1="0" x2="1" y2="0">
+                      <stop offset="0%" stopColor="#00E7FF" stopOpacity={0.85} />
+                      <stop offset="100%" stopColor="#a855f7" stopOpacity={0.95} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid
-                    horizontal={false}
-                    stroke="rgba(255,255,255,0.04)"
-                  />
-                  <XAxis
-                    type="number"
-                    stroke="rgba(255,255,255,0.25)"
-                    fontSize={11}
-                    tickFormatter={(v: number) => compactRupee(Number(v))}
-                    tickLine={false}
-                    axisLine={false}
-                    tick={{ fill: "rgba(255,255,255,0.4)" }}
-                  />
-                  <YAxis
-                    type="category"
-                    dataKey="serviceName"
-                    stroke="rgba(255,255,255,0.25)"
-                    fontSize={11}
-                    width={110}
-                    tickLine={false}
-                    axisLine={false}
-                    tick={{ fill: "rgba(255,255,255,0.4)" }}
-                  />
-                  <Tooltip
-                    contentStyle={CHART_TOOLTIP_STYLE}
-                    formatter={(value: number) => formatCurrency(Number(value))}
-                  />
-                  <Bar
-                    dataKey="totalRevenue"
-                    fill="url(#servicesBarGrad)"
-                    radius={[0, 4, 4, 0]}
-                  />
+                  <CartesianGrid horizontal={false} stroke="rgba(255,255,255,0.04)" />
+                  <XAxis type="number" fontSize={11} tickFormatter={(v) => fmt(Number(v))} tick={{ fill: "rgba(255,255,255,0.3)", fontWeight: 500 }} tickLine={false} axisLine={false} stroke="transparent" />
+                  <YAxis type="category" dataKey="serviceName" fontSize={10.5} width={120} tick={{ fill: "rgba(255,255,255,0.45)", fontWeight: 500 }} tickLine={false} axisLine={false} stroke="transparent" />
+                  <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v: number) => [formatCurrency(Number(v)), "Revenue"]} />
+                  <Bar dataKey="totalRevenue" fill="url(#barGrad)" radius={[0, 6, 6, 0]} maxBarSize={24} />
                 </BarChart>
               </ResponsiveContainer>
             ) : (
-              <div className="h-full grid place-items-center text-sm text-muted-foreground">
-                No services yet.
-              </div>
+              <div className="h-full grid place-items-center text-sm text-muted-foreground/40">No services yet</div>
             )}
-          </CardContent>
-        </SpotlightCard>
+          </div>
+        </motion.div>
       </div>
 
+      {/* ── Service Type Profitability ── */}
       {serviceTypeBreakdown && serviceTypeBreakdown.length > 0 && (
-        <SpotlightCard spotlightColor="rgba(0,231,255,0.04)">
-          <CardHeader>
-            <CardTitle className="text-base font-semibold flex items-center gap-2">
-              <Briefcase className="w-4 h-4" /> Service type profitability
-            </CardTitle>
-            <CardDescription>Revenue, cost, and profit by service type</CardDescription>
-          </CardHeader>
-          <CardContent className="h-[280px]">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.6, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+          className="rounded-2xl border border-white/[0.07] bg-card overflow-hidden"
+        >
+          <div className="px-6 pt-5 pb-4 flex items-center justify-between border-b border-white/[0.05]">
+            <div>
+              <div className="flex items-center gap-2 mb-0.5">
+                <Briefcase className="w-4 h-4 text-cyan-400" />
+                <span className="text-sm font-semibold tracking-tight">Service Profitability</span>
+              </div>
+              <p className="text-[11px] text-muted-foreground/45 font-medium">Revenue, cost and margin by service type</p>
+            </div>
+            <div className="flex items-center gap-5 text-[11px] font-medium">
+              {[["Revenue","#00E7FF"],["Cost","#a855f7"],["Profit","#10B981"]].map(([l,c]) => (
+                <span key={l} className="flex items-center gap-1.5 text-muted-foreground/50">
+                  <span className="w-2.5 h-2.5 rounded-sm" style={{ background: c }} />{l}
+                </span>
+              ))}
+            </div>
+          </div>
+          <div className="px-2 pt-4 pb-3" style={{ height: 260 }}>
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={serviceTypeBreakdown}
-                margin={{ top: 4, right: 12, left: 0, bottom: 0 }}
-              >
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  stroke="rgba(255,255,255,0.04)"
-                  vertical={false}
-                />
-                <XAxis
-                  dataKey="serviceType"
-                  stroke="rgba(255,255,255,0.25)"
-                  fontSize={11}
-                  tickLine={false}
-                  axisLine={false}
-                  tick={{ fill: "rgba(255,255,255,0.4)" }}
-                />
-                <YAxis
-                  stroke="rgba(255,255,255,0.25)"
-                  fontSize={11}
-                  tickLine={false}
-                  axisLine={false}
-                  tickFormatter={(v: number) => compactRupee(Number(v))}
-                  tick={{ fill: "rgba(255,255,255,0.4)" }}
-                />
-                <Tooltip
-                  contentStyle={CHART_TOOLTIP_STYLE}
-                  formatter={(value: number, name: string) => [
-                    formatCurrency(Number(value)),
-                    name.charAt(0).toUpperCase() + name.slice(1),
-                  ]}
-                />
-                <Legend iconType="circle" wrapperStyle={{ fontSize: 11, paddingTop: 8, color: "rgba(255,255,255,0.5)" }} />
-                <Bar dataKey="revenue" name="Revenue" fill="#00E7FF" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="cost" name="Cost" fill="#7C3AED" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="profit" name="Profit" fill="#10B981" radius={[4, 4, 0, 0]} />
+              <BarChart data={serviceTypeBreakdown} margin={{ top: 4, right: 16, left: -8, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
+                <XAxis dataKey="label" fontSize={11} tick={{ fill: "rgba(255,255,255,0.35)", fontWeight: 500 }} tickLine={false} axisLine={false} stroke="transparent" />
+                <YAxis fontSize={11} tickFormatter={(v) => fmt(Number(v))} tick={{ fill: "rgba(255,255,255,0.35)", fontWeight: 500 }} tickLine={false} axisLine={false} stroke="transparent" />
+                <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v: number, name: string) => [formatCurrency(Number(v)), name.charAt(0).toUpperCase() + name.slice(1)]} />
+                <Bar dataKey="revenue" name="Revenue" fill="#00E7FF" radius={[5,5,0,0]} maxBarSize={32} opacity={0.85} />
+                <Bar dataKey="cost" name="Cost" fill="#a855f7" radius={[5,5,0,0]} maxBarSize={32} opacity={0.85} />
+                <Bar dataKey="profit" name="Profit" fill="#10B981" radius={[5,5,0,0]} maxBarSize={32} opacity={0.9} />
               </BarChart>
             </ResponsiveContainer>
-          </CardContent>
-        </SpotlightCard>
+          </div>
+        </motion.div>
       )}
 
-      <SpotlightCard spotlightColor="rgba(155,89,245,0.05)">
-        <CardHeader className="flex flex-row items-center justify-between">
+      {/* ── Top Customers ── */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.66, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+        className="rounded-2xl border border-white/[0.07] bg-card overflow-hidden"
+      >
+        <div className="px-6 pt-5 pb-4 flex items-center justify-between border-b border-white/[0.05]">
           <div>
-            <CardTitle className="text-base font-semibold">
-              Top customers
-            </CardTitle>
-            <CardDescription>Lifetime revenue leaders</CardDescription>
+            <div className="flex items-center gap-2 mb-0.5">
+              <Users className="w-4 h-4 text-violet-400" />
+              <span className="text-sm font-semibold tracking-tight">Top Clients</span>
+            </div>
+            <p className="text-[11px] text-muted-foreground/45 font-medium">Ranked by lifetime revenue</p>
           </div>
           <Link href="/customers">
-            <Button variant="ghost" size="sm">
-              View all
+            <Button variant="ghost" size="sm" className="text-[11px] h-7 gap-1 text-muted-foreground/50 hover:text-foreground font-medium">
+              View all <ChevronRight className="w-3.5 h-3.5" />
             </Button>
           </Link>
-        </CardHeader>
-        <CardContent>
+        </div>
+        <div className="px-6 py-4">
           {!topCustomers && (
-            <div className="space-y-2">
+            <div className="space-y-3">
               {Array.from({ length: 4 }).map((_, i) => (
-                <Skeleton key={i} className="h-10 w-full" />
+                <div key={i} className="flex items-center gap-4">
+                  <Skeleton className="w-8 h-8 rounded-full" />
+                  <div className="flex-1"><Skeleton className="h-3 w-40 mb-2 rounded-full" /><Skeleton className="h-2 w-full rounded-full" /></div>
+                  <Skeleton className="h-4 w-20 rounded-full" />
+                </div>
               ))}
             </div>
           )}
           {topCustomers?.length === 0 && (
-            <div className="text-sm text-muted-foreground text-center py-8">
-              No customers yet.
-            </div>
+            <div className="text-sm text-muted-foreground/40 text-center py-8">No clients yet.</div>
           )}
-          <div className="divide-y divide-white/[0.05]">
-            {topCustomers?.map((c, i) => (
-              <Link key={c.customerId} href={`/customers/${c.customerId}`} className="flex items-center justify-between py-3 hover:bg-white/[0.03] -mx-2 px-2 rounded-md transition">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-500/20 to-violet-600/20 text-cyan-400 flex items-center justify-center text-xs font-bold">
+          <div className="space-y-1">
+            {topCustomers?.map((c, i) => {
+              const pct = Math.round((Number(c.totalRevenue) / maxCustomerRevenue) * 100);
+              const rankColors = ["#00E7FF", "#a855f7", "#10B981", "#F59E0B", "#EC4899"];
+              const rankColor = rankColors[i] ?? "#fff";
+              return (
+                <Link
+                  key={c.customerId}
+                  href={`/customers/${c.customerId}`}
+                  className="flex items-center gap-4 rounded-xl px-3 py-3 hover:bg-white/[0.03] transition-colors group -mx-1"
+                >
+                  <div
+                    className="w-8 h-8 rounded-full shrink-0 flex items-center justify-center text-[11px] font-bold"
+                    style={{ background: `${rankColor}18`, color: rankColor }}
+                  >
                     {String(i + 1).padStart(2, "0")}
                   </div>
-                  <div>
-                    <div className="text-sm font-medium">{c.customerName}</div>
-                    <div className="text-xs text-muted-foreground">
-                      Profit {formatCurrency(Number(c.totalProfit))}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-[13px] font-semibold truncate group-hover:text-foreground transition-colors">{c.customerName}</span>
+                      <span className="text-[12.5px] font-bold tabular-nums ml-3 shrink-0" style={{ color: rankColor }}>
+                        {formatCurrency(Number(c.totalRevenue))}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 h-1 rounded-full bg-white/[0.05] overflow-hidden">
+                        <motion.div
+                          className="h-full rounded-full"
+                          style={{ background: rankColor, opacity: 0.7 }}
+                          initial={{ width: 0 }}
+                          animate={{ width: `${pct}%` }}
+                          transition={{ delay: i * 0.1 + 0.8, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+                        />
+                      </div>
+                      <span className="text-[10px] text-muted-foreground/35 font-medium shrink-0">
+                        {c.servicesCount} svc{Number(c.servicesCount) !== 1 ? "s" : ""}
+                      </span>
                     </div>
                   </div>
-                </div>
-                <div className="text-right">
-                  <div className="text-sm font-semibold tabular-nums">
-                    {formatCurrency(Number(c.totalRevenue))}
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    {c.servicesCount} service
-                    {c.servicesCount === 1 ? "" : "s"}
-                  </div>
-                </div>
-              </Link>
-            ))}
+                </Link>
+              );
+            })}
           </div>
-        </CardContent>
-      </SpotlightCard>
+        </div>
+      </motion.div>
     </div>
   );
 }
