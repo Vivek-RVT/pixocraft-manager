@@ -31,19 +31,13 @@ import {
   TrendingUp,
   Clock,
   Zap,
+  Building2,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { getYear, getMonth } from "date-fns";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
@@ -73,7 +67,6 @@ import { CustomerFormDialog } from "@/components/customer-form-dialog";
 import { ServiceFormDialog } from "@/components/service-form-dialog";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { SpotlightCard } from "@/components/ui/spotlight-card";
 
 const BASE_PATH = import.meta.env.BASE_URL ?? "/";
 
@@ -1083,124 +1076,176 @@ export default function CustomerDetail() {
 
   const oneTimeServices = (services ?? []).slice().sort((a, b) => (b.date ?? "").localeCompare(a.date ?? ""));
 
+  const avatarColors = (() => {
+    const palettes = [
+      ["#00E7FF","#0ea5e9"], ["#a855f7","#7c3aed"], ["#10B981","#059669"],
+      ["#F59E0B","#d97706"], ["#EC4899","#db2777"], ["#38bdf8","#0284c7"],
+    ];
+    return palettes[customer.name.charCodeAt(0) % palettes.length];
+  })();
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-6 pb-10">
+
+      {/* ── Back + Edit ── */}
+      <motion.div
+        initial={{ opacity: 0, y: -8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+        className="flex items-center justify-between"
+      >
         <Link href="/customers">
-          <Button variant="ghost" size="sm" className="gap-2">
-            <ArrowLeft className="h-4 w-4" /> Back
+          <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground/60 hover:text-foreground -ml-2 rounded-xl">
+            <ArrowLeft className="h-4 w-4" /> Back to clients
           </Button>
         </Link>
-        <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
-          <Pencil className="mr-2 h-4 w-4" /> Edit
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setEditOpen(true)}
+          className="gap-2 border-white/[0.08] hover:border-white/20 rounded-xl"
+        >
+          <Pencil className="h-3.5 w-3.5" /> Edit
         </Button>
-      </div>
+      </motion.div>
 
-      <SpotlightCard spotlightColor="rgba(0,231,255,0.04)">
-        <CardContent className="pt-6 space-y-6">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+      {/* ── Hero Profile Card ── */}
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.06, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+        className="relative rounded-2xl border border-white/[0.07] bg-card overflow-hidden"
+        style={{ boxShadow: `0 0 60px ${avatarColors[0]}10` }}
+      >
+        {/* Ambient top glow */}
+        <div
+          className="absolute top-0 left-0 right-0 h-px"
+          style={{ background: `linear-gradient(90deg, transparent, ${avatarColors[0]}50, transparent)` }}
+        />
+        <div
+          className="absolute -top-20 -left-10 w-64 h-64 rounded-full blur-[80px] pointer-events-none"
+          style={{ background: `${avatarColors[0]}08` }}
+        />
+
+        <div className="relative p-5 sm:p-6">
+          {/* Top row: avatar + name + actions */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5">
             <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary to-chart-2 text-primary-foreground flex items-center justify-center text-xl font-semibold shadow-md shadow-primary/20">
-                {customer.name.slice(0, 1).toUpperCase()}
+              {/* Avatar */}
+              <div className="relative shrink-0">
+                <div
+                  className="w-16 h-16 rounded-2xl flex items-center justify-center text-white text-xl font-bold shadow-xl ring-1 ring-white/10"
+                  style={{ background: `linear-gradient(135deg, ${avatarColors[0]}, ${avatarColors[1]})`, boxShadow: `0 0 30px ${avatarColors[0]}30` }}
+                >
+                  {customer.name.slice(0, 1).toUpperCase()}
+                </div>
+                <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-card bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
               </div>
               <div>
-                <div className="text-xl font-semibold">{customer.name}</div>
+                <h2 className="text-xl sm:text-2xl font-bold tracking-tight leading-tight">{customer.name}</h2>
                 {customer.businessName && (
-                  <div className="text-sm text-muted-foreground">
-                    {customer.businessName}
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <Building2 className="w-3 h-3 text-muted-foreground/50" />
+                    <span className="text-sm text-muted-foreground/60">{customer.businessName}</span>
                   </div>
                 )}
-                <div className="flex items-center gap-1 mt-1">
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-6 w-6 text-muted-foreground hover:text-foreground"
+                <div className="flex items-center gap-1 mt-2">
+                  <button
                     onClick={() => setInfoOpen(true)}
-                    title="More info"
+                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-medium text-muted-foreground/50 hover:text-foreground border border-white/[0.06] hover:border-white/[0.12] bg-white/[0.02] hover:bg-white/[0.05] transition-all"
                   >
-                    <Info className="h-3.5 w-3.5" />
-                  </Button>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-6 w-6 text-muted-foreground hover:text-blue-600"
+                    <Info className="h-3 w-3" /> Details
+                  </button>
+                  <button
                     onClick={() => setPortalOpen(true)}
-                    title="Client Portal"
+                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-medium text-muted-foreground/50 hover:text-cyan-400 border border-white/[0.06] hover:border-cyan-500/30 bg-white/[0.02] hover:bg-cyan-500/5 transition-all"
                   >
-                    <LayoutDashboard className="h-3.5 w-3.5" />
-                  </Button>
+                    <LayoutDashboard className="h-3 w-3" /> Client Portal
+                  </button>
                 </div>
               </div>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 text-sm">
-              <div>
-                <div className="text-xs text-muted-foreground">Revenue</div>
-                <div className="font-semibold tabular-nums">
-                  {formatCurrency(totals.revenue)}
+
+            {/* Financial stats */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {[
+                { label: "Revenue", value: formatCurrency(totals.revenue), color: "#00E7FF" },
+                { label: "Profit", value: formatCurrency(totals.profit), color: "#10B981" },
+                { label: "Paid", value: formatCurrency(totals.paid), color: "#a855f7" },
+                { label: "Pending", value: formatCurrency(totals.pending), color: "#F59E0B" },
+              ].map((item) => (
+                <div
+                  key={item.label}
+                  className="rounded-xl px-3 py-2.5 border border-white/[0.05]"
+                  style={{ background: `${item.color}08` }}
+                >
+                  <div className="text-[10px] font-semibold uppercase tracking-widest mb-1" style={{ color: `${item.color}80` }}>
+                    {item.label}
+                  </div>
+                  <div className="text-sm font-bold tabular-nums" style={{ color: item.color }}>
+                    {item.value}
+                  </div>
                 </div>
-              </div>
-              <div>
-                <div className="text-xs text-muted-foreground">Profit</div>
-                <div className="font-semibold tabular-nums text-emerald-600 dark:text-emerald-400">
-                  {formatCurrency(totals.profit)}
-                </div>
-              </div>
-              <div>
-                <div className="text-xs text-muted-foreground">Paid</div>
-                <div className="font-semibold tabular-nums">
-                  {formatCurrency(totals.paid)}
-                </div>
-              </div>
-              <div>
-                <div className="text-xs text-muted-foreground">Pending</div>
-                <div className="font-semibold tabular-nums text-amber-600 dark:text-amber-400">
-                  {formatCurrency(totals.pending)}
-                </div>
-              </div>
+              ))}
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-2 border-t pt-6 mt-4">
-            <TabButton active={customerTab === "overview"} onClick={() => setCustomerTab("overview")}>Overview</TabButton>
-            <TabButton active={customerTab === "digital"} onClick={() => setCustomerTab("digital")}>Digital</TabButton>
-            <TabButton active={customerTab === "web"} onClick={() => setCustomerTab("web")}>Web</TabButton>
-            <TabButton active={customerTab === "monthly"} onClick={() => setCustomerTab("monthly")}>Monthly</TabButton>
+          {/* Tab bar */}
+          <div className="mt-5 pt-5 border-t border-white/[0.05]">
+            <div className="flex flex-wrap gap-1.5">
+              {(["overview", "digital", "web", "monthly"] as const).map((tab) => {
+                const isActive = customerTab === tab;
+                const label = tab.charAt(0).toUpperCase() + tab.slice(1);
+                return (
+                  <button
+                    key={tab}
+                    onClick={() => setCustomerTab(tab)}
+                    className="relative px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200"
+                    style={{
+                      color: isActive ? avatarColors[0] : "rgba(255,255,255,0.35)",
+                      background: isActive ? `${avatarColors[0]}12` : "transparent",
+                      border: isActive ? `1px solid ${avatarColors[0]}30` : "1px solid transparent",
+                    }}
+                  >
+                    {label}
+                    {isActive && (
+                      <motion.div
+                        layoutId="tab-underline"
+                        className="absolute bottom-0 left-1/2 -translate-x-1/2 w-4 h-0.5 rounded-full"
+                        style={{ background: avatarColors[0] }}
+                        transition={{ type: "spring", bounce: 0.2, duration: 0.4 }}
+                      />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           {customerTab === "monthly" && (
-            <div className="rounded-xl border border-white/[0.07] bg-white/[0.03] p-4 space-y-3">
+            <div className="mt-4 rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
               <div className="flex items-center justify-between gap-2">
                 <div>
                   <div className="text-sm font-semibold">Monthly Progress Reports</div>
-                  <div className="text-xs text-muted-foreground">
+                  <div className="text-xs text-muted-foreground/50 mt-0.5">
                     {dmReports.length} DM · {seoReports.length} SEO saved
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="gap-1.5"
-                    onClick={() => { setDmForm(blankDm()); setDmDialog(true); }}
-                  >
-                    <Megaphone className="h-3.5 w-3.5" />
-                    Add DM
+                  <Button size="sm" variant="outline" className="gap-1.5 border-white/[0.08] rounded-xl h-8 text-xs"
+                    onClick={() => { setDmForm(blankDm()); setDmDialog(true); }}>
+                    <Megaphone className="h-3.5 w-3.5" /> Add DM
                   </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="gap-1.5"
-                    onClick={() => { setSeoForm(blankSeo()); setSeoDialog(true); }}
-                  >
-                    <Globe className="h-3.5 w-3.5" />
-                    Add SEO
+                  <Button size="sm" variant="outline" className="gap-1.5 border-white/[0.08] rounded-xl h-8 text-xs"
+                    onClick={() => { setSeoForm(blankSeo()); setSeoDialog(true); }}>
+                    <Globe className="h-3.5 w-3.5" /> Add SEO
                   </Button>
                 </div>
               </div>
             </div>
           )}
-        </CardContent>
-      </SpotlightCard>
+        </div>
+      </motion.div>
 
       {/* Info Popup */}
       <Dialog open={infoOpen} onOpenChange={setInfoOpen}>
@@ -1332,105 +1377,114 @@ export default function CustomerDetail() {
         </DialogContent>
       </Dialog>
 
-      {/* Context Stats Strip — always visible, content varies by tab */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {customerTab === "overview" && <>
-          <div className="rounded-xl border bg-muted/20 p-3">
-            <div className="text-xs text-muted-foreground flex items-center gap-1.5"><TrendingUp className="w-3 h-3" /> Total Revenue</div>
-            <div className="text-base font-bold mt-0.5">{formatCurrency(totals.revenue)}</div>
+      {/* ── Context Stats Strip ── */}
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.18, duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+        className="grid grid-cols-2 sm:grid-cols-4 gap-3"
+      >
+        {customerTab === "overview" && [
+          { label: "Total Revenue", value: formatCurrency(totals.revenue), icon: TrendingUp, color: "#00E7FF" },
+          { label: "Outstanding", value: formatCurrency(totals.pending), icon: Clock, color: "#F59E0B" },
+          { label: "Monthly MRR", value: formatCurrency(webMRR + digitalMRR), icon: Zap, color: "#10B981" },
+          { label: "Reports", value: String(dmReports.length + seoReports.length), icon: Activity, color: "#a855f7" },
+        ].map((s) => (
+          <div key={s.label} className="rounded-2xl border border-white/[0.06] bg-card p-4" style={{ boxShadow: `0 0 20px ${s.color}08` }}>
+            <div className="flex items-center gap-1.5 mb-2">
+              <div className="w-5 h-5 rounded-lg flex items-center justify-center" style={{ background: `${s.color}18` }}>
+                <s.icon className="w-2.5 h-2.5" style={{ color: s.color }} />
+              </div>
+              <span className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: `${s.color}70` }}>{s.label}</span>
+            </div>
+            <div className="text-base font-bold tabular-nums" style={{ color: s.color }}>{s.value}</div>
           </div>
-          <div className="rounded-xl border bg-muted/20 p-3">
-            <div className="text-xs text-muted-foreground flex items-center gap-1.5"><Clock className="w-3 h-3" /> Outstanding</div>
-            <div className="text-base font-bold mt-0.5 text-amber-600 dark:text-amber-400">{formatCurrency(totals.pending)}</div>
+        ))}
+        {customerTab === "digital" && [
+          { label: "Digital MRR", value: formatCurrency(digitalMRR), icon: Megaphone, color: "#a855f7" },
+          { label: "Active Services", value: String(digitalServices.filter(s => s.status === "active").length), icon: Zap, color: "#10B981" },
+          { label: "DM Reports", value: String(dmReports.length), icon: FileText, color: "#00E7FF" },
+          { label: "Total Leads", value: String(dmReports.reduce((acc, r) => acc + (r.leadsGenerated ?? 0), 0)), icon: TrendingUp, color: "#F59E0B" },
+        ].map((s) => (
+          <div key={s.label} className="rounded-2xl border border-white/[0.06] bg-card p-4" style={{ boxShadow: `0 0 20px ${s.color}08` }}>
+            <div className="flex items-center gap-1.5 mb-2">
+              <div className="w-5 h-5 rounded-lg flex items-center justify-center" style={{ background: `${s.color}18` }}>
+                <s.icon className="w-2.5 h-2.5" style={{ color: s.color }} />
+              </div>
+              <span className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: `${s.color}70` }}>{s.label}</span>
+            </div>
+            <div className="text-base font-bold tabular-nums" style={{ color: s.color }}>{s.value}</div>
           </div>
-          <div className="rounded-xl border bg-muted/20 p-3">
-            <div className="text-xs text-muted-foreground flex items-center gap-1.5"><Zap className="w-3 h-3" /> Monthly MRR</div>
-            <div className="text-base font-bold mt-0.5 text-emerald-600 dark:text-emerald-400">{formatCurrency(webMRR + digitalMRR)}</div>
+        ))}
+        {customerTab === "web" && [
+          { label: "Web MRR", value: formatCurrency(webMRR), icon: Globe, color: "#00E7FF" },
+          { label: "Active Services", value: String(webServices.filter(s => s.status === "active").length), icon: Zap, color: "#10B981" },
+          { label: "Projects", value: String(projects.length), icon: Layers, color: "#a855f7" },
+          { label: "SEO Reports", value: String(seoReports.length), icon: FileText, color: "#F59E0B" },
+        ].map((s) => (
+          <div key={s.label} className="rounded-2xl border border-white/[0.06] bg-card p-4" style={{ boxShadow: `0 0 20px ${s.color}08` }}>
+            <div className="flex items-center gap-1.5 mb-2">
+              <div className="w-5 h-5 rounded-lg flex items-center justify-center" style={{ background: `${s.color}18` }}>
+                <s.icon className="w-2.5 h-2.5" style={{ color: s.color }} />
+              </div>
+              <span className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: `${s.color}70` }}>{s.label}</span>
+            </div>
+            <div className="text-base font-bold tabular-nums" style={{ color: s.color }}>{s.value}</div>
           </div>
-          <div className="rounded-xl border bg-muted/20 p-3">
-            <div className="text-xs text-muted-foreground flex items-center gap-1.5"><Activity className="w-3 h-3" /> Reports</div>
-            <div className="text-base font-bold mt-0.5">{dmReports.length + seoReports.length}</div>
+        ))}
+        {customerTab === "monthly" && [
+          { label: "Total MRR", value: formatCurrency(webMRR + digitalMRR), icon: Zap, color: "#10B981" },
+          { label: "DM Reports", value: String(dmReports.length), icon: Megaphone, color: "#a855f7" },
+          { label: "SEO Reports", value: String(seoReports.length), icon: Globe, color: "#00E7FF" },
+          { label: "Total Leads", value: String(dmReports.reduce((acc, r) => acc + (r.leadsGenerated ?? 0), 0)), icon: TrendingUp, color: "#F59E0B" },
+        ].map((s) => (
+          <div key={s.label} className="rounded-2xl border border-white/[0.06] bg-card p-4" style={{ boxShadow: `0 0 20px ${s.color}08` }}>
+            <div className="flex items-center gap-1.5 mb-2">
+              <div className="w-5 h-5 rounded-lg flex items-center justify-center" style={{ background: `${s.color}18` }}>
+                <s.icon className="w-2.5 h-2.5" style={{ color: s.color }} />
+              </div>
+              <span className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: `${s.color}70` }}>{s.label}</span>
+            </div>
+            <div className="text-base font-bold tabular-nums" style={{ color: s.color }}>{s.value}</div>
           </div>
-        </>}
-        {customerTab === "digital" && <>
-          <div className="rounded-xl border border-purple-500/20 bg-purple-950/20 p-3">
-            <div className="text-xs text-purple-400 flex items-center gap-1.5"><Megaphone className="w-3 h-3" /> Digital MRR</div>
-            <div className="text-base font-bold mt-0.5 text-purple-300">{formatCurrency(digitalMRR)}</div>
-          </div>
-          <div className="rounded-xl border bg-muted/20 p-3">
-            <div className="text-xs text-muted-foreground flex items-center gap-1.5"><Zap className="w-3 h-3" /> Active Services</div>
-            <div className="text-base font-bold mt-0.5">{digitalServices.filter(s => s.status === "active").length}</div>
-          </div>
-          <div className="rounded-xl border bg-muted/20 p-3">
-            <div className="text-xs text-muted-foreground flex items-center gap-1.5"><FileText className="w-3 h-3" /> DM Reports</div>
-            <div className="text-base font-bold mt-0.5">{dmReports.length}</div>
-          </div>
-          <div className="rounded-xl border bg-muted/20 p-3">
-            <div className="text-xs text-muted-foreground flex items-center gap-1.5"><TrendingUp className="w-3 h-3" /> Total Leads</div>
-            <div className="text-base font-bold mt-0.5">{dmReports.reduce((acc, r) => acc + (r.leadsGenerated ?? 0), 0)}</div>
-          </div>
-        </>}
-        {customerTab === "web" && <>
-          <div className="rounded-xl border border-cyan-500/20 bg-cyan-950/20 p-3">
-            <div className="text-xs text-cyan-400 flex items-center gap-1.5"><Globe className="w-3 h-3" /> Web MRR</div>
-            <div className="text-base font-bold mt-0.5 text-cyan-300">{formatCurrency(webMRR)}</div>
-          </div>
-          <div className="rounded-xl border bg-muted/20 p-3">
-            <div className="text-xs text-muted-foreground flex items-center gap-1.5"><Zap className="w-3 h-3" /> Active Services</div>
-            <div className="text-base font-bold mt-0.5">{webServices.filter(s => s.status === "active").length}</div>
-          </div>
-          <div className="rounded-xl border bg-muted/20 p-3">
-            <div className="text-xs text-muted-foreground flex items-center gap-1.5"><Layers className="w-3 h-3" /> Projects</div>
-            <div className="text-base font-bold mt-0.5">{projects.length}</div>
-          </div>
-          <div className="rounded-xl border bg-muted/20 p-3">
-            <div className="text-xs text-muted-foreground flex items-center gap-1.5"><FileText className="w-3 h-3" /> SEO Reports</div>
-            <div className="text-base font-bold mt-0.5">{seoReports.length}</div>
-          </div>
-        </>}
-        {customerTab === "monthly" && <>
-          <div className="rounded-xl border bg-muted/20 p-3">
-            <div className="text-xs text-muted-foreground flex items-center gap-1.5"><Zap className="w-3 h-3" /> Total MRR</div>
-            <div className="text-base font-bold mt-0.5 text-emerald-600 dark:text-emerald-400">{formatCurrency(webMRR + digitalMRR)}</div>
-          </div>
-          <div className="rounded-xl border bg-muted/20 p-3">
-            <div className="text-xs text-muted-foreground flex items-center gap-1.5"><Megaphone className="w-3 h-3" /> DM Reports</div>
-            <div className="text-base font-bold mt-0.5">{dmReports.length}</div>
-          </div>
-          <div className="rounded-xl border bg-muted/20 p-3">
-            <div className="text-xs text-muted-foreground flex items-center gap-1.5"><Globe className="w-3 h-3" /> SEO Reports</div>
-            <div className="text-base font-bold mt-0.5">{seoReports.length}</div>
-          </div>
-          <div className="rounded-xl border bg-muted/20 p-3">
-            <div className="text-xs text-muted-foreground flex items-center gap-1.5"><TrendingUp className="w-3 h-3" /> Total Leads</div>
-            <div className="text-base font-bold mt-0.5">{dmReports.reduce((acc, r) => acc + (r.leadsGenerated ?? 0), 0)}</div>
-          </div>
-        </>}
-      </div>
+        ))}
+      </motion.div>
 
-      {/* Recent Activity — always visible, compact with View More popup */}
-      <SpotlightCard spotlightColor="rgba(0,231,255,0.04)">
-        <CardHeader className="flex flex-row items-center justify-between gap-3 pb-3">
-          <div>
-            <CardTitle className="text-base font-semibold flex items-center gap-2">
-              <Activity className="w-4 h-4 shrink-0" /> Recent Activity
-            </CardTitle>
-            <CardDescription>Latest events with this client</CardDescription>
+      {/* ── Recent Activity ── */}
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.28, duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+        className="relative rounded-2xl border border-white/[0.06] bg-card overflow-hidden"
+      >
+        <div className="absolute top-0 left-0 right-0 h-px" style={{ background: "linear-gradient(90deg,transparent,rgba(168,85,247,0.4),transparent)" }} />
+        <div className="flex items-center justify-between gap-3 px-5 pt-5 pb-4">
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: "rgba(168,85,247,0.12)", border: "1px solid rgba(168,85,247,0.2)" }}>
+              <Activity className="w-3.5 h-3.5 text-violet-400" />
+            </div>
+            <div>
+              <div className="text-sm font-semibold">Recent Activity</div>
+              <div className="text-[10.5px] text-muted-foreground/40 mt-0.5">Latest events with this client</div>
+            </div>
           </div>
           {filteredActivityEvents.length > 5 && (
-            <Button size="sm" variant="outline" onClick={() => setActivityOpen(true)} className="shrink-0 text-xs">
+            <button
+              onClick={() => setActivityOpen(true)}
+              className="px-3 py-1.5 rounded-xl text-[11px] font-semibold border border-white/[0.07] text-muted-foreground/50 hover:text-foreground hover:border-white/[0.14] bg-white/[0.02] hover:bg-white/[0.04] transition-all"
+            >
               View all {filteredActivityEvents.length}
-            </Button>
+            </button>
           )}
-        </CardHeader>
-        <CardContent>
+        </div>
+        <div className="px-5 pb-5">
           {filteredActivityEvents.length === 0 ? (
-            <div className="text-center py-8 text-sm text-muted-foreground">
+            <div className="text-center py-8 text-sm text-muted-foreground/40">
               No activity yet for this category.
             </div>
           ) : (
             <div className="relative">
-              <div className="absolute left-3.5 top-0 bottom-0 w-px bg-border" />
+              <div className="absolute left-3 top-1 bottom-4 w-px" style={{ background: "linear-gradient(to bottom, rgba(168,85,247,0.3), transparent)" }} />
               <div className="space-y-0">
                 {filteredActivityEvents.slice(0, 5).map((ev, i) => (
                   <div key={i} className="relative flex gap-4 pb-4">
@@ -1450,134 +1504,193 @@ export default function CustomerDetail() {
               {filteredActivityEvents.length > 5 && (
                 <button
                   onClick={() => setActivityOpen(true)}
-                  className="w-full text-center text-xs text-muted-foreground hover:text-foreground pt-1 pb-0.5 border-t transition-colors"
+                  className="w-full text-center text-[11px] font-medium text-muted-foreground/40 hover:text-muted-foreground pt-3 transition-colors"
                 >
-                  + {filteredActivityEvents.length - 5} more activities — View all
+                  + {filteredActivityEvents.length - 5} more — View all
                 </button>
               )}
             </div>
           )}
-        </CardContent>
-      </SpotlightCard>
+        </div>
+      </motion.div>
 
-      {/* Service History — Overview tab only */}
+      {/* ── Service History — Overview tab only ── */}
       {customerTab === "overview" && (
-        <SpotlightCard spotlightColor="rgba(139,92,246,0.04)">
-          <CardHeader className="flex flex-row items-center justify-between gap-3">
-            <div>
-              <CardTitle className="text-base font-semibold flex items-center gap-2">
-                <Briefcase className="w-4 h-4 shrink-0" /> Service History
-              </CardTitle>
-              <CardDescription>All one-time services delivered to this client</CardDescription>
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.32, duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+          className="relative rounded-2xl border border-white/[0.06] bg-card overflow-hidden"
+        >
+          <div className="absolute top-0 left-0 right-0 h-px" style={{ background: "linear-gradient(90deg,transparent,rgba(0,231,255,0.35),transparent)" }} />
+          <div className="flex items-center justify-between gap-3 px-5 pt-5 pb-4">
+            <div className="flex items-center gap-2.5">
+              <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: "rgba(0,231,255,0.10)", border: "1px solid rgba(0,231,255,0.18)" }}>
+                <Briefcase className="w-3.5 h-3.5 text-cyan-400" />
+              </div>
+              <div>
+                <div className="text-sm font-semibold">Service History</div>
+                <div className="text-[10.5px] text-muted-foreground/40 mt-0.5">All one-time services delivered to this client</div>
+              </div>
             </div>
-            <Button size="sm" onClick={() => setServiceOpen(true)} className="shrink-0">
-              <Plus className="sm:mr-2 h-4 w-4" />
-              <span className="hidden sm:inline">Add</span>
-            </Button>
-          </CardHeader>
-          <CardContent>
+            <button
+              onClick={() => setServiceOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-semibold border border-cyan-500/20 text-cyan-400 hover:text-cyan-300 hover:border-cyan-400/40 bg-cyan-500/5 hover:bg-cyan-500/10 transition-all"
+            >
+              <Plus className="w-3 h-3" /> Add
+            </button>
+          </div>
+          <div className="px-5 pb-5">
             {oneTimeServices.length === 0 ? (
-              <div className="text-center py-10 text-sm text-muted-foreground">No one-time services yet.</div>
+              <div className="text-center py-10 text-sm text-muted-foreground/40">No one-time services yet.</div>
             ) : (
-              <div className="space-y-2">
-                {oneTimeServices.map((s) => (
-                  <div key={s.id} className="flex items-center gap-3 rounded-lg border bg-muted/10 px-3 py-2.5">
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium truncate">{s.serviceName}</div>
-                      <div className="text-xs text-muted-foreground mt-0.5">
-                        {s.serviceType === "web" ? "Web" : s.serviceType === "digital" ? "Digital" : "Other"}
-                        {s.date ? ` · ${formatDate(s.date)}` : ""}
+              <div className="space-y-2.5">
+                {oneTimeServices.map((s, idx) => {
+                  const typeColor = s.serviceType === "web"
+                    ? { accent: "#00E7FF", bg: "rgba(0,231,255,0.06)", border: "rgba(0,231,255,0.12)" }
+                    : s.serviceType === "digital"
+                      ? { accent: "#a855f7", bg: "rgba(168,85,247,0.06)", border: "rgba(168,85,247,0.12)" }
+                      : { accent: "#F59E0B", bg: "rgba(245,158,11,0.06)", border: "rgba(245,158,11,0.12)" };
+                  const typeLabel = s.serviceType === "web" ? "Web" : s.serviceType === "digital" ? "Digital" : "Other";
+                  return (
+                    <motion.div
+                      key={s.id}
+                      initial={{ opacity: 0, x: -8 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: idx * 0.04 }}
+                      className="flex items-center gap-3 rounded-xl px-3.5 py-3 border"
+                      style={{ background: typeColor.bg, borderColor: typeColor.border }}
+                    >
+                      <div
+                        className="w-1.5 h-8 rounded-full shrink-0"
+                        style={{ background: `linear-gradient(to bottom, ${typeColor.accent}, ${typeColor.accent}40)` }}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-semibold truncate">{s.serviceName}</div>
+                        <div className="text-[11px] mt-0.5" style={{ color: `${typeColor.accent}70` }}>
+                          {typeLabel}{s.date ? ` · ${formatDate(s.date)}` : ""}
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <div className="text-sm font-semibold tabular-nums">{formatCurrency(s.priceSold)}</div>
-                      <Badge variant="outline" className={cn("text-[10px] capitalize", s.paymentStatus === "paid" && "border-emerald-400 text-emerald-600", s.paymentStatus === "pending" && "border-amber-400 text-amber-600", s.paymentStatus === "partial" && "border-blue-400 text-blue-600")}>
-                        {s.paymentStatus}
-                      </Badge>
-                      <Badge variant="outline" className={cn("text-[10px] capitalize", s.deliveryStatus === "delivered" && "border-emerald-400 text-emerald-600", s.deliveryStatus === "pending" && "border-amber-400 text-amber-600")}>
-                        {s.deliveryStatus}
-                      </Badge>
-                    </div>
-                  </div>
-                ))}
+                      <div className="flex items-center gap-2 shrink-0">
+                        <div className="text-sm font-bold tabular-nums" style={{ color: typeColor.accent }}>{formatCurrency(s.priceSold)}</div>
+                        <span
+                          className="px-2 py-0.5 rounded-full text-[10px] font-semibold border"
+                          style={{
+                            color: s.paymentStatus === "paid" ? "#10B981" : s.paymentStatus === "partial" ? "#38bdf8" : "#F59E0B",
+                            borderColor: s.paymentStatus === "paid" ? "rgba(16,185,129,0.3)" : s.paymentStatus === "partial" ? "rgba(56,189,248,0.3)" : "rgba(245,158,11,0.3)",
+                            background: s.paymentStatus === "paid" ? "rgba(16,185,129,0.08)" : s.paymentStatus === "partial" ? "rgba(56,189,248,0.08)" : "rgba(245,158,11,0.08)",
+                          }}
+                        >
+                          {s.paymentStatus}
+                        </span>
+                        <span
+                          className="px-2 py-0.5 rounded-full text-[10px] font-semibold border"
+                          style={{
+                            color: s.deliveryStatus === "delivered" ? "#10B981" : "#F59E0B",
+                            borderColor: s.deliveryStatus === "delivered" ? "rgba(16,185,129,0.3)" : "rgba(245,158,11,0.3)",
+                            background: s.deliveryStatus === "delivered" ? "rgba(16,185,129,0.08)" : "rgba(245,158,11,0.08)",
+                          }}
+                        >
+                          {s.deliveryStatus}
+                        </span>
+                      </div>
+                    </motion.div>
+                  );
+                })}
               </div>
             )}
-          </CardContent>
-        </SpotlightCard>
+          </div>
+        </motion.div>
       )}
 
-      {/* Project Progress */}
+      {/* ── Project Progress ── */}
       {customerTab === "web" && (
-        <SpotlightCard spotlightColor="rgba(0,231,255,0.04)">
-          <CardHeader className="flex flex-row items-center justify-between gap-3">
-            <div>
-              <CardTitle className="text-base font-semibold flex items-center gap-2">
-                <Layers className="w-4 h-4 shrink-0" /> Project Progress
-              </CardTitle>
-              <CardDescription>Website & web app projects visible in client dashboard</CardDescription>
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.32, duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+          className="relative rounded-2xl border border-white/[0.06] bg-card overflow-hidden"
+        >
+          <div className="absolute top-0 left-0 right-0 h-px" style={{ background: "linear-gradient(90deg,transparent,rgba(0,231,255,0.35),transparent)" }} />
+          <div className="flex items-center justify-between gap-3 px-5 pt-5 pb-4">
+            <div className="flex items-center gap-2.5">
+              <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: "rgba(0,231,255,0.10)", border: "1px solid rgba(0,231,255,0.18)" }}>
+                <Layers className="w-3.5 h-3.5 text-cyan-400" />
+              </div>
+              <div>
+                <div className="text-sm font-semibold">Project Progress</div>
+                <div className="text-[10.5px] text-muted-foreground/40 mt-0.5">Website & web app projects visible in client dashboard</div>
+              </div>
             </div>
-            <Button size="sm" onClick={() => { setEditProject(undefined); setProjectDialog(true); }} className="shrink-0">
-              <Plus className="sm:mr-2 h-4 w-4" />
-              <span className="hidden sm:inline">Add</span>
-            </Button>
-          </CardHeader>
-          <CardContent className="space-y-4">
+            <button
+              onClick={() => { setEditProject(undefined); setProjectDialog(true); }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-semibold border border-cyan-500/20 text-cyan-400 hover:text-cyan-300 hover:border-cyan-400/40 bg-cyan-500/5 hover:bg-cyan-500/10 transition-all"
+            >
+              <Plus className="w-3 h-3" /> Add
+            </button>
+          </div>
+          <div className="px-5 pb-5">
             {projects.length === 0 ? (
-              <div className="text-center py-8 text-sm text-muted-foreground">
+              <div className="text-center py-10 text-sm text-muted-foreground/40">
                 No projects yet. Add one to show progress in the client dashboard.
               </div>
             ) : (
               <div className="grid gap-4 lg:grid-cols-2">
-                {projects.map((proj) => (
-                  <div key={proj.id} className="space-y-2">
+                {projects.map((proj, idx) => (
+                  <motion.div
+                    key={proj.id}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: idx * 0.06 }}
+                    className="rounded-xl border border-white/[0.07] bg-white/[0.02] overflow-hidden"
+                    style={{ boxShadow: "0 0 20px rgba(0,231,255,0.04)" }}
+                  >
                     <ServiceDetailCard project={proj} />
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="w-full h-7 text-xs gap-1.5"
-                      onClick={() => { setEditProject(proj); setProjectDialog(true); }}
-                    >
-                      <Pencil className="w-3 h-3" /> Edit Project
-                    </Button>
-                  </div>
+                    <div className="px-3 pb-3">
+                      <button
+                        className="w-full flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-[11px] font-semibold border border-white/[0.07] text-muted-foreground/40 hover:text-foreground hover:border-white/[0.14] transition-all"
+                        onClick={() => { setEditProject(proj); setProjectDialog(true); }}
+                      >
+                        <Pencil className="w-3 h-3" /> Edit Project
+                      </button>
+                    </div>
+                  </motion.div>
                 ))}
               </div>
             )}
-          </CardContent>
-        </SpotlightCard>
+          </div>
+        </motion.div>
       )}
 
+      {/* ── Digital Services ── */}
       {customerTab === "digital" && (
-        <SpotlightCard spotlightColor="rgba(139,92,246,0.05)">
-          <CardHeader>
-            <div className="flex items-center justify-between gap-3">
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.32, duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+          className="relative rounded-2xl border border-white/[0.06] bg-card overflow-hidden"
+        >
+          <div className="absolute top-0 left-0 right-0 h-px" style={{ background: "linear-gradient(90deg,transparent,rgba(168,85,247,0.45),transparent)" }} />
+          <div className="flex items-center justify-between gap-3 px-5 pt-5 pb-4">
+            <div className="flex items-center gap-2.5">
+              <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: "rgba(168,85,247,0.12)", border: "1px solid rgba(168,85,247,0.22)" }}>
+                <Megaphone className="w-3.5 h-3.5 text-violet-400" />
+              </div>
               <div>
-                <CardTitle className="text-base font-semibold">Digital services</CardTitle>
-                <CardDescription>Digital marketing subscriptions and monthly performance</CardDescription>
-              </div>
-              <Button size="sm" onClick={() => setServiceOpen(true)} className="shrink-0">
-                <Plus className="sm:mr-2 h-4 w-4" />
-                <span className="hidden sm:inline">Add service</span>
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
-              <div className="rounded-lg border border-purple-500/20 bg-purple-950/20 p-3">
-                <div className="flex items-center gap-1.5 text-xs text-purple-400 font-medium">
-                  <Megaphone className="w-3.5 h-3.5" /> Digital MRR
-                </div>
-                <div className="text-lg font-bold text-purple-300 mt-0.5">
-                  {formatCurrency(digitalMRR)}
-                </div>
-              </div>
-              <div className="rounded-lg border bg-muted/30 p-3">
-                <div className="text-xs text-muted-foreground">Services</div>
-                <div className="text-lg font-bold">{digitalServiceCards.length}</div>
+                <div className="text-sm font-semibold">Digital Services</div>
+                <div className="text-[10.5px] text-muted-foreground/40 mt-0.5">Digital marketing subscriptions and monthly performance</div>
               </div>
             </div>
+            <button
+              onClick={() => setServiceOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-semibold border border-violet-500/20 text-violet-400 hover:text-violet-300 hover:border-violet-400/40 bg-violet-500/5 hover:bg-violet-500/10 transition-all"
+            >
+              <Plus className="w-3 h-3" /> Add service
+            </button>
+          </div>
+          <div className="px-5 pb-5 space-y-4">
             {digitalServiceCards.length === 0 ? (
-              <div className="text-center py-8 text-sm text-muted-foreground">
+              <div className="text-center py-10 text-sm text-muted-foreground/40">
                 No digital services yet.
               </div>
             ) : (
@@ -1586,7 +1699,11 @@ export default function CustomerDetail() {
                   const isEditing = dsEditId === ds.id;
                   const isSaving = updateMonthlyDigital.isPending || updateOneTimeService.isPending;
                   return (
-                    <div key={ds.id} className="rounded-2xl border bg-muted/20 p-3.5 space-y-2">
+                    <div
+                      key={ds.id}
+                      className="rounded-xl border border-white/[0.07] bg-white/[0.02] p-4 space-y-3"
+                      style={{ boxShadow: "0 0 24px rgba(168,85,247,0.04)" }}
+                    >
                       <div className="flex items-center justify-between gap-2">
                         <div>
                           <div className="font-medium text-sm leading-tight">{ds.serviceName}</div>
@@ -1811,166 +1928,191 @@ export default function CustomerDetail() {
                 })}
               </div>
             )}
-          </CardContent>
-        </SpotlightCard>
+          </div>
+        </motion.div>
+      )}
+
+      {/* ── Monthly Website Services ── */}
+      {customerTab === "monthly" && (
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.32, duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+          className="relative rounded-2xl border border-white/[0.06] bg-card overflow-hidden"
+        >
+          <div className="absolute top-0 left-0 right-0 h-px" style={{ background: "linear-gradient(90deg,transparent,rgba(0,231,255,0.35),transparent)" }} />
+          <div className="px-5 pt-5 pb-4">
+            <div className="flex items-center gap-2.5">
+              <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: "rgba(0,231,255,0.10)", border: "1px solid rgba(0,231,255,0.18)" }}>
+                <Globe className="w-3.5 h-3.5 text-cyan-400" />
+              </div>
+              <div>
+                <div className="text-sm font-semibold">Monthly Website Services</div>
+                <div className="text-[10.5px] text-muted-foreground/40 mt-0.5">Recurring website maintenance retainers</div>
+              </div>
+            </div>
+          </div>
+          <div className="px-5 pb-5 space-y-3">
+            {webServices.length === 0 ? (
+              <div className="text-center py-8 text-sm text-muted-foreground/40">No monthly website services yet.</div>
+            ) : (
+              webServices.map((ws, idx) => {
+                const statusColor = ws.status === "active"
+                  ? { text: "#10B981", bg: "rgba(16,185,129,0.08)", border: "rgba(16,185,129,0.2)" }
+                  : ws.status === "paused"
+                    ? { text: "#F59E0B", bg: "rgba(245,158,11,0.08)", border: "rgba(245,158,11,0.2)" }
+                    : { text: "#6b7280", bg: "rgba(107,114,128,0.08)", border: "rgba(107,114,128,0.2)" };
+                const profit = ws.monthlyCharge - ws.monthlyCost - ws.discount;
+                return (
+                  <motion.div
+                    key={ws.id}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: idx * 0.06 }}
+                    className="rounded-xl border border-white/[0.07] overflow-hidden"
+                    style={{ background: "rgba(0,231,255,0.02)", boxShadow: "0 0 24px rgba(0,231,255,0.04)" }}
+                  >
+                    <div className="p-4 space-y-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <div className="font-semibold text-sm leading-tight">{ws.websiteName}</div>
+                          <div className="text-[11px] text-cyan-400/60 mt-0.5">Website Retainer · Since {formatDate(ws.startDate)}</div>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span
+                            className="px-2 py-0.5 rounded-full text-[10px] font-semibold border capitalize"
+                            style={{ color: statusColor.text, background: statusColor.bg, borderColor: statusColor.border }}
+                          >
+                            {ws.status}
+                          </span>
+                          <Link href={`/monthly-services?highlight=${ws.id}&tab=website`}>
+                            <span className="px-2.5 py-1 rounded-lg text-[11px] font-semibold border border-white/[0.08] text-muted-foreground/50 hover:text-foreground hover:border-white/[0.16] bg-white/[0.02] transition-all cursor-pointer">
+                              Manage →
+                            </span>
+                          </Link>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2">
+                        {[
+                          { label: "Charge", value: `${formatCurrency(ws.monthlyCharge)}/mo`, color: "#00E7FF" },
+                          { label: "Cost", value: `${formatCurrency(ws.monthlyCost)}/mo`, color: "#a855f7" },
+                          { label: "Profit", value: `${formatCurrency(profit)}/mo`, color: "#10B981" },
+                        ].map((item) => (
+                          <div
+                            key={item.label}
+                            className="rounded-lg px-3 py-2 border border-white/[0.05]"
+                            style={{ background: `${item.color}06` }}
+                          >
+                            <div className="text-[9px] font-semibold uppercase tracking-widest mb-1" style={{ color: `${item.color}60` }}>{item.label}</div>
+                            <div className="text-xs font-bold tabular-nums" style={{ color: item.color }}>{item.value}</div>
+                          </div>
+                        ))}
+                      </div>
+                      {ws.discount > 0 && (
+                        <div className="text-[11px] text-amber-400/60">Discount: {formatCurrency(ws.discount)}/mo</div>
+                      )}
+                      <MiniMonthGrid completions={ws.completions} />
+                    </div>
+                  </motion.div>
+                );
+              })
+            )}
+            <Link href="/monthly-services">
+              <div className="text-center text-[11px] font-medium text-muted-foreground/40 hover:text-muted-foreground pt-1 transition-colors cursor-pointer">
+                Manage all monthly services →
+              </div>
+            </Link>
+          </div>
+        </motion.div>
       )}
 
       {customerTab === "monthly" && (
-        <SpotlightCard spotlightColor="rgba(0,231,255,0.04)">
-          <CardHeader>
-            <CardTitle className="text-base font-semibold">Monthly services</CardTitle>
-            <CardDescription>Recurring website services and maintenance</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
-              <div className="rounded-lg border border-cyan-500/20 bg-cyan-950/20 p-3">
-                <div className="flex items-center gap-1.5 text-xs text-cyan-400 font-medium">
-                  <Globe className="w-3.5 h-3.5" /> Website MRR
-                </div>
-                <div className="text-lg font-bold text-cyan-300 mt-0.5">
-                  {formatCurrency(webMRR)}
-                </div>
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.38, duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+          className="relative rounded-2xl border border-white/[0.06] bg-card overflow-hidden"
+        >
+          <div className="absolute top-0 left-0 right-0 h-px" style={{ background: "linear-gradient(90deg,transparent,rgba(168,85,247,0.35),transparent)" }} />
+          <div className="flex items-center justify-between gap-3 px-5 pt-5 pb-4">
+            <div className="flex items-center gap-2.5">
+              <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: "rgba(168,85,247,0.12)", border: "1px solid rgba(168,85,247,0.2)" }}>
+                <Briefcase className="w-3.5 h-3.5 text-violet-400" />
               </div>
-              <div className="rounded-lg border bg-muted/30 p-3">
-                <div className="text-xs text-muted-foreground">Services</div>
-                <div className="text-lg font-bold">{webServices.length}</div>
+              <div>
+                <div className="text-sm font-semibold">Service History</div>
+                <div className="text-[10.5px] text-muted-foreground/40 mt-0.5">{services?.length ?? 0} service{services?.length === 1 ? "" : "s"} delivered</div>
               </div>
             </div>
-            {webServices.length === 0 ? (
-              <div className="text-center py-8 text-sm text-muted-foreground">
-                No monthly website services yet.
-              </div>
+            <button
+              onClick={() => setServiceOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-semibold border border-white/[0.07] text-muted-foreground/50 hover:text-foreground hover:border-white/[0.14] bg-white/[0.02] hover:bg-white/[0.04] transition-all"
+            >
+              <Plus className="w-3 h-3" /> Add service
+            </button>
+          </div>
+          <div className="px-5 pb-5 space-y-2">
+            {!services || services.length === 0 ? (
+              <div className="text-center py-10 text-sm text-muted-foreground/40">No services yet for this customer.</div>
             ) : (
-              <div className="space-y-3">
-                {webServices.map((ws) => (
-                  <div key={ws.id} className="rounded-2xl border bg-muted/20 p-4 space-y-2">
-                    <div className="flex items-center justify-between gap-2">
-                      <div>
-                        <div className="font-medium text-sm">{ws.websiteName}</div>
-                        <div className="text-xs text-muted-foreground">Website service</div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline" className={cn("text-xs capitalize", ws.status === "active" && "border-emerald-400 text-emerald-600", ws.status === "paused" && "border-amber-400 text-amber-600", ws.status === "cancelled" && "border-red-400 text-red-500")}>
-                          {ws.status}
-                        </Badge>
-                        <Link href={`/monthly-services?highlight=${ws.id}&tab=website`}>
-                          <Button size="sm" variant="outline" className="h-7 text-xs gap-1">
-                            Manage <span aria-hidden>→</span>
-                          </Button>
-                        </Link>
+              <div className="space-y-2">
+                {services.map((s, i) => (
+                  <motion.div
+                    key={s.id}
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.04 }}
+                    className="rounded-xl border border-white/[0.07] p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                    style={{ background: "rgba(168,85,247,0.02)", boxShadow: "0 0 20px rgba(168,85,247,0.03)" }}
+                  >
+                    <div className="space-y-0.5">
+                      <div className="font-medium text-sm">{s.serviceName}</div>
+                      <div className="text-[11px] text-muted-foreground/60">{formatDate(s.date)} · Profit {formatCurrency(Number(s.profit ?? 0))}</div>
+                    </div>
+                    <div className="flex items-center gap-3 shrink-0">
+                      <Badge variant="outline" className={paymentBadge(s.paymentStatus)}>{s.paymentStatus}</Badge>
+                      <div className="text-right">
+                        <div className="text-sm font-semibold tabular-nums">{formatCurrency(Number(s.priceSold))}</div>
+                        <div className="text-[10px] text-muted-foreground/60">Paid {formatCurrency(Number(s.amountPaid ?? 0))}</div>
                       </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-2 text-xs">
-                      <div className="rounded-lg bg-muted/30 p-3 border border-white/[0.06]">
-                        <div className="text-muted-foreground">Charge</div>
-                        <div className="font-semibold">{formatCurrency(ws.monthlyCharge)}/mo</div>
-                      </div>
-                      <div className="rounded-lg bg-muted/30 p-3 border border-white/[0.06]">
-                        <div className="text-muted-foreground">Cost</div>
-                        <div className="font-semibold">{formatCurrency(ws.monthlyCost)}/mo</div>
-                      </div>
-                    </div>
-                    <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
-                      {ws.discount > 0 && <span>Discount: {formatCurrency(ws.discount)}</span>}
-                      <span>Since: {formatDate(ws.startDate)}</span>
-                    </div>
-                    <MiniMonthGrid completions={ws.completions} />
-                  </div>
+                  </motion.div>
                 ))}
               </div>
             )}
-            <div className="pt-2 border-t">
-              <Link href="/monthly-services">
-                <Button variant="ghost" size="sm" className="text-xs text-muted-foreground">
-                  Manage monthly services →
-                </Button>
-              </Link>
-            </div>
-          </CardContent>
-        </SpotlightCard>
-      )}
-
-      {customerTab === "monthly" && (
-        <SpotlightCard spotlightColor="rgba(139,92,246,0.04)">
-          <CardHeader className="flex flex-row items-center justify-between gap-3">
-          <div className="min-w-0">
-            <CardTitle className="text-base font-semibold flex items-center gap-2">
-              <Briefcase className="w-4 h-4 shrink-0" /> Service history
-            </CardTitle>
-            <CardDescription>
-              {services?.length ?? 0} service
-              {services?.length === 1 ? "" : "s"} delivered
-            </CardDescription>
           </div>
-          <Button size="sm" onClick={() => setServiceOpen(true)} className="shrink-0">
-            <Plus className="sm:mr-2 h-4 w-4" />
-            <span className="hidden sm:inline">Add service</span>
-          </Button>
-        </CardHeader>
-        <CardContent>
-          {!services || services.length === 0 ? (
-            <div className="text-center py-10 text-sm text-muted-foreground">
-              No services yet for this customer.
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {services.map((s, i) => (
-                <motion.div
-                  key={s.id}
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.04 }}
-                  className="border rounded-lg p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover-elevate"
-                >
-                  <div className="space-y-1">
-                    <div className="font-medium">{s.serviceName}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {formatDate(s.date)} · Profit{" "}
-                      {formatCurrency(Number(s.profit ?? 0))}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <Badge
-                      variant="outline"
-                      className={paymentBadge(s.paymentStatus)}
-                    >
-                      {s.paymentStatus}
-                    </Badge>
-                    <div className="text-right">
-                      <div className="text-sm font-semibold tabular-nums">
-                        {formatCurrency(Number(s.priceSold))}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        Paid {formatCurrency(Number(s.amountPaid ?? 0))}
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-        </SpotlightCard>
+        </motion.div>
       )}
 
       {/* DM Reports Card — Monthly Tab */}
       {customerTab === "monthly" && (
-        <SpotlightCard spotlightColor="rgba(139,92,246,0.05)">
-          <CardHeader className="flex flex-row items-center justify-between gap-3 pb-3">
-            <div>
-              <CardTitle className="text-base font-semibold flex items-center gap-2">
-                <Megaphone className="w-4 h-4 shrink-0" /> Digital Marketing Reports
-              </CardTitle>
-              <CardDescription>Social media & DM monthly reports</CardDescription>
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.42, duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+          className="relative rounded-2xl border border-white/[0.06] bg-card overflow-hidden"
+        >
+          <div className="absolute top-0 left-0 right-0 h-px" style={{ background: "linear-gradient(90deg,transparent,rgba(168,85,247,0.4),transparent)" }} />
+          <div className="flex items-center justify-between gap-3 px-5 pt-5 pb-4">
+            <div className="flex items-center gap-2.5">
+              <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: "rgba(168,85,247,0.12)", border: "1px solid rgba(168,85,247,0.2)" }}>
+                <Megaphone className="w-3.5 h-3.5 text-violet-400" />
+              </div>
+              <div>
+                <div className="text-sm font-semibold">Digital Marketing Reports</div>
+                <div className="text-[10.5px] text-muted-foreground/40 mt-0.5">Social media &amp; DM monthly reports</div>
+              </div>
             </div>
-            <Button size="sm" onClick={() => { setDmForm(blankDm()); setDmDialog(true); }} className="shrink-0">
-              <Plus className="sm:mr-2 h-4 w-4" />
-              <span className="hidden sm:inline">Add</span>
-            </Button>
-          </CardHeader>
-          <CardContent>
+            <button
+              onClick={() => { setDmForm(blankDm()); setDmDialog(true); }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-semibold border border-white/[0.07] text-muted-foreground/50 hover:text-foreground hover:border-white/[0.14] bg-white/[0.02] hover:bg-white/[0.04] transition-all"
+            >
+              <Plus className="w-3 h-3" /> Add
+            </button>
+          </div>
+          <div className="px-5 pb-5">
             {dmReports.length === 0 ? (
-              <div className="text-center py-8 text-sm text-muted-foreground">No DM reports yet.</div>
+              <div className="text-center py-8 text-sm text-muted-foreground/40">No DM reports yet.</div>
             ) : (
               <div className="space-y-2">
                 {dmReports
@@ -1980,11 +2122,11 @@ export default function CustomerDetail() {
                     const total = (r.uploadedVideos ?? 0) + (r.uploadedPosts ?? 0) + (r.uploadedReels ?? 0) + (r.uploadedStories ?? 0);
                     const target = (r.targetVideos ?? 0) + (r.targetPosts ?? 0) + (r.targetReels ?? 0) + (r.targetStories ?? 0);
                     return (
-                      <div key={r.id} className="border border-white/[0.07] rounded-xl p-3 text-sm bg-white/[0.02]">
+                      <div key={r.id} className="rounded-xl border border-white/[0.07] p-3 text-sm" style={{ background: "rgba(168,85,247,0.02)" }}>
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0 flex-1">
-                            <div className="font-semibold">{MONTHS[r.month - 1]} {r.year}</div>
-                            <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted-foreground mt-0.5">
+                            <div className="font-semibold text-[13px]">{MONTHS[r.month - 1]} {r.year}</div>
+                            <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-muted-foreground/60 mt-0.5">
                               {r.platforms && <span>{r.platforms}</span>}
                               {r.plan && <span className="capitalize">{r.plan} plan</span>}
                               <span>Content: {total}/{target}</span>
@@ -1993,13 +2135,11 @@ export default function CustomerDetail() {
                               {r.engagementGrowth && <span>Engagement: {r.engagementGrowth}</span>}
                             </div>
                             {r.summaryNotes && (
-                              <div className="text-xs text-muted-foreground italic mt-1 line-clamp-2">{r.summaryNotes}</div>
+                              <div className="text-[11px] text-muted-foreground/50 italic mt-1 line-clamp-2">{r.summaryNotes}</div>
                             )}
                           </div>
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="h-7 w-7 shrink-0"
+                          <button
+                            className="h-7 w-7 shrink-0 flex items-center justify-center rounded-lg text-muted-foreground/40 hover:text-muted-foreground hover:bg-white/[0.04] transition-all"
                             onClick={() => {
                               setDmForm({
                                 year: String(r.year), month: String(r.month),
@@ -2021,47 +2161,58 @@ export default function CustomerDetail() {
                               setDmDialog(true);
                             }}
                           >
-                            <Pencil className="h-3.5 w-3.5" />
-                          </Button>
+                            <Pencil className="h-3 w-3" />
+                          </button>
                         </div>
                       </div>
                     );
                   })}
               </div>
             )}
-          </CardContent>
-        </SpotlightCard>
+          </div>
+        </motion.div>
       )}
 
       {/* SEO Reports Card — Monthly Tab */}
       {customerTab === "monthly" && (
-        <SpotlightCard spotlightColor="rgba(0,231,255,0.04)">
-          <CardHeader className="flex flex-row items-center justify-between gap-3 pb-3">
-            <div>
-              <CardTitle className="text-base font-semibold flex items-center gap-2">
-                <Globe className="w-4 h-4 shrink-0" /> Web / SEO Reports
-              </CardTitle>
-              <CardDescription>Search performance & SEO monthly reports</CardDescription>
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.46, duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+          className="relative rounded-2xl border border-white/[0.06] bg-card overflow-hidden"
+        >
+          <div className="absolute top-0 left-0 right-0 h-px" style={{ background: "linear-gradient(90deg,transparent,rgba(0,231,255,0.35),transparent)" }} />
+          <div className="flex items-center justify-between gap-3 px-5 pt-5 pb-4">
+            <div className="flex items-center gap-2.5">
+              <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: "rgba(0,231,255,0.10)", border: "1px solid rgba(0,231,255,0.18)" }}>
+                <Globe className="w-3.5 h-3.5 text-cyan-400" />
+              </div>
+              <div>
+                <div className="text-sm font-semibold">Web / SEO Reports</div>
+                <div className="text-[10.5px] text-muted-foreground/40 mt-0.5">Search performance &amp; SEO monthly reports</div>
+              </div>
             </div>
-            <Button size="sm" onClick={() => { setSeoForm(blankSeo()); setSeoDialog(true); }} className="shrink-0">
-              <Plus className="sm:mr-2 h-4 w-4" />
-              <span className="hidden sm:inline">Add</span>
-            </Button>
-          </CardHeader>
-          <CardContent>
+            <button
+              onClick={() => { setSeoForm(blankSeo()); setSeoDialog(true); }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-semibold border border-white/[0.07] text-muted-foreground/50 hover:text-foreground hover:border-white/[0.14] bg-white/[0.02] hover:bg-white/[0.04] transition-all"
+            >
+              <Plus className="w-3 h-3" /> Add
+            </button>
+          </div>
+          <div className="px-5 pb-5">
             {seoReports.length === 0 ? (
-              <div className="text-center py-8 text-sm text-muted-foreground">No SEO reports yet.</div>
+              <div className="text-center py-8 text-sm text-muted-foreground/40">No SEO reports yet.</div>
             ) : (
               <div className="space-y-2">
                 {seoReports
                   .slice()
                   .sort((a, b) => b.year !== a.year ? b.year - a.year : b.month - a.month)
                   .map((r) => (
-                    <div key={r.id} className="border border-white/[0.07] rounded-xl p-3 text-sm bg-white/[0.02]">
+                    <div key={r.id} className="rounded-xl border border-white/[0.07] p-3 text-sm" style={{ background: "rgba(0,231,255,0.015)" }}>
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0 flex-1">
-                          <div className="font-semibold">{MONTHS[r.month - 1]} {r.year}</div>
-                          <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted-foreground mt-0.5">
+                          <div className="font-semibold text-[13px]">{MONTHS[r.month - 1]} {r.year}</div>
+                          <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-muted-foreground/60 mt-0.5">
                             <span>{r.blogsPosted} blogs posted</span>
                             <span>{r.keywordsRanked} keywords</span>
                             {r.trafficGrowth && <span>Traffic: {r.trafficGrowth}</span>}
@@ -2069,13 +2220,11 @@ export default function CustomerDetail() {
                             {r.seoScore != null && <span>Score: {r.seoScore}/100</span>}
                           </div>
                           {r.notes && (
-                            <div className="text-xs text-muted-foreground italic mt-1 line-clamp-2">{r.notes}</div>
+                            <div className="text-[11px] text-muted-foreground/50 italic mt-1 line-clamp-2">{r.notes}</div>
                           )}
                         </div>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-7 w-7 shrink-0"
+                        <button
+                          className="h-7 w-7 shrink-0 flex items-center justify-center rounded-lg text-muted-foreground/40 hover:text-muted-foreground hover:bg-white/[0.04] transition-all"
                           onClick={() => {
                             setSeoForm({
                               year: String(r.year), month: String(r.month),
@@ -2089,15 +2238,15 @@ export default function CustomerDetail() {
                             setSeoDialog(true);
                           }}
                         >
-                          <Pencil className="h-3.5 w-3.5" />
-                        </Button>
+                          <Pencil className="h-3 w-3" />
+                        </button>
                       </div>
                     </div>
                   ))}
               </div>
             )}
-          </CardContent>
-        </SpotlightCard>
+          </div>
+        </motion.div>
       )}
 
       {/* Activity View More Dialog */}
