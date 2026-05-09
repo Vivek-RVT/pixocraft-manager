@@ -37,8 +37,11 @@ import {
   Layers,
   BarChart2,
 } from "lucide-react";
-import { motion, useSpring, useTransform, animate } from "framer-motion";
+import { motion, useSpring, useTransform, animate, AnimatePresence } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle,
+} from "@/components/ui/dialog";
 import {
   ResponsiveContainer,
   AreaChart,
@@ -112,10 +115,7 @@ function CountUp({ value, prefix = "", suffix = "" }: { value: number; prefix?: 
 
 function CurrencyCount({ value }: { value: number }) {
   const count = useCountUp(value);
-  if (count >= 1000) {
-    return <span>SAR {fmt(count)}</span>;
-  }
-  return <span>SAR {count.toLocaleString()}</span>;
+  return <span>{formatCurrency(count)}</span>;
 }
 
 const activityIcon: Record<string, { icon: React.ElementType; color: string; bg: string }> = {
@@ -225,6 +225,8 @@ export default function Dashboard() {
     queryKey: ["dashboard", "service-type-breakdown"],
     queryFn: () => apiFetch("/dashboard/service-type-breakdown"),
   });
+
+  const [activityAllOpen, setActivityAllOpen] = useState(false);
 
   const growth = summary?.revenueGrowthPercent ?? 0;
   const growthUp = growth >= 0;
@@ -433,8 +435,18 @@ export default function Dashboard() {
               </div>
               <p className="text-[11px] text-muted-foreground/45 font-medium">Latest across your studio</p>
             </div>
+            {activity && activity.length > 5 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setActivityAllOpen(true)}
+                className="text-[11px] h-7 gap-1 text-muted-foreground/50 hover:text-foreground font-medium"
+              >
+                View all <ChevronRight className="w-3.5 h-3.5" />
+              </Button>
+            )}
           </div>
-          <div className="flex-1 overflow-y-auto px-3 py-3 space-y-1">
+          <div className="px-3 py-3 space-y-1">
             {!activity && Array.from({ length: 5 }).map((_, i) => (
               <div key={i} className="flex items-center gap-3 px-2 py-3">
                 <Skeleton className="w-9 h-9 rounded-xl shrink-0" />
@@ -444,7 +456,7 @@ export default function Dashboard() {
             {activity?.length === 0 && (
               <div className="text-sm text-muted-foreground/40 text-center py-10">No activity yet.</div>
             )}
-            {activity?.map((item, i) => {
+            {activity?.slice(0, 5).map((item, i) => {
               const meta = activityIcon[item.kind] ?? activityIcon.service;
               const IconComp = meta.icon;
               return (
@@ -473,8 +485,63 @@ export default function Dashboard() {
                 </motion.div>
               );
             })}
+            {activity && activity.length > 5 && (
+              <button
+                onClick={() => setActivityAllOpen(true)}
+                className="w-full mt-1 py-2 rounded-xl text-[11px] font-semibold text-muted-foreground/40 hover:text-muted-foreground/70 hover:bg-white/[0.03] transition-all tracking-wide uppercase"
+              >
+                +{activity.length - 5} more entries
+              </button>
+            )}
           </div>
         </motion.div>
+
+        {/* Activity All Dialog */}
+        <Dialog open={activityAllOpen} onOpenChange={setActivityAllOpen}>
+          <DialogContent className="max-w-lg rounded-2xl border border-white/[0.08] bg-[rgba(10,11,30,0.98)] backdrop-blur-2xl shadow-[0_32px_80px_rgba(0,0,0,0.8)] p-0 overflow-hidden">
+            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-violet-500/50 to-transparent" />
+            <DialogHeader className="px-6 pt-6 pb-4 border-b border-white/[0.05]">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-violet-500/10 flex items-center justify-center">
+                  <Activity className="w-3.5 h-3.5 text-violet-400" />
+                </div>
+                <DialogTitle className="text-sm font-semibold tracking-tight">All Activity</DialogTitle>
+              </div>
+              <p className="text-[11px] text-muted-foreground/45 font-medium mt-0.5">Complete history across your studio</p>
+            </DialogHeader>
+            <div className="px-3 py-3 space-y-0.5 max-h-[60vh] overflow-y-auto">
+              {activity?.map((item, i) => {
+                const meta = activityIcon[item.kind] ?? activityIcon.service;
+                const IconComp = meta.icon;
+                return (
+                  <motion.div
+                    key={item.id}
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.025, duration: 0.25 }}
+                    className="flex items-center gap-3 rounded-xl px-3 py-2.5 hover:bg-white/[0.04] transition-colors group cursor-default"
+                  >
+                    <div className="w-8 h-8 rounded-xl shrink-0 flex items-center justify-center" style={{ background: meta.bg }}>
+                      <IconComp className="w-3 h-3" style={{ color: meta.color }} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[12.5px] font-medium leading-tight truncate">{item.title}</div>
+                      {item.subtitle && (
+                        <div className="text-[11px] text-muted-foreground/45 leading-tight truncate mt-0.5">{item.subtitle}</div>
+                      )}
+                      <div className="text-[10px] text-muted-foreground/30 uppercase tracking-wide font-medium mt-0.5">{formatDate(item.date)}</div>
+                    </div>
+                    {item.amount != null && (
+                      <div className="text-[12.5px] font-bold tabular-nums shrink-0" style={{ color: meta.color }}>
+                        {formatCurrency(Number(item.amount))}
+                      </div>
+                    )}
+                  </motion.div>
+                );
+              })}
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* ── Expense Breakdown + Top Services ── */}
