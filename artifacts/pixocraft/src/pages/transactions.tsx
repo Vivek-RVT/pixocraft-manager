@@ -25,7 +25,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Card, CardContent } from "@/components/ui/card";
+import { CardContent } from "@/components/ui/card";
+import { SpotlightCard } from "@/components/ui/spotlight-card";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -118,44 +119,42 @@ export default function Transactions() {
       </div>
 
       <div className="grid gap-3 sm:gap-4 grid-cols-3">
-        <Card>
+        <SpotlightCard spotlightColor="rgba(52,211,153,0.08)">
           <CardContent className="pt-4 sm:pt-5">
             <div className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wide truncate">
               Total in
             </div>
-            <div className="text-sm sm:text-xl font-semibold tabular-nums text-emerald-600 dark:text-emerald-400 flex items-center gap-1 sm:gap-2 mt-1 truncate">
+            <div className="text-sm sm:text-xl font-semibold tabular-nums text-emerald-400 flex items-center gap-1 sm:gap-2 mt-1 truncate">
               <ArrowUpRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
               <span className="truncate">{formatCurrency(credits)}</span>
             </div>
           </CardContent>
-        </Card>
-        <Card>
+        </SpotlightCard>
+        <SpotlightCard spotlightColor="rgba(251,113,133,0.08)">
           <CardContent className="pt-4 sm:pt-5">
             <div className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wide truncate">
               Total out
             </div>
-            <div className="text-sm sm:text-xl font-semibold tabular-nums text-rose-600 dark:text-rose-400 flex items-center gap-1 sm:gap-2 mt-1 truncate">
+            <div className="text-sm sm:text-xl font-semibold tabular-nums text-rose-400 flex items-center gap-1 sm:gap-2 mt-1 truncate">
               <ArrowDownRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
               <span className="truncate">{formatCurrency(debits)}</span>
             </div>
           </CardContent>
-        </Card>
-        <Card>
+        </SpotlightCard>
+        <SpotlightCard spotlightColor={net >= 0 ? "rgba(52,211,153,0.08)" : "rgba(251,113,133,0.08)"}>
           <CardContent className="pt-4 sm:pt-5">
             <div className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wide truncate">
               Net flow
             </div>
             <div
               className={`text-sm sm:text-xl font-semibold tabular-nums mt-1 truncate ${
-                net >= 0
-                  ? "text-emerald-600 dark:text-emerald-400"
-                  : "text-rose-600 dark:text-rose-400"
+                net >= 0 ? "text-emerald-400" : "text-rose-400"
               }`}
             >
               {formatCurrency(net)}
             </div>
           </CardContent>
-        </Card>
+        </SpotlightCard>
       </div>
 
       <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>

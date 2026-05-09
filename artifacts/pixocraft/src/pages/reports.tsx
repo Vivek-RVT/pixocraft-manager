@@ -23,6 +23,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { SpotlightCard } from "@/components/ui/spotlight-card";
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/format";
 import {
@@ -252,7 +253,7 @@ export default function Reports() {
         </div>
       </div>
 
-      <Card>
+      <SpotlightCard spotlightColor="rgba(0,231,255,0.05)">
         <CardHeader>
           <CardTitle className="text-base font-semibold">
             12-month performance
@@ -329,7 +330,7 @@ export default function Reports() {
           )}
         </CardContent>
         {trend && trend.length > 0 && (
-          <CardContent className="pt-0 grid grid-cols-3 gap-3 sm:gap-4 text-sm border-t">
+          <CardContent className="pt-0 grid grid-cols-3 gap-3 sm:gap-4 text-sm border-t border-white/[0.06]">
             <div className="pt-4 min-w-0">
               <div className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wide truncate">
                 Year revenue
@@ -350,13 +351,13 @@ export default function Reports() {
               <div className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wide truncate">
                 Year profit
               </div>
-              <div className="font-semibold tabular-nums text-emerald-600 dark:text-emerald-400 truncate">
+              <div className="font-semibold tabular-nums text-emerald-400 truncate">
                 {formatCurrency(yearTotals.profit)}
               </div>
             </div>
           </CardContent>
         )}
-      </Card>
+      </SpotlightCard>
 
       <div className="space-y-3">
         <div>
@@ -367,10 +368,10 @@ export default function Reports() {
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
           {exports.map((ex) => (
-            <Card key={ex.title}>
+            <SpotlightCard key={ex.title} spotlightColor="rgba(0,231,255,0.06)">
               <CardContent className="pt-5 flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-9 h-9 rounded-md bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                  <div className="w-9 h-9 rounded-md bg-cyan-500/10 text-cyan-400 flex items-center justify-center shrink-0">
                     <FileSpreadsheet className="w-4 h-4" />
                   </div>
                   <div className="min-w-0">
@@ -380,12 +381,12 @@ export default function Reports() {
                     </div>
                   </div>
                 </div>
-                <Button variant="outline" size="sm" onClick={ex.onClick} className="shrink-0">
+                <Button variant="outline" size="sm" onClick={ex.onClick} className="shrink-0 border-white/[0.08] hover:border-cyan-400/40 hover:text-cyan-400">
                   <Download className="w-4 h-4 sm:mr-2" />
                   <span className="hidden sm:inline">CSV</span>
                 </Button>
               </CardContent>
-            </Card>
+            </SpotlightCard>
           ))}
         </div>
       </div>
@@ -403,19 +404,19 @@ function SummaryStat({
   positive?: boolean;
 }) {
   return (
-    <Card>
+    <SpotlightCard spotlightColor={positive ? "rgba(52,211,153,0.08)" : "rgba(0,231,255,0.06)"}>
       <CardContent className="pt-5">
         <div className="text-xs text-muted-foreground uppercase tracking-wide">
           {label}
         </div>
         <div
           className={`text-xl font-semibold tabular-nums mt-1 ${
-            positive ? "text-emerald-600 dark:text-emerald-400" : ""
+            positive ? "text-emerald-400" : ""
           }`}
         >
           {formatCurrency(value)}
         </div>
       </CardContent>
-    </Card>
+    </SpotlightCard>
   );
 }

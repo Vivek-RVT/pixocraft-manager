@@ -24,6 +24,7 @@ import {
 import { cn } from "@/lib/utils";
 
 import { Button } from "@/components/ui/button";
+import { SpotlightCard } from "@/components/ui/spotlight-card";
 import {
   Table,
   TableBody,
@@ -197,20 +198,20 @@ export default function Services() {
 
       {services.length > 0 && (
         <div className="grid grid-cols-3 gap-4">
-          <div className="rounded-xl border border-white/[0.07] bg-card p-4">
+          <SpotlightCard spotlightColor="rgba(0,231,255,0.06)" className="p-4">
             <p className="text-xs text-muted-foreground uppercase tracking-wider">Services</p>
             <p className="text-2xl font-bold mt-1">{services.length}</p>
-          </div>
-          <div className="rounded-xl border border-white/[0.07] bg-card p-4">
+          </SpotlightCard>
+          <SpotlightCard spotlightColor="rgba(0,231,255,0.06)" className="p-4">
             <p className="text-xs text-muted-foreground uppercase tracking-wider">Revenue</p>
             <p className="text-2xl font-bold mt-1">{formatCurrency(totalRevenue)}</p>
-          </div>
-          <div className="rounded-xl border border-white/[0.07] bg-card p-4">
+          </SpotlightCard>
+          <SpotlightCard spotlightColor="rgba(139,92,246,0.08)" className="p-4">
             <p className="text-xs text-muted-foreground uppercase tracking-wider">Profit</p>
             <p className={cn("text-2xl font-bold mt-1", totalProfit >= 0 ? "text-emerald-400" : "text-rose-400")}>
               {formatCurrency(totalProfit)}
             </p>
-          </div>
+          </SpotlightCard>
         </div>
       )}
 
@@ -344,7 +345,7 @@ export default function Services() {
             <h2 className="text-base font-semibold">Monthly Retainers</h2>
             <Badge variant="secondary">{monthlyWebsite.length + monthlyDigital.length}</Badge>
           </div>
-          <div className="rounded-md border bg-card overflow-hidden">
+          <div className="rounded-xl border border-white/[0.07] bg-card overflow-hidden">
             <Table>
               <TableHeader>
                 <TableRow>

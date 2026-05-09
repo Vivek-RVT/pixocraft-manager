@@ -73,6 +73,7 @@ import { CustomerFormDialog } from "@/components/customer-form-dialog";
 import { ServiceFormDialog } from "@/components/service-form-dialog";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { SpotlightCard } from "@/components/ui/spotlight-card";
 
 const BASE_PATH = import.meta.env.BASE_URL ?? "/";
 
@@ -243,42 +244,42 @@ function ServiceDetailCard({ project }: { project: ServiceProject }) {
   const stageOrder = STAGES.indexOf(project.stage as typeof STAGES[number]);
   const progress = project.progress > 0 ? project.progress : (stageOrder >= 0 ? Math.round(((stageOrder + 1) / STAGES.length) * 100) : 0);
   return (
-    <div className="rounded-2xl border bg-white p-4 shadow-sm space-y-3">
+    <div className="rounded-2xl border border-white/[0.08] bg-card p-4 space-y-3 shadow-sm">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <div className="font-semibold text-gray-900">{project.projectName}</div>
-          <div className="text-xs text-gray-500 capitalize">{project.projectType === "webapp" ? "Web App" : "Website"}</div>
+          <div className="font-semibold text-foreground">{project.projectName}</div>
+          <div className="text-xs text-muted-foreground capitalize">{project.projectType === "webapp" ? "Web App" : "Website"}</div>
         </div>
         <Badge variant="outline" className={cn("text-xs text-white border-transparent", STAGE_COLORS[project.stage])}>
           {STAGE_LABELS[project.stage] ?? project.stage}
         </Badge>
       </div>
       <div className="grid grid-cols-2 gap-2 text-xs">
-        <div className="rounded-xl bg-gray-50 p-3">
-          <div className="text-gray-500">Progress</div>
-          <div className="font-semibold text-gray-900">{progress}%</div>
+        <div className="rounded-xl bg-muted/30 p-3">
+          <div className="text-muted-foreground mb-0.5">Progress</div>
+          <div className="font-semibold text-foreground">{progress}%</div>
         </div>
-        <div className="rounded-xl bg-gray-50 p-3">
-          <div className="text-gray-500">Expected delivery</div>
-          <div className="font-semibold text-gray-900">{project.expectedDelivery ? formatDate(project.expectedDelivery) : "—"}</div>
+        <div className="rounded-xl bg-muted/30 p-3">
+          <div className="text-muted-foreground mb-0.5">Expected delivery</div>
+          <div className="font-semibold text-foreground">{project.expectedDelivery ? formatDate(project.expectedDelivery) : "—"}</div>
         </div>
-        <div className="rounded-xl bg-gray-50 p-3">
-          <div className="text-gray-500">Live URL</div>
-          <div className="font-semibold text-blue-600 truncate">{project.liveUrl || "—"}</div>
+        <div className="rounded-xl bg-muted/30 p-3">
+          <div className="text-muted-foreground mb-0.5">Live URL</div>
+          <div className="font-semibold text-cyan-400 truncate">{project.liveUrl || "—"}</div>
         </div>
-        <div className="rounded-xl bg-gray-50 p-3">
-          <div className="text-gray-500">Stage</div>
-          <div className="font-semibold text-gray-900 capitalize">{project.stage.replace("-", " ")}</div>
+        <div className="rounded-xl bg-muted/30 p-3">
+          <div className="text-muted-foreground mb-0.5">Stage</div>
+          <div className="font-semibold text-foreground capitalize">{project.stage.replace("-", " ")}</div>
         </div>
       </div>
       <div className="grid gap-2 text-xs">
-        <div className="rounded-xl border bg-muted/20 p-3">
-          <div className="text-gray-500 mb-1">Completed</div>
-          <div className="text-gray-900 whitespace-pre-wrap">{project.completedNotes || "—"}</div>
+        <div className="rounded-xl border border-white/[0.06] bg-muted/20 p-3">
+          <div className="text-muted-foreground mb-1">Completed</div>
+          <div className="text-foreground whitespace-pre-wrap">{project.completedNotes || "—"}</div>
         </div>
-        <div className="rounded-xl border bg-muted/20 p-3">
-          <div className="text-gray-500 mb-1">Pending</div>
-          <div className="text-gray-900 whitespace-pre-wrap">{project.pendingNotes || "—"}</div>
+        <div className="rounded-xl border border-white/[0.06] bg-muted/20 p-3">
+          <div className="text-muted-foreground mb-1">Pending</div>
+          <div className="text-foreground whitespace-pre-wrap">{project.pendingNotes || "—"}</div>
         </div>
       </div>
     </div>
@@ -299,10 +300,10 @@ function TabButton({
       type="button"
       onClick={onClick}
       className={cn(
-        "rounded-full px-4 py-2 text-sm font-medium transition",
+        "rounded-full px-4 py-2 text-sm font-medium transition-all",
         active
-          ? "bg-primary text-primary-foreground shadow-sm"
-          : "bg-muted text-muted-foreground hover:text-foreground",
+          ? "bg-gradient-to-r from-cyan-500/20 to-violet-600/20 text-cyan-300 border border-cyan-500/30 shadow-[0_0_12px_rgba(0,231,255,0.08)]"
+          : "bg-transparent text-muted-foreground hover:text-foreground hover:bg-white/[0.05] border border-transparent",
       )}
     >
       {children}
@@ -1095,7 +1096,7 @@ export default function CustomerDetail() {
         </Button>
       </div>
 
-      <Card>
+      <SpotlightCard spotlightColor="rgba(0,231,255,0.04)">
         <CardContent className="pt-6 space-y-6">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="flex items-center gap-4">
@@ -1199,7 +1200,7 @@ export default function CustomerDetail() {
             </div>
           )}
         </CardContent>
-      </Card>
+      </SpotlightCard>
 
       {/* Info Popup */}
       <Dialog open={infoOpen} onOpenChange={setInfoOpen}>
@@ -1352,9 +1353,9 @@ export default function CustomerDetail() {
           </div>
         </>}
         {customerTab === "digital" && <>
-          <div className="rounded-xl border bg-purple-50 dark:bg-purple-950/20 p-3">
-            <div className="text-xs text-purple-600 dark:text-purple-400 flex items-center gap-1.5"><Megaphone className="w-3 h-3" /> Digital MRR</div>
-            <div className="text-base font-bold mt-0.5 text-purple-700 dark:text-purple-300">{formatCurrency(digitalMRR)}</div>
+          <div className="rounded-xl border border-purple-500/20 bg-purple-950/20 p-3">
+            <div className="text-xs text-purple-400 flex items-center gap-1.5"><Megaphone className="w-3 h-3" /> Digital MRR</div>
+            <div className="text-base font-bold mt-0.5 text-purple-300">{formatCurrency(digitalMRR)}</div>
           </div>
           <div className="rounded-xl border bg-muted/20 p-3">
             <div className="text-xs text-muted-foreground flex items-center gap-1.5"><Zap className="w-3 h-3" /> Active Services</div>
@@ -1370,9 +1371,9 @@ export default function CustomerDetail() {
           </div>
         </>}
         {customerTab === "web" && <>
-          <div className="rounded-xl border bg-blue-50 dark:bg-blue-950/20 p-3">
-            <div className="text-xs text-blue-600 dark:text-blue-400 flex items-center gap-1.5"><Globe className="w-3 h-3" /> Web MRR</div>
-            <div className="text-base font-bold mt-0.5 text-blue-700 dark:text-blue-300">{formatCurrency(webMRR)}</div>
+          <div className="rounded-xl border border-cyan-500/20 bg-cyan-950/20 p-3">
+            <div className="text-xs text-cyan-400 flex items-center gap-1.5"><Globe className="w-3 h-3" /> Web MRR</div>
+            <div className="text-base font-bold mt-0.5 text-cyan-300">{formatCurrency(webMRR)}</div>
           </div>
           <div className="rounded-xl border bg-muted/20 p-3">
             <div className="text-xs text-muted-foreground flex items-center gap-1.5"><Zap className="w-3 h-3" /> Active Services</div>
@@ -1408,7 +1409,7 @@ export default function CustomerDetail() {
       </div>
 
       {/* Recent Activity — always visible, compact with View More popup */}
-      <Card>
+      <SpotlightCard spotlightColor="rgba(0,231,255,0.04)">
         <CardHeader className="flex flex-row items-center justify-between gap-3 pb-3">
           <div>
             <CardTitle className="text-base font-semibold flex items-center gap-2">
@@ -1457,11 +1458,11 @@ export default function CustomerDetail() {
             </div>
           )}
         </CardContent>
-      </Card>
+      </SpotlightCard>
 
       {/* Service History — Overview tab only */}
       {customerTab === "overview" && (
-        <Card>
+        <SpotlightCard spotlightColor="rgba(139,92,246,0.04)">
           <CardHeader className="flex flex-row items-center justify-between gap-3">
             <div>
               <CardTitle className="text-base font-semibold flex items-center gap-2">
@@ -1502,12 +1503,12 @@ export default function CustomerDetail() {
               </div>
             )}
           </CardContent>
-        </Card>
+        </SpotlightCard>
       )}
 
       {/* Project Progress */}
       {customerTab === "web" && (
-        <Card>
+        <SpotlightCard spotlightColor="rgba(0,231,255,0.04)">
           <CardHeader className="flex flex-row items-center justify-between gap-3">
             <div>
               <CardTitle className="text-base font-semibold flex items-center gap-2">
@@ -1543,11 +1544,11 @@ export default function CustomerDetail() {
               </div>
             )}
           </CardContent>
-        </Card>
+        </SpotlightCard>
       )}
 
       {customerTab === "digital" && (
-        <Card>
+        <SpotlightCard spotlightColor="rgba(139,92,246,0.05)">
           <CardHeader>
             <div className="flex items-center justify-between gap-3">
               <div>
@@ -1562,11 +1563,11 @@ export default function CustomerDetail() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
-              <div className="rounded-lg border bg-purple-50 dark:bg-purple-950/20 p-3">
-                <div className="flex items-center gap-1.5 text-xs text-purple-600 dark:text-purple-400 font-medium">
+              <div className="rounded-lg border border-purple-500/20 bg-purple-950/20 p-3">
+                <div className="flex items-center gap-1.5 text-xs text-purple-400 font-medium">
                   <Megaphone className="w-3.5 h-3.5" /> Digital MRR
                 </div>
-                <div className="text-lg font-bold text-purple-700 dark:text-purple-300 mt-0.5">
+                <div className="text-lg font-bold text-purple-300 mt-0.5">
                   {formatCurrency(digitalMRR)}
                 </div>
               </div>
@@ -1598,7 +1599,7 @@ export default function CustomerDetail() {
                           <Button
                             size="icon"
                             variant="ghost"
-                            className="h-7 w-7 shrink-0 text-purple-500 hover:text-purple-700 hover:bg-purple-50"
+                            className="h-7 w-7 shrink-0 text-purple-400 hover:text-purple-200 hover:bg-purple-950/40"
                             onClick={() => setActivityOpenId(activityOpenId === ds.id ? null : ds.id)}
                             title="View activity"
                           >
@@ -1632,7 +1633,7 @@ export default function CustomerDetail() {
                       </div>
 
                       {isEditing ? (
-                        <div className="rounded-lg border bg-white p-2.5 space-y-2.5">
+                        <div className="rounded-lg border border-white/[0.08] bg-muted/30 p-2.5 space-y-2.5">
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
                             <div className="space-y-1">
                               <Label className="text-xs text-muted-foreground">Name</Label>
@@ -1698,7 +1699,7 @@ export default function CustomerDetail() {
                         </div>
                       ) : (
                         <>
-                          <div className="rounded-lg border bg-white dark:bg-muted/10 p-3">
+                          <div className="rounded-lg border border-white/[0.07] bg-muted/10 p-3">
                             <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
                               <span>{ds.serviceType === "web" ? "Web" : "Digital"} · {ds.billingType === "monthly" ? "Monthly" : "One-time"}</span>
                               <span>{formatDate(ds.startDate)}</span>
@@ -1728,11 +1729,11 @@ export default function CustomerDetail() {
                       )}
 
                       <div className="grid grid-cols-2 gap-2 text-xs">
-                        <div className="rounded-lg bg-white p-3 border">
+                        <div className="rounded-lg bg-muted/30 p-3 border border-white/[0.06]">
                           <div className="text-muted-foreground">Charge</div>
                           <div className="font-semibold">{formatCurrency(ds.charge)}{ds.billingType === "monthly" ? "/mo" : ""}</div>
                         </div>
-                        <div className="rounded-lg bg-white p-3 border">
+                        <div className="rounded-lg bg-muted/30 p-3 border border-white/[0.06]">
                           <div className="text-muted-foreground">Cost</div>
                           <div className="font-semibold">{formatCurrency(ds.cost)}{ds.billingType === "monthly" ? "/mo" : ""}</div>
                         </div>
@@ -1756,8 +1757,8 @@ export default function CustomerDetail() {
 
                       {/* Activity panel */}
                       {activityOpenId === ds.id && (
-                        <div className="rounded-xl border border-purple-100 bg-purple-50/60 dark:bg-purple-950/20 dark:border-purple-900 p-3 space-y-2">
-                          <div className="flex items-center gap-1.5 text-xs font-semibold text-purple-700 dark:text-purple-300">
+                        <div className="rounded-xl border border-purple-500/20 bg-purple-950/25 p-3 space-y-2">
+                          <div className="flex items-center gap-1.5 text-xs font-semibold text-purple-300">
                             <Activity className="w-3.5 h-3.5" />
                             Recent Activity
                           </div>
@@ -1811,22 +1812,22 @@ export default function CustomerDetail() {
               </div>
             )}
           </CardContent>
-        </Card>
+        </SpotlightCard>
       )}
 
       {customerTab === "monthly" && (
-        <Card>
+        <SpotlightCard spotlightColor="rgba(0,231,255,0.04)">
           <CardHeader>
             <CardTitle className="text-base font-semibold">Monthly services</CardTitle>
             <CardDescription>Recurring website services and maintenance</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
-              <div className="rounded-lg border bg-blue-50 dark:bg-blue-950/20 p-3">
-                <div className="flex items-center gap-1.5 text-xs text-blue-600 dark:text-blue-400 font-medium">
+              <div className="rounded-lg border border-cyan-500/20 bg-cyan-950/20 p-3">
+                <div className="flex items-center gap-1.5 text-xs text-cyan-400 font-medium">
                   <Globe className="w-3.5 h-3.5" /> Website MRR
                 </div>
-                <div className="text-lg font-bold text-blue-700 dark:text-blue-300 mt-0.5">
+                <div className="text-lg font-bold text-cyan-300 mt-0.5">
                   {formatCurrency(webMRR)}
                 </div>
               </div>
@@ -1860,11 +1861,11 @@ export default function CustomerDetail() {
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-2 text-xs">
-                      <div className="rounded-lg bg-white p-3 border">
+                      <div className="rounded-lg bg-muted/30 p-3 border border-white/[0.06]">
                         <div className="text-muted-foreground">Charge</div>
                         <div className="font-semibold">{formatCurrency(ws.monthlyCharge)}/mo</div>
                       </div>
-                      <div className="rounded-lg bg-white p-3 border">
+                      <div className="rounded-lg bg-muted/30 p-3 border border-white/[0.06]">
                         <div className="text-muted-foreground">Cost</div>
                         <div className="font-semibold">{formatCurrency(ws.monthlyCost)}/mo</div>
                       </div>
@@ -1886,11 +1887,11 @@ export default function CustomerDetail() {
               </Link>
             </div>
           </CardContent>
-        </Card>
+        </SpotlightCard>
       )}
 
       {customerTab === "monthly" && (
-        <Card>
+        <SpotlightCard spotlightColor="rgba(139,92,246,0.04)">
           <CardHeader className="flex flex-row items-center justify-between gap-3">
           <div className="min-w-0">
             <CardTitle className="text-base font-semibold flex items-center gap-2">
@@ -1949,12 +1950,12 @@ export default function CustomerDetail() {
             </div>
           )}
         </CardContent>
-        </Card>
+        </SpotlightCard>
       )}
 
       {/* DM Reports Card — Monthly Tab */}
       {customerTab === "monthly" && (
-        <Card>
+        <SpotlightCard spotlightColor="rgba(139,92,246,0.05)">
           <CardHeader className="flex flex-row items-center justify-between gap-3 pb-3">
             <div>
               <CardTitle className="text-base font-semibold flex items-center gap-2">
@@ -1979,7 +1980,7 @@ export default function CustomerDetail() {
                     const total = (r.uploadedVideos ?? 0) + (r.uploadedPosts ?? 0) + (r.uploadedReels ?? 0) + (r.uploadedStories ?? 0);
                     const target = (r.targetVideos ?? 0) + (r.targetPosts ?? 0) + (r.targetReels ?? 0) + (r.targetStories ?? 0);
                     return (
-                      <div key={r.id} className="border rounded-lg p-3 text-sm">
+                      <div key={r.id} className="border border-white/[0.07] rounded-xl p-3 text-sm bg-white/[0.02]">
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0 flex-1">
                             <div className="font-semibold">{MONTHS[r.month - 1]} {r.year}</div>
@@ -2029,12 +2030,12 @@ export default function CustomerDetail() {
               </div>
             )}
           </CardContent>
-        </Card>
+        </SpotlightCard>
       )}
 
       {/* SEO Reports Card — Monthly Tab */}
       {customerTab === "monthly" && (
-        <Card>
+        <SpotlightCard spotlightColor="rgba(0,231,255,0.04)">
           <CardHeader className="flex flex-row items-center justify-between gap-3 pb-3">
             <div>
               <CardTitle className="text-base font-semibold flex items-center gap-2">
@@ -2056,7 +2057,7 @@ export default function CustomerDetail() {
                   .slice()
                   .sort((a, b) => b.year !== a.year ? b.year - a.year : b.month - a.month)
                   .map((r) => (
-                    <div key={r.id} className="border rounded-lg p-3 text-sm">
+                    <div key={r.id} className="border border-white/[0.07] rounded-xl p-3 text-sm bg-white/[0.02]">
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0 flex-1">
                           <div className="font-semibold">{MONTHS[r.month - 1]} {r.year}</div>
@@ -2096,7 +2097,7 @@ export default function CustomerDetail() {
               </div>
             )}
           </CardContent>
-        </Card>
+        </SpotlightCard>
       )}
 
       {/* Activity View More Dialog */}

@@ -23,7 +23,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { SpotlightCard } from "@/components/ui/spotlight-card";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -143,7 +144,7 @@ export default function Expenses() {
         </Button>
       </div>
 
-      <Card>
+      <SpotlightCard spotlightColor="rgba(155,89,245,0.07)">
         <CardHeader>
           <CardTitle className="text-base font-semibold">
             Spending by category
@@ -202,7 +203,7 @@ export default function Expenses() {
             </div>
           )}
         </CardContent>
-      </Card>
+      </SpotlightCard>
 
       <DateRangeFilter value={dateFilter} onChange={setDateFilter} />
 

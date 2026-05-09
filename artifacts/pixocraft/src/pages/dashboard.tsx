@@ -431,7 +431,7 @@ export default function Dashboard() {
       </div>
 
       <div className="grid gap-4 lg:grid-cols-7">
-        <Card className="lg:col-span-3">
+        <SpotlightCard spotlightColor="rgba(155,89,245,0.07)" className="lg:col-span-3">
           <CardHeader>
             <CardTitle className="text-base font-semibold flex items-center gap-2">
               <PieIcon className="w-4 h-4" /> Expense breakdown
@@ -483,9 +483,9 @@ export default function Dashboard() {
               </div>
             )}
           </CardContent>
-        </Card>
+        </SpotlightCard>
 
-        <Card className="lg:col-span-4">
+        <SpotlightCard spotlightColor="rgba(0,231,255,0.05)" className="lg:col-span-4">
           <CardHeader>
             <CardTitle className="text-base font-semibold flex items-center gap-2">
               <Award className="w-4 h-4" /> Top services this period
@@ -543,11 +543,11 @@ export default function Dashboard() {
               </div>
             )}
           </CardContent>
-        </Card>
+        </SpotlightCard>
       </div>
 
       {serviceTypeBreakdown && serviceTypeBreakdown.length > 0 && (
-        <Card>
+        <SpotlightCard spotlightColor="rgba(0,231,255,0.04)">
           <CardHeader>
             <CardTitle className="text-base font-semibold flex items-center gap-2">
               <Briefcase className="w-4 h-4" /> Service type profitability
@@ -598,10 +598,10 @@ export default function Dashboard() {
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
-        </Card>
+        </SpotlightCard>
       )}
 
-      <Card>
+      <SpotlightCard spotlightColor="rgba(155,89,245,0.05)">
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
             <CardTitle className="text-base font-semibold">
@@ -628,11 +628,11 @@ export default function Dashboard() {
               No customers yet.
             </div>
           )}
-          <div className="divide-y">
+          <div className="divide-y divide-white/[0.05]">
             {topCustomers?.map((c, i) => (
-              <Link key={c.customerId} href={`/customers/${c.customerId}`} className="flex items-center justify-between py-3 hover:bg-muted/40 -mx-2 px-2 rounded-md transition">
+              <Link key={c.customerId} href={`/customers/${c.customerId}`} className="flex items-center justify-between py-3 hover:bg-white/[0.03] -mx-2 px-2 rounded-md transition">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-semibold">
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-500/20 to-violet-600/20 text-cyan-400 flex items-center justify-center text-xs font-bold">
                     {String(i + 1).padStart(2, "0")}
                   </div>
                   <div>
@@ -655,7 +655,7 @@ export default function Dashboard() {
             ))}
           </div>
         </CardContent>
-      </Card>
+      </SpotlightCard>
     </div>
   );
 }
