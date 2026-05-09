@@ -65,14 +65,24 @@ async function apiFetch(path: string) {
 }
 
 const PIE_COLORS = [
-  "hsl(var(--chart-1))",
-  "hsl(var(--chart-2))",
-  "hsl(var(--chart-3))",
-  "hsl(var(--chart-4))",
-  "hsl(var(--chart-5))",
-  "hsl(220 10% 50%)",
-  "hsl(170 70% 45%)",
+  "#00E7FF",
+  "#7C3AED",
+  "#10B981",
+  "#F59E0B",
+  "#EC4899",
+  "#3B82F6",
+  "#8B5CF6",
 ];
+
+const CHART_TOOLTIP_STYLE = {
+  background: "rgba(5,5,22,0.95)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  borderRadius: 12,
+  fontSize: 12,
+  color: "#fff",
+  boxShadow: "0 8px 32px rgba(0,0,0,0.6)",
+  backdropFilter: "blur(12px)",
+};
 
 const monthLabel = (m: string) => {
   // m = YYYY-MM
@@ -283,69 +293,38 @@ export default function Dashboard() {
                   margin={{ top: 5, right: 8, left: 0, bottom: 0 }}
                 >
                   <defs>
-                    <linearGradient
-                      id="revenueGradient"
-                      x1="0"
-                      y1="0"
-                      x2="0"
-                      y2="1"
-                    >
-                      <stop
-                        offset="0%"
-                        stopColor="hsl(var(--chart-1))"
-                        stopOpacity={0.4}
-                      />
-                      <stop
-                        offset="100%"
-                        stopColor="hsl(var(--chart-1))"
-                        stopOpacity={0}
-                      />
+                    <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#00E7FF" stopOpacity={0.28} />
+                      <stop offset="100%" stopColor="#00E7FF" stopOpacity={0} />
                     </linearGradient>
-                    <linearGradient
-                      id="expenseGradient"
-                      x1="0"
-                      y1="0"
-                      x2="0"
-                      y2="1"
-                    >
-                      <stop
-                        offset="0%"
-                        stopColor="hsl(var(--chart-4))"
-                        stopOpacity={0.35}
-                      />
-                      <stop
-                        offset="100%"
-                        stopColor="hsl(var(--chart-4))"
-                        stopOpacity={0}
-                      />
+                    <linearGradient id="expenseGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#7C3AED" stopOpacity={0.25} />
+                      <stop offset="100%" stopColor="#7C3AED" stopOpacity={0} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid
                     strokeDasharray="3 3"
-                    stroke="hsl(var(--border))"
+                    stroke="rgba(255,255,255,0.04)"
                     vertical={false}
                   />
                   <XAxis
                     dataKey="label"
-                    stroke="hsl(var(--muted-foreground))"
+                    stroke="rgba(255,255,255,0.25)"
                     fontSize={11}
                     tickLine={false}
                     axisLine={false}
+                    tick={{ fill: "rgba(255,255,255,0.4)" }}
                   />
                   <YAxis
-                    stroke="hsl(var(--muted-foreground))"
+                    stroke="rgba(255,255,255,0.25)"
                     fontSize={11}
                     tickLine={false}
                     axisLine={false}
                     tickFormatter={(v: number) => compactRupee(Number(v))}
+                    tick={{ fill: "rgba(255,255,255,0.4)" }}
                   />
                   <Tooltip
-                    contentStyle={{
-                      background: "hsl(var(--popover))",
-                      border: "1px solid hsl(var(--border))",
-                      borderRadius: 8,
-                      fontSize: 12,
-                    }}
+                    contentStyle={CHART_TOOLTIP_STYLE}
                     formatter={(value: number, name: string) => [
                       formatCurrency(Number(value)),
                       name.charAt(0).toUpperCase() + name.slice(1),
@@ -354,14 +333,14 @@ export default function Dashboard() {
                   <Area
                     type="monotone"
                     dataKey="revenue"
-                    stroke="hsl(var(--chart-1))"
+                    stroke="#00E7FF"
                     strokeWidth={2}
                     fill="url(#revenueGradient)"
                   />
                   <Area
                     type="monotone"
                     dataKey="expenses"
-                    stroke="hsl(var(--chart-4))"
+                    stroke="#7C3AED"
                     strokeWidth={2}
                     fill="url(#expenseGradient)"
                   />
@@ -460,12 +439,7 @@ export default function Dashboard() {
                     ))}
                   </Pie>
                   <Tooltip
-                    contentStyle={{
-                      background: "hsl(var(--popover))",
-                      border: "1px solid hsl(var(--border))",
-                      borderRadius: 8,
-                      fontSize: 12,
-                    }}
+                    contentStyle={CHART_TOOLTIP_STYLE}
                     formatter={(value: number, name: string) => [
                       formatCurrency(Number(value)),
                       name,
@@ -473,7 +447,7 @@ export default function Dashboard() {
                   />
                   <Legend
                     iconType="circle"
-                    wrapperStyle={{ fontSize: 11 }}
+                    wrapperStyle={{ fontSize: 11, color: "rgba(255,255,255,0.5)" }}
                   />
                 </PieChart>
               </ResponsiveContainer>
@@ -500,39 +474,42 @@ export default function Dashboard() {
                   layout="vertical"
                   margin={{ top: 4, right: 12, left: 8, bottom: 0 }}
                 >
+                  <defs>
+                    <linearGradient id="servicesBarGrad" x1="0" y1="0" x2="1" y2="0">
+                      <stop offset="0%" stopColor="#00E7FF" stopOpacity={0.7} />
+                      <stop offset="100%" stopColor="#7C3AED" stopOpacity={0.9} />
+                    </linearGradient>
+                  </defs>
                   <CartesianGrid
                     horizontal={false}
-                    stroke="hsl(var(--border))"
+                    stroke="rgba(255,255,255,0.04)"
                   />
                   <XAxis
                     type="number"
-                    stroke="hsl(var(--muted-foreground))"
+                    stroke="rgba(255,255,255,0.25)"
                     fontSize={11}
                     tickFormatter={(v: number) => compactRupee(Number(v))}
                     tickLine={false}
                     axisLine={false}
+                    tick={{ fill: "rgba(255,255,255,0.4)" }}
                   />
                   <YAxis
                     type="category"
                     dataKey="serviceName"
-                    stroke="hsl(var(--muted-foreground))"
+                    stroke="rgba(255,255,255,0.25)"
                     fontSize={11}
                     width={110}
                     tickLine={false}
                     axisLine={false}
+                    tick={{ fill: "rgba(255,255,255,0.4)" }}
                   />
                   <Tooltip
-                    contentStyle={{
-                      background: "hsl(var(--popover))",
-                      border: "1px solid hsl(var(--border))",
-                      borderRadius: 8,
-                      fontSize: 12,
-                    }}
+                    contentStyle={CHART_TOOLTIP_STYLE}
                     formatter={(value: number) => formatCurrency(Number(value))}
                   />
                   <Bar
                     dataKey="totalRevenue"
-                    fill="hsl(var(--chart-1))"
+                    fill="url(#servicesBarGrad)"
                     radius={[0, 4, 4, 0]}
                   />
                 </BarChart>
@@ -562,39 +539,36 @@ export default function Dashboard() {
               >
                 <CartesianGrid
                   strokeDasharray="3 3"
-                  stroke="hsl(var(--border))"
+                  stroke="rgba(255,255,255,0.04)"
                   vertical={false}
                 />
                 <XAxis
                   dataKey="serviceType"
-                  stroke="hsl(var(--muted-foreground))"
+                  stroke="rgba(255,255,255,0.25)"
                   fontSize={11}
                   tickLine={false}
                   axisLine={false}
+                  tick={{ fill: "rgba(255,255,255,0.4)" }}
                 />
                 <YAxis
-                  stroke="hsl(var(--muted-foreground))"
+                  stroke="rgba(255,255,255,0.25)"
                   fontSize={11}
                   tickLine={false}
                   axisLine={false}
                   tickFormatter={(v: number) => compactRupee(Number(v))}
+                  tick={{ fill: "rgba(255,255,255,0.4)" }}
                 />
                 <Tooltip
-                  contentStyle={{
-                    background: "hsl(var(--popover))",
-                    border: "1px solid hsl(var(--border))",
-                    borderRadius: 8,
-                    fontSize: 12,
-                  }}
+                  contentStyle={CHART_TOOLTIP_STYLE}
                   formatter={(value: number, name: string) => [
                     formatCurrency(Number(value)),
                     name.charAt(0).toUpperCase() + name.slice(1),
                   ]}
                 />
-                <Legend iconType="circle" wrapperStyle={{ fontSize: 11, paddingTop: 8 }} />
-                <Bar dataKey="revenue" name="Revenue" fill="hsl(var(--chart-1))" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="cost" name="Cost" fill="hsl(var(--chart-4))" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="profit" name="Profit" fill="hsl(var(--chart-3))" radius={[4, 4, 0, 0]} />
+                <Legend iconType="circle" wrapperStyle={{ fontSize: 11, paddingTop: 8, color: "rgba(255,255,255,0.5)" }} />
+                <Bar dataKey="revenue" name="Revenue" fill="#00E7FF" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="cost" name="Cost" fill="#7C3AED" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="profit" name="Profit" fill="#10B981" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>

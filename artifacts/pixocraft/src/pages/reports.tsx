@@ -271,29 +271,34 @@ export default function Reports() {
               >
                 <CartesianGrid
                   strokeDasharray="3 3"
-                  stroke="hsl(var(--border))"
+                  stroke="rgba(255,255,255,0.04)"
                   vertical={false}
                 />
                 <XAxis
                   dataKey="label"
-                  stroke="hsl(var(--muted-foreground))"
+                  stroke="rgba(255,255,255,0.25)"
                   fontSize={11}
                   tickLine={false}
                   axisLine={false}
+                  tick={{ fill: "rgba(255,255,255,0.4)" }}
                 />
                 <YAxis
-                  stroke="hsl(var(--muted-foreground))"
+                  stroke="rgba(255,255,255,0.25)"
                   fontSize={11}
                   tickLine={false}
                   axisLine={false}
                   tickFormatter={(v: number) => compactRupee(Number(v))}
+                  tick={{ fill: "rgba(255,255,255,0.4)" }}
                 />
                 <Tooltip
                   contentStyle={{
-                    background: "hsl(var(--popover))",
-                    border: "1px solid hsl(var(--border))",
-                    borderRadius: 8,
+                    background: "rgba(5,5,22,0.95)",
+                    border: "1px solid rgba(255,255,255,0.08)",
+                    borderRadius: 12,
                     fontSize: 12,
+                    color: "#fff",
+                    boxShadow: "0 8px 32px rgba(0,0,0,0.6)",
+                    backdropFilter: "blur(12px)",
                   }}
                   formatter={(value: number, name: string) => [
                     formatCurrency(Number(value)),
@@ -302,24 +307,24 @@ export default function Reports() {
                 />
                 <Legend
                   iconType="circle"
-                  wrapperStyle={{ fontSize: 11, paddingTop: 8 }}
+                  wrapperStyle={{ fontSize: 11, paddingTop: 8, color: "rgba(255,255,255,0.5)" }}
                 />
                 <Bar
                   dataKey="revenue"
-                  fill="hsl(var(--chart-1))"
+                  fill="#00E7FF"
                   radius={[4, 4, 0, 0]}
                 />
                 <Bar
                   dataKey="expenses"
-                  fill="hsl(var(--chart-4))"
+                  fill="#7C3AED"
                   radius={[4, 4, 0, 0]}
                 />
                 <Line
                   type="monotone"
                   dataKey="profit"
-                  stroke="hsl(var(--chart-3))"
+                  stroke="#10B981"
                   strokeWidth={2.5}
-                  dot={{ r: 3 }}
+                  dot={{ r: 3, fill: "#10B981" }}
                 />
               </ComposedChart>
             </ResponsiveContainer>

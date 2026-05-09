@@ -160,39 +160,50 @@ export default function Expenses() {
                 }))}
                 margin={{ top: 4, right: 12, left: 0, bottom: 0 }}
               >
+                <defs>
+                  <linearGradient id="expensesBarGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#7C3AED" stopOpacity={0.9} />
+                    <stop offset="100%" stopColor="#4F46E5" stopOpacity={0.7} />
+                  </linearGradient>
+                </defs>
                 <CartesianGrid
                   vertical={false}
-                  stroke="hsl(var(--border))"
+                  stroke="rgba(255,255,255,0.04)"
                   strokeDasharray="3 3"
                 />
                 <XAxis
                   dataKey="category"
-                  stroke="hsl(var(--muted-foreground))"
+                  stroke="rgba(255,255,255,0.25)"
                   fontSize={11}
                   tickLine={false}
                   axisLine={false}
+                  tick={{ fill: "rgba(255,255,255,0.4)" }}
                 />
                 <YAxis
-                  stroke="hsl(var(--muted-foreground))"
+                  stroke="rgba(255,255,255,0.25)"
                   fontSize={11}
                   tickLine={false}
                   axisLine={false}
                   tickFormatter={(v: number) =>
                     v >= 1000 ? `₹${(v / 1000).toFixed(0)}k` : `₹${v}`
                   }
+                  tick={{ fill: "rgba(255,255,255,0.4)" }}
                 />
                 <Tooltip
                   contentStyle={{
-                    background: "hsl(var(--popover))",
-                    border: "1px solid hsl(var(--border))",
-                    borderRadius: 8,
+                    background: "rgba(5,5,22,0.95)",
+                    border: "1px solid rgba(255,255,255,0.08)",
+                    borderRadius: 12,
                     fontSize: 12,
+                    color: "#fff",
+                    boxShadow: "0 8px 32px rgba(0,0,0,0.6)",
+                    backdropFilter: "blur(12px)",
                   }}
                   formatter={(value: number) => formatCurrency(Number(value))}
                 />
                 <Bar
                   dataKey="total"
-                  fill="hsl(var(--chart-4))"
+                  fill="url(#expensesBarGrad)"
                   radius={[6, 6, 0, 0]}
                 />
               </BarChart>
